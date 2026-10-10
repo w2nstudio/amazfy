@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class AmazfyBackendApplication
 
 fun main(args: Array<String>) {
-	runApplication<AmazfyBackendApplication>(*args)
+    runApplication<AmazfyBackendApplication>(*args)
 }

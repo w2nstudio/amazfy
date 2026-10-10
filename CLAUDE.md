@@ -49,7 +49,8 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 
 Backend (run in `backend/`; Windows: `gradlew.bat`):
 
-- `./gradlew build` — compile, run tests, build the jar
+- `./gradlew build` — compile, ktlint check, run tests, build the jar (same as CI)
+- `./gradlew ktlintFormat` — auto-fix formatting (style: `.editorconfig`, ktlint_official)
 - `./gradlew test` — tests only
 - `./gradlew bootRun` — start on http://localhost:8080 (health: `/actuator/health`)
 

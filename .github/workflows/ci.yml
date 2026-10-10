@@ -1,0 +1,37 @@
+# Runs on every pull request and every push to main.
+# A pull request can only be merged when this passes (once branch protection is on).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to the same branch cancels the older, still-running build
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend build and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # Caches Gradle downloads between runs and validates the wrapper
+      - uses: gradle/actions/setup-gradle@v6
+
+      # build = compile + ktlintCheck + tests (Testcontainers uses the runner's Docker)
+      - run: ./gradlew build --console=plain
