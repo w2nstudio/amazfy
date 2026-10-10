@@ -1,8 +1,25 @@
 # Phase 1 development plan
 
-Last updated: 2026-10-10 · Team: 1 developer · Scope: [Phase 1 requirements](../requirements/phase-1-requirements.md)
+Last updated: 2026-10-11 · Team: 1 developer · Scope: [Phase 1 requirements](../requirements/phase-1-requirements.md)
 
 Phase 1a ships first: real sellers can connect Google Ads and Amazon and see ROAS. Phase 1b (campaign wizard) follows. API approvals run in parallel from week 1, because they take longer than the early milestones.
+
+## Progress
+
+Current milestone: **M0 project setup**. Update this section whenever a step is merged.
+
+| Step | Status |
+| --- | --- |
+| Docs, CLAUDE.md, GitHub repo, `.gitattributes` | Done |
+| Backend skeleton: Spring Boot 4.1 + Kotlin 2.3, JDK 21 toolchain, Gradle wrapper | Done |
+| PostgreSQL 18 via Docker Compose, Spring Data JPA, Flyway (V1 baseline), Testcontainers | Done |
+| ktlint + `.editorconfig`, GitHub Actions CI (backend), Dependabot | Done |
+| OpenAPI contract `api/openapi.yaml` + Kotlin interface generation; `GET /api/v1/system/info` | Done |
+| RFC 7807 errors, Spring Security baseline (deny by default, stateless, CORS), local/prod config | Done |
+| Frontend skeleton (React + TypeScript + Vite, agreed libraries) + generated TypeScript client + frontend CI | Next |
+| Backend Dockerfile | To do |
+| Architecture tests (Spring Modulith or ArchUnit) | To do (when the first real modules arrive in M1) |
+| Branch protection on `main` (require CI) | To do (GitHub setting, done by the repo owner) |
 
 ## Repository layout
 
@@ -10,6 +27,8 @@ Phase 1a ships first: real sellers can connect Google Ads and Amazon and see ROA
 amazfy/
 ├─ backend/        Spring Boot 4 + Kotlin, Gradle (Kotlin DSL)
 │  └─ src/main/kotlin/com/amazfy/
+│     ├─ common/        shared: web error handling, security config
+│     ├─ system/        service info endpoint
 │     ├─ auth/          users, login, JWT, memberships
 │     ├─ account/       accounts, account switching
 │     ├─ catalog/       brands, products
@@ -80,10 +99,12 @@ Start in week 1; see the checklist in the requirements, section 10. The critical
 
 ## Local prerequisites
 
-| Tool | Version | Status on the lead developer's machine (2026-10-10) |
+| Tool | Version | Notes |
 | --- | --- | --- |
-| JDK | 21 LTS (17 works) | 17 installed |
-| Node.js | 22 LTS (20.19+ minimum for current Vite) | 18.16 installed: upgrade needed |
-| Docker Desktop | current | not installed |
-| Git | any recent | installed |
+| JDK | 17+ to run Gradle | Gradle downloads JDK 21 for compiling (toolchain) |
+| Node.js | 22 LTS (20.19+ minimum for current Vite) | |
+| Docker Desktop | current | Needed for the local database and for backend tests (Testcontainers) |
+| Git | any recent | |
 | Gradle | not needed globally | project uses the Gradle wrapper |
+
+Lead developer's machine (2026-10-11): Windows 11, JDK 17, Node 22.23, Docker Desktop 29.8, IntelliJ IDEA Ultimate and VS Code.

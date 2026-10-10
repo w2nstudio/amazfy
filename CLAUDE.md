@@ -2,6 +2,8 @@
 
 SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales they produce (external ROAS). Phase 1 = Google Ads + Amazon Attribution.
 
+**Start of a session:** read the Progress section of `docs/plan/phase-1-plan.md` to see what is done and what is next.
+
 ## Docs
 
 - `docs/requirements/phase-1-requirements.md`: scope, user stories, data model, architecture. Source of truth.
@@ -14,7 +16,15 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 
 - Make small changes, one focused step at a time, and explain each: what changed and why.
 - When an Amazon or Google Ads business concept comes up, explain it in plain words with an example, and append it to the glossary.
-- Update the docs when behaviour, setup or decisions change.
+- Keep docs current as part of every change: this file (rules, commands), the plan's Progress section (mark merged steps), and the requirements (decisions). A new session must be able to continue from the docs alone.
+- The developer is new to the Amazon/ads domain and to some tools (e.g. OpenAPI); explain new tools and concepts briefly when introducing them.
+
+## Git workflow
+
+- Never commit to `main` directly. One branch per step (`m0/...`, `m1/...`, `docs/...`), pushed to GitHub; the developer opens and merges the pull request (no `gh` CLI installed). Give the PR link and a short suggested description.
+- Remote: `git@github-w2n:w2nstudio/amazfy.git` (SSH alias `github-w2n` for the w2nstudio GitHub account). Commit email for this repo: `w2nstudio16@gmail.com`.
+- After the developer says a PR is merged: `git fetch` and **confirm `origin/main` contains the change** before switching to `main` and deleting the branch locally and remotely.
+- CI (`.github/workflows/ci.yml`) must be green before merging.
 
 ## Domain naming (use everywhere: code, schema, UI, docs)
 
@@ -29,7 +39,8 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - Modular monolith, Spring Boot 4 + Kotlin (JDK 21), PostgreSQL. No microservices.
 - Hexagonal modules: `domain/` (pure Kotlin) · `application/` (use cases) + `application/port/` (interfaces) · `adapter/inbound/web`, `adapter/outbound/persistence`, `adapter/outbound/<service>` (not `in`/`out`: `in` is a Kotlin keyword).
 - **Strict** (domain has no Spring, JPA or API-client imports): channel (Google), attribution, reporting, ad matching.
-- **Light** (simple CRUD may skip layers): auth, account, catalog, audit.
+- **Light** (simple CRUD may skip layers): auth, account, catalog, audit, system.
+- `common/` holds shared infrastructure only (error handling, security config), no business logic.
 - Modules talk to each other only through their public application API, never another module's internals. Enforced by architecture tests.
 - Every table has `account_id`; every query is scoped to the current account.
 - Daily metrics are stored per ad per day; higher levels are sums.
@@ -66,4 +77,4 @@ Local database (run in repo root; needs Docker Desktop running):
 Backend tests start their own throwaway PostgreSQL with Testcontainers; only Docker must be running.
 Migrations live in `backend/src/main/resources/db/migration` (`V<n>__<description>.sql`); never edit a merged one.
 
-Frontend: to be added in M0.
+Frontend: to be added in M0 (next step).
