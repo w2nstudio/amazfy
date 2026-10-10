@@ -25,7 +25,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 
 ## Architecture
 
-- Modular monolith, Spring Boot 3 + Kotlin, PostgreSQL. No microservices.
+- Modular monolith, Spring Boot 4 + Kotlin (JDK 21), PostgreSQL. No microservices.
 - Hexagonal modules: `domain/` (pure Kotlin) · `application/` (use cases) + `application/port/` (interfaces) · `adapter/in/web`, `adapter/out/persistence`, `adapter/out/<service>`.
 - **Strict** (domain has no Spring, JPA or API-client imports): channel (Google), attribution, reporting, ad matching.
 - **Light** (simple CRUD may skip layers): auth, account, catalog, audit.
@@ -47,4 +47,10 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 
 ## Commands
 
-To be added in milestone M0 (backend build/test, frontend dev/build, local database).
+Backend (run in `backend/`; Windows: `gradlew.bat`):
+
+- `./gradlew build` — compile, run tests, build the jar
+- `./gradlew test` — tests only
+- `./gradlew bootRun` — start on http://localhost:8080 (health: `/actuator/health`)
+
+Frontend and local database: to be added in M0.

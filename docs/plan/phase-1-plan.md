@@ -8,7 +8,7 @@ Phase 1a ships first: real sellers can connect Google Ads and Amazon and see ROA
 
 ```
 amazfy/
-├─ backend/        Spring Boot 3 + Kotlin, Gradle (Kotlin DSL)
+├─ backend/        Spring Boot 4 + Kotlin, Gradle (Kotlin DSL)
 │  └─ src/main/kotlin/com/amazfy/
 │     ├─ auth/          users, login, JWT, memberships
 │     ├─ account/       accounts, account switching

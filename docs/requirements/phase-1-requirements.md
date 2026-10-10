@@ -201,9 +201,9 @@ The rules are enforced by architecture tests (Spring Modulith or ArchUnit): the 
 
 | Layer | Choice | Why |
 | --- | --- | --- |
-| Backend | Spring Boot 3, Kotlin, JDK 21 (17 minimum) | Long-lived, typed, scales well |
+| Backend | Spring Boot 4, Kotlin 2, JDK 21 (downloaded by the Gradle toolchain) | Long-lived, typed, scales well |
 | Build | Gradle (Kotlin DSL) with wrapper | No global Gradle install needed |
-| Frontend | React, TypeScript, Vite (single-page app) | Dashboard sits behind login; no server rendering needed |
+| Frontend | React, TypeScript, Vite (single-page app); React Router, TanStack Query, Tailwind CSS + shadcn/ui, Recharts, React Hook Form + Zod, OpenAPI-generated client | Dashboard sits behind login; no server rendering needed; widely used, maintained libraries |
 | Database | PostgreSQL 16, Flyway migrations | Relational data with strict per-account isolation |
 | Background jobs | JobRunr (or Spring Scheduler + ShedLock) | Retries; one run per job across instances |
 | Google client | Official Google Ads API Java client library | Maintained by Google; works from Kotlin |
