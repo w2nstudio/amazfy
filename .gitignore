@@ -1,0 +1,28 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Backend: Gradle / Kotlin / JVM
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+*.log
+.kotlin/
+
+# Frontend: Node / Vite
+node_modules/
+dist/
+coverage/
+*.local
+
+# IDEs and OS
+.idea/
+*.iml
+.vscode/
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
