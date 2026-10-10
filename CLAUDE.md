@@ -26,7 +26,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 ## Architecture
 
 - Modular monolith, Spring Boot 4 + Kotlin (JDK 21), PostgreSQL. No microservices.
-- Hexagonal modules: `domain/` (pure Kotlin) · `application/` (use cases) + `application/port/` (interfaces) · `adapter/in/web`, `adapter/out/persistence`, `adapter/out/<service>`.
+- Hexagonal modules: `domain/` (pure Kotlin) · `application/` (use cases) + `application/port/` (interfaces) · `adapter/inbound/web`, `adapter/outbound/persistence`, `adapter/outbound/<service>` (not `in`/`out`: `in` is a Kotlin keyword).
 - **Strict** (domain has no Spring, JPA or API-client imports): channel (Google), attribution, reporting, ad matching.
 - **Light** (simple CRUD may skip layers): auth, account, catalog, audit.
 - Modules talk to each other only through their public application API, never another module's internals. Enforced by architecture tests.
@@ -50,6 +50,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 Backend (run in `backend/`; Windows: `gradlew.bat`):
 
 - `./gradlew build` — compile, ktlint check, run tests, build the jar (same as CI)
+- `./gradlew openApiGenerate` — regenerate API interfaces from `api/openapi.yaml` (also runs automatically before compiling; output in `build/generated/openapi`, never committed)
 - `./gradlew ktlintFormat` — auto-fix formatting (style: `.editorconfig`, ktlint_official)
 - `./gradlew test` — tests only
 - `./gradlew bootRun` — start on http://localhost:8080 (health: `/actuator/health`)

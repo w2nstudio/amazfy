@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Amazfy API
+  version: 1.0.0
+  description: |
+    Contract for the Amazfy backend. Written first, then the Kotlin server interfaces
+    and the TypeScript client are generated from it. Never hand-edit generated code.
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: System
+    description: Information about the running service
+
+paths:
+  /api/v1/system/info:
+    get:
+      tags: [System]
+      operationId: getSystemInfo
+      summary: Name and version of the running backend
+      responses:
+        "200":
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemInfo"
+
+components:
+  schemas:
+    SystemInfo:
+      type: object
+      required: [name, version]
+      properties:
+        name:
+          type: string
+          example: amazfy-backend
+        version:
+          type: string
+          example: 0.0.1-SNAPSHOT
