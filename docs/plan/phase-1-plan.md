@@ -58,7 +58,7 @@ M3 comes before the connectors on purpose: the dashboard can be built and tested
 | Code quality | ktlint and detekt (Kotlin); ESLint and Prettier (frontend) |
 | Tests | JUnit 5 unit tests; integration tests with Testcontainers PostgreSQL; architecture tests (Spring Modulith or ArchUnit) |
 | CI | GitHub Actions: build, checks and tests for backend and frontend on every push and pull request |
-| Database | PostgreSQL 16 in Docker Compose for local development; Flyway migrations only |
+| Database | PostgreSQL 18 in Docker Compose for local development; Flyway migrations only |
 | API | `api/openapi.yaml`, code generation for Kotlin and TypeScript, `/api/v1` paths, RFC 7807 errors |
 | Configuration | Spring profiles per environment (local, test, production); secrets from environment variables, never committed |
 | Operations | Spring Actuator health checks, structured JSON logs in production, Dockerfile for the backend |

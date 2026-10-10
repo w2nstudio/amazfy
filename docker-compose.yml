@@ -1,0 +1,21 @@
+# Local development services. Start: docker compose up -d   Stop: docker compose down
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: amazfy-postgres
+    environment:
+      POSTGRES_DB: amazfy
+      POSTGRES_USER: amazfy
+      POSTGRES_PASSWORD: amazfy # local development only; real environments use secrets
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amazfy -d amazfy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

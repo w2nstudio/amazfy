@@ -53,4 +53,12 @@ Backend (run in `backend/`; Windows: `gradlew.bat`):
 - `./gradlew test` — tests only
 - `./gradlew bootRun` — start on http://localhost:8080 (health: `/actuator/health`)
 
-Frontend and local database: to be added in M0.
+Local database (run in repo root; needs Docker Desktop running):
+
+- `docker compose up -d` — start PostgreSQL 18 on localhost:5432 (db/user/password: `amazfy`)
+- `docker compose down` — stop it (data is kept in a Docker volume; `down -v` deletes it)
+
+Backend tests start their own throwaway PostgreSQL with Testcontainers; only Docker must be running.
+Migrations live in `backend/src/main/resources/db/migration` (`V<n>__<description>.sql`); never edit a merged one.
+
+Frontend: to be added in M0.
