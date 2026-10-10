@@ -55,7 +55,7 @@ M3 comes before the connectors on purpose: the dashboard can be built and tested
 | Area | Included in M0 |
 | --- | --- |
 | Repository | Git on GitHub, `main` protected, pull requests for every change, LF line endings |
-| Code quality | ktlint and detekt (Kotlin); ESLint and Prettier (frontend) |
+| Code quality | ktlint (Kotlin, in M0); detekt added once its Kotlin 2.3-compatible 2.0 release is stable; ESLint and Prettier (frontend) |
 | Tests | JUnit 5 unit tests; integration tests with Testcontainers PostgreSQL; architecture tests (Spring Modulith or ArchUnit) |
 | CI | GitHub Actions: build, checks and tests for backend and frontend on every push and pull request |
 | Database | PostgreSQL 18 in Docker Compose for local development; Flyway migrations only |

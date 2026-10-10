@@ -12,7 +12,7 @@ import org.testcontainers.utility.DockerImageName
  */
 @TestConfiguration(proxyBeanMethods = false)
 class TestcontainersConfiguration {
-	@Bean
-	@ServiceConnection
-	fun postgresContainer(): PostgreSQLContainer = PostgreSQLContainer(DockerImageName.parse("postgres:18-alpine"))
+    @Bean
+    @ServiceConnection
+    fun postgresContainer(): PostgreSQLContainer = PostgreSQLContainer(DockerImageName.parse("postgres:18-alpine"))
 }

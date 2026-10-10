@@ -10,11 +10,18 @@ import kotlin.test.assertEquals
 @Import(TestcontainersConfiguration::class)
 @SpringBootTest
 class AmazfyBackendApplicationTests {
-	@Autowired
-	lateinit var flyway: Flyway
+    @Autowired
+    lateinit var flyway: Flyway
 
-	@Test
-	fun `app starts and Flyway applies the migrations`() {
-		assertEquals("1", flyway.info().current()?.version?.version)
-	}
+    @Test
+    fun `app starts and Flyway applies the migrations`() {
+        assertEquals(
+            "1",
+            flyway
+                .info()
+                .current()
+                ?.version
+                ?.version,
+        )
+    }
 }
