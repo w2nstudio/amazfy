@@ -5,6 +5,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
     kotlin("plugin.jpa") version "2.3.21"
+    id("org.openapi.generator") version "7.26.0"
 }
 
 group = "com.amazfy"
@@ -59,3 +60,49 @@ allOpen {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+// Writes build-info.properties (name, version, build time) so the app can report its own version
+springBoot {
+    buildInfo {
+        properties {
+            name = "amazfy-backend"
+        }
+    }
+}
+
+// --- API contract: generate Kotlin interfaces from ../api/openapi.yaml ---
+// Controllers implement the generated interfaces, so code that doesn't match the contract won't compile.
+val generatedApiDir = layout.buildDirectory.dir("generated/openapi")
+
+openApiGenerate {
+    generatorName = "kotlin-spring"
+    inputSpec = layout.projectDirectory.file("../api/openapi.yaml")
+    outputDir = generatedApiDir
+    apiPackage = "com.amazfy.api.generated"
+    modelPackage = "com.amazfy.api.generated.model"
+    configOptions =
+        mapOf(
+            "useSpringBoot4" to "true",
+            "interfaceOnly" to "true", // only interfaces; we write the controllers
+            "skipDefaultInterface" to "true", // no default bodies: every endpoint must be implemented
+            "useTags" to "true", // one interface per tag, e.g. SystemApi
+            "useBeanValidation" to "true",
+            "documentationProvider" to "none",
+            "annotationLibrary" to "none",
+            "exceptionHandler" to "false",
+            "gradleBuildFile" to "false",
+            "requestMappingMode" to "none",
+        )
+}
+
+sourceSets.main {
+    kotlin.srcDir(generatedApiDir.map { it.dir("src/main/kotlin") })
+}
+
+tasks.compileKotlin { dependsOn(tasks.openApiGenerate) }
+
+// Generated code follows the generator's style, not ours
+ktlint {
+    filter { exclude { it.file.path.contains("generated") } }
+}
+tasks.matching { it.name.startsWith("runKtlint") }.configureEach { dependsOn(tasks.openApiGenerate) }

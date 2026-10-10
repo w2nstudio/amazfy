@@ -185,10 +185,12 @@ Business logic in the centre knows nothing about Google, Amazon, the database or
 ├─ application/         use cases, e.g. SyncAttribution, ImportAttributionCsv
 │  └─ port/             interfaces, e.g. AttributionSourcePort, AttributionRepositoryPort
 └─ adapter/
-   ├─ in/web/           REST controllers
-   ├─ out/persistence/  JPA entities and repositories
-   └─ out/<service>/    external clients, e.g. out/amazon, out/csv
+   ├─ inbound/web/           REST controllers (implement generated API interfaces)
+   ├─ outbound/persistence/  JPA entities and repositories
+   └─ outbound/<service>/    external clients, e.g. outbound/amazon, outbound/csv
 ```
+
+`inbound` / `outbound` rather than `in` / `out`: `in` is a reserved word in Kotlin and cannot be a plain package name.
 
 | Strictness | Modules | Rule |
 | --- | --- | --- |
