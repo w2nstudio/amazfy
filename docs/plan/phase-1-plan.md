@@ -16,7 +16,10 @@ Current milestone: **M0 project setup**. Update this section whenever a step is 
 | ktlint + `.editorconfig`, GitHub Actions CI (backend), Dependabot | Done |
 | OpenAPI contract `api/openapi.yaml` + Kotlin interface generation; `GET /api/v1/system/info` | Done |
 | RFC 7807 errors, Spring Security baseline (deny by default, stateless, CORS), local/prod config | Done |
-| Frontend skeleton (React + TypeScript + Vite, agreed libraries) + generated TypeScript client + frontend CI | Next |
+| Frontend scaffold: Vite 8 + React 19 + TypeScript (Vite template), placeholder page | Done |
+| Frontend styling: Tailwind CSS + shadcn/ui | Next |
+| Frontend data: generated TypeScript client, TanStack Query, React Router; show `system/info` | To do |
+| Frontend quality: linting and formatting, frontend job in CI | To do |
 | Backend Dockerfile | To do |
 | Architecture tests (Spring Modulith or ArchUnit) | To do (when the first real modules arrive in M1) |
 | Branch protection on `main` (require CI) | To do (GitHub setting, done by the repo owner) |

@@ -77,4 +77,9 @@ Local database (run in repo root; needs Docker Desktop running):
 Backend tests start their own throwaway PostgreSQL with Testcontainers; only Docker must be running.
 Migrations live in `backend/src/main/resources/db/migration` (`V<n>__<description>.sql`); never edit a merged one.
 
-Frontend: to be added in M0 (next step).
+Frontend (run in `frontend/`; Node 22):
+
+- `npm install` — install dependencies (after cloning or when `package.json` changes)
+- `npm run dev` — dev server on http://localhost:5173 with hot reload
+- `npm run build` — TypeScript check + production build into `dist/`
+- `npm run lint` — oxlint
