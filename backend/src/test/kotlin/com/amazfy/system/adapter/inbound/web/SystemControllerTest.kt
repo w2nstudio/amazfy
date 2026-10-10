@@ -1,5 +1,6 @@
 package com.amazfy.system.adapter.inbound.web
 
+import com.amazfy.common.security.SecurityConfig
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.info.BuildProperties
@@ -12,13 +13,13 @@ import org.springframework.test.web.servlet.get
 import java.util.Properties
 
 @WebMvcTest(SystemController::class)
-@Import(SystemControllerTest.FixedBuildInfo::class)
+@Import(SecurityConfig::class, SystemControllerTest.FixedBuildInfo::class)
 class SystemControllerTest {
     @Autowired
     lateinit var mockMvc: MockMvc
 
     @Test
-    fun `GET system info returns name and version`() {
+    fun `GET system info is public and returns name and version`() {
         mockMvc
             .get("/api/v1/system/info")
             .andExpect {

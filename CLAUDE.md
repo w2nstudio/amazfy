@@ -38,12 +38,14 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 
 - Contract-first: write/update `api/openapi.yaml` for a milestone's endpoints **before** implementing them.
 - Kotlin controller interfaces and the TypeScript client are generated from the spec; never hand-edit generated code.
-- Paths are versioned (`/api/v1/...`); errors use RFC 7807 problem details.
+- Paths are versioned (`/api/v1/...`); errors use RFC 7807 problem details (`common/web/GlobalExceptionHandler`; never expose internal messages).
+- Security: every endpoint requires authentication unless added to the public list in `common/security/SecurityConfig`.
 
 ## Conventions
 
 - Database changes only through Flyway migrations.
 - Secrets never in code, config files or logs; OAuth tokens encrypted at rest.
+- Config: `application.properties` (shared, values only from environment variables) · `application-local.properties` (local defaults, the default profile) · `application-prod.properties`. A new required setting goes into `requiredSettings` in `AmazfyBackendApplication.kt` and gets a local default.
 - Tests: unit tests for domain and use cases; integration tests with Testcontainers PostgreSQL.
 
 ## Commands
