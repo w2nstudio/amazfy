@@ -84,3 +84,6 @@ Frontend (run in `frontend/`; Node 22):
 - `npm run dev` — dev server on http://localhost:5173 with hot reload
 - `npm run build` — TypeScript check + production build into `dist/`
 - `npm run lint` — oxlint
+- `npx shadcn@latest add <component>` — add a shadcn/ui component (e.g. `input`, `table`, `dialog`); its source is copied into `src/components/ui/` and is ours to edit
+
+Frontend conventions: TypeScript `strict`; style with Tailwind classes and shadcn/ui components (theme colours in `src/index.css`); import from `src` with the `@/` alias (`@/components/ui/button`).
