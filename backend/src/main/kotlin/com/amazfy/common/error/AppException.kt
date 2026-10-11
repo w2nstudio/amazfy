@@ -8,6 +8,7 @@ enum class ErrorKind {
     NOT_FOUND,
     CONFLICT,
     TOO_MANY_REQUESTS,
+    NOT_IMPLEMENTED,
 }
 
 /**
@@ -18,3 +19,8 @@ open class AppException(
     val kind: ErrorKind,
     message: String,
 ) : RuntimeException(message)
+
+/** For endpoints that exist in the contract but are built in a later step. */
+class NotImplementedYetException(
+    feature: String,
+) : AppException(ErrorKind.NOT_IMPLEMENTED, "$feature is not available yet.")

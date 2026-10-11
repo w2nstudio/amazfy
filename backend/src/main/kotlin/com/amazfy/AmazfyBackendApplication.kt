@@ -9,7 +9,7 @@ import org.springframework.context.ConfigurableApplicationContext
 class AmazfyBackendApplication
 
 /** Settings every environment must provide. The local profile supplies them; production gets them from secrets. */
-private val requiredSettings = arrayOf("DB_URL", "DB_USERNAME", "DB_PASSWORD", "CORS_ALLOWED_ORIGINS")
+private val requiredSettings = arrayOf("DB_URL", "DB_USERNAME", "DB_PASSWORD", "CORS_ALLOWED_ORIGINS", "JWT_SECRET")
 
 /** Stops startup with a clear message listing missing settings, before anything tries to use them. */
 private val requiredSettingsCheck =

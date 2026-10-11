@@ -3,10 +3,15 @@ package com.amazfy.common.web
 import com.amazfy.common.error.AppException
 import com.amazfy.common.error.ErrorKind
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.ProblemDetail
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.context.request.WebRequest
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 
 /**
@@ -19,6 +24,24 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @RestControllerAdvice
 class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
     private val log = LoggerFactory.getLogger(javaClass)
+
+    /** Invalid request body (bean validation from the contract): 400 with one entry per field in `errors`. */
+    override fun handleMethodArgumentNotValid(
+        ex: MethodArgumentNotValidException,
+        headers: HttpHeaders,
+        status: HttpStatusCode,
+        request: WebRequest,
+    ): ResponseEntity<Any>? {
+        val problem =
+            ex.body.apply {
+                detail = "Some fields are invalid."
+                setProperty(
+                    "errors",
+                    ex.bindingResult.fieldErrors.map { mapOf("field" to it.field, "message" to (it.defaultMessage ?: "is invalid")) },
+                )
+            }
+        return handleExceptionInternal(ex, problem, headers, status, request)
+    }
 
     /** Expected business errors: status from their kind, their (safe) message as detail. */
     @ExceptionHandler(AppException::class)
@@ -39,4 +62,5 @@ private fun ErrorKind.toHttpStatus(): HttpStatus =
         ErrorKind.NOT_FOUND -> HttpStatus.NOT_FOUND
         ErrorKind.CONFLICT -> HttpStatus.CONFLICT
         ErrorKind.TOO_MANY_REQUESTS -> HttpStatus.TOO_MANY_REQUESTS
+        ErrorKind.NOT_IMPLEMENTED -> HttpStatus.NOT_IMPLEMENTED
     }

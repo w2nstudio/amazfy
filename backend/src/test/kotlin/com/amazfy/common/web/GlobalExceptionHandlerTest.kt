@@ -2,6 +2,7 @@ package com.amazfy.common.web
 
 import com.amazfy.common.error.AppException
 import com.amazfy.common.error.ErrorKind
+import com.amazfy.common.security.JwtConfig
 import com.amazfy.common.security.SecurityConfig
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
 @WebMvcTest(GlobalExceptionHandlerTest.FailingController::class)
-@Import(GlobalExceptionHandler::class, SecurityConfig::class, GlobalExceptionHandlerTest.FailingController::class)
+@Import(GlobalExceptionHandler::class, SecurityConfig::class, JwtConfig::class, GlobalExceptionHandlerTest.FailingController::class)
 @WithMockUser // the test endpoints are protected like every non-public endpoint
 class GlobalExceptionHandlerTest {
     @Autowired

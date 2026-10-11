@@ -15,8 +15,8 @@ import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 /**
- * Security baseline: every endpoint requires authentication unless listed as public below.
- * Login (JWT) arrives in M1; until then only the public endpoints are reachable.
+ * Every endpoint requires a valid access token unless listed in PUBLIC_ENDPOINTS.
+ * Keep PUBLIC_ENDPOINTS in sync with the operations marked `security: []` in api/openapi.yaml.
  */
 @Configuration
 class SecurityConfig(
@@ -27,7 +27,7 @@ class SecurityConfig(
         http
             .authorizeHttpRequests {
                 it
-                    .requestMatchers("/actuator/health/**", "/api/v1/system/info")
+                    .requestMatchers(*PUBLIC_ENDPOINTS)
                     .permitAll()
                     .anyRequest()
                     .authenticated()
@@ -39,6 +39,16 @@ class SecurityConfig(
             .cors(Customizer.withDefaults())
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
+            // Every other request needs a valid access token: "Authorization: Bearer <JWT>", checked by JwtConfig's decoder
+            .oauth2ResourceServer {
+                it.jwt(Customizer.withDefaults()).authenticationEntryPoint {
+                    _,
+                    response,
+                    _,
+                    ->
+                    writeUnauthorized(response)
+                }
+            }
             // Missing or invalid credentials → 401 in the same RFC 7807 format as other errors
             .exceptionHandling { it.authenticationEntryPoint { _, response, _ -> writeUnauthorized(response) } }
             .build()
@@ -51,6 +61,7 @@ class SecurityConfig(
                 allowedOrigins = this@SecurityConfig.allowedOrigins
                 allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 allowedHeaders = listOf("Authorization", "Content-Type")
+                allowCredentials = true // lets the browser send the refresh cookie to /api/v1/auth/*
                 maxAge = 3600
             }
         return UrlBasedCorsConfigurationSource().apply { registerCorsConfiguration("/api/**", config) }
@@ -62,5 +73,23 @@ class SecurityConfig(
         response.writer.write(
             """{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Authentication is required."}""",
         )
+    }
+
+    companion object {
+        /** Reachable without a token (matches `security: []` in api/openapi.yaml). */
+        val PUBLIC_ENDPOINTS =
+            arrayOf(
+                "/actuator/health/**",
+                "/api/v1/system/info",
+                "/api/v1/auth/register",
+                "/api/v1/auth/login",
+                "/api/v1/auth/refresh",
+                "/api/v1/auth/logout",
+                "/api/v1/auth/verify-email",
+                "/api/v1/auth/forgot-password",
+                "/api/v1/auth/reset-password",
+                "/api/v1/auth/google",
+                "/api/v1/auth/google/callback",
+            )
     }
 }

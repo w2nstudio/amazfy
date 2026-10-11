@@ -2,6 +2,8 @@ package com.amazfy.auth.application.port
 
 import com.amazfy.auth.domain.Email
 import com.amazfy.auth.domain.User
+import java.time.Instant
+import java.util.UUID
 
 /** Storage the auth module needs for users and their login identities. */
 interface UserRepository {
@@ -30,4 +32,48 @@ interface PasswordHasher {
         rawPassword: String,
         hash: String,
     ): Boolean
+}
+
+/** Creates signed access tokens (JWT) for a user. */
+interface AccessTokenIssuer {
+    fun issue(
+        userId: UUID,
+        expiresAt: Instant,
+    ): String
+}
+
+/** A stored refresh token (only its hash). */
+data class StoredRefreshToken(
+    val id: UUID,
+    val userId: UUID,
+    val familyId: UUID,
+    val expiresAt: Instant,
+    val revokedAt: Instant?,
+)
+
+/** Storage for refresh tokens. */
+interface RefreshTokenRepository {
+    fun save(
+        userId: UUID,
+        familyId: UUID,
+        tokenHash: String,
+        expiresAt: Instant,
+    )
+
+    fun findByHash(tokenHash: String): StoredRefreshToken?
+
+    fun revoke(
+        id: UUID,
+        at: Instant,
+    )
+
+    fun revokeFamily(
+        familyId: UUID,
+        at: Instant,
+    )
+
+    fun revokeAllForUser(
+        userId: UUID,
+        at: Instant,
+    )
 }

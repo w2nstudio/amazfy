@@ -55,7 +55,9 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - Kotlin controller interfaces and the TypeScript client are generated from the spec; never hand-edit generated code.
 - Paths are versioned (`/api/v1/...`); errors use RFC 7807 problem details (`common/web/GlobalExceptionHandler`; never expose internal messages).
 - Expected business errors extend `common.error.AppException` with an `ErrorKind` (e.g. CONFLICT → 409); their message is shown to clients, so keep it safe and user-friendly.
-- Security: every endpoint requires authentication unless added to the public list in `common/security/SecurityConfig`.
+- Security: every endpoint requires a valid access token (JWT, checked by `common/security/JwtConfig`) unless listed in `SecurityConfig.PUBLIC_ENDPOINTS`; keep that list in sync with `security: []` in `api/openapi.yaml`. In authenticated endpoints get the user with `currentUserId()`.
+- Tokens: access token 15 min (JWT, HS256, `JWT_SECRET`); refresh token 30 days, only in the `amazfy_refresh` HttpOnly cookie, stored as a SHA-256 hash, rotated on every use (reuse revokes the family). Use the injected `Clock`, never `Instant.now()`, in application code.
+- Contract endpoints not built yet throw `NotImplementedYetException` (501) until their step.
 - Authentication is our own (M1), built to be swappable for a managed provider: other modules only verify JWTs and use the user ID. Authorization goes through `accountAccess` + `@PreAuthorize`; account-scoped paths are `/api/v1/accounts/{accountId}/...`. See requirements section 3.
 
 ## Conventions
