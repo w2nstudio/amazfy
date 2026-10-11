@@ -1,5 +1,6 @@
 package com.amazfy.common.security
 
+import com.amazfy.common.security.JwtConfig
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
 @WebMvcTest(SecurityConfigTest.ProtectedController::class)
-@Import(SecurityConfig::class, SecurityConfigTest.ProtectedController::class)
+@Import(SecurityConfig::class, JwtConfig::class, SecurityConfigTest.ProtectedController::class)
 class SecurityConfigTest {
     @Autowired
     lateinit var mockMvc: MockMvc

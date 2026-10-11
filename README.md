@@ -17,7 +17,7 @@ Stack: Spring Boot 4 + Kotlin backend, React + TypeScript (Vite) frontend, Postg
 
 Gradle itself is **not** needed: the project includes the Gradle wrapper (`gradlew`).
 
-Recommended editors: IntelliJ IDEA (Ultimate covers backend and frontend) or VS Code.
+Recommended editors: IntelliJ IDEA for the backend (Community is enough; Ultimate also covers the frontend) and VS Code for the frontend.
 
 ### 2. Get the code
 
@@ -66,7 +66,8 @@ cd frontend && npm run lint && npm run format:check && npm run build
 
 ### IDE setup
 
-- **IntelliJ IDEA:** open the repository root (`amazfy/`). If the backend isn't recognised as a Gradle project, right-click `backend/build.gradle.kts` → *Link Gradle Project*. Generated API code appears after the first build; if types show red, build once and click *Reload All Gradle Projects*.
+- **IntelliJ IDEA (Community or Ultimate):** open the repository root (`amazfy/`). The backend's Gradle build is one folder down, so link it once: right-click `backend/build.gradle.kts` → *Link Gradle Project*. Set *Settings → Build Tools → Gradle → Gradle JVM* to JDK 17 or 21. Generated API code appears after the first build; if types show red, build once and click *Reload All Gradle Projects*.
+- **Frontend editor:** VS Code (or IntelliJ Ultimate). Community edition has no React/TypeScript support.
 - **VS Code:** install the EditorConfig extension so files follow `.editorconfig`.
 
 ### Common problems

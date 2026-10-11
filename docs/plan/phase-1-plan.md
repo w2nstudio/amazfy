@@ -33,8 +33,8 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Database migrations: V2 users, identities, refresh tokens; V3 accounts, memberships (uuidv7 ids, constraints tested) | Done |
 | Account module core: domain, AccountService, JPA adapter (create with owner, list, role, rename) | Done |
 | Auth core: users, bcrypt passwords, register and login rules (AuthService), business error mapping | Done |
-| Email + password endpoints: JWT access token, register/login/refresh/logout over HTTP, security wiring | Next |
-| Email verification, password reset, Mailpit | To do |
+| Email + password endpoints: JWT access token, register/login/refresh/logout/logout-all over HTTP, refresh rotation with reuse detection, security wiring, field errors on 400 | Done |
+| Email verification, password reset, Mailpit | Next |
 | Brute-force limits | To do |
 | Accounts, memberships, `accountAccess`, `@TenantId`, tenant-isolation tests | To do |
 | Google login | To do |
