@@ -19,8 +19,8 @@ Current milestone: **M0 project setup**. Update this section whenever a step is 
 | Frontend scaffold: Vite 8 + React 19 + TypeScript (Vite template), placeholder page | Done |
 | Frontend styling: Tailwind CSS 4 + shadcn/ui (Radix, Nova preset), `@/` alias, TypeScript strict | Done |
 | Frontend data: Orval-generated client + TanStack Query hooks, React Router, Vite `/api` proxy; home page shows backend version | Done |
-| Frontend quality: linting and formatting, frontend job in CI | Next |
-| Backend Dockerfile | To do |
+| Frontend quality: oxlint (warnings as errors) + Prettier with Tailwind plugin; frontend job in CI; Dependabot for npm | Done |
+| Backend Dockerfile | Next |
 | Architecture tests (Spring Modulith or ArchUnit) | To do (when the first real modules arrive in M1) |
 | Branch protection on `main` (require CI) | To do (GitHub setting, done by the repo owner) |
 
@@ -77,7 +77,7 @@ M3 comes before the connectors on purpose: the dashboard can be built and tested
 | Area | Included in M0 |
 | --- | --- |
 | Repository | Git on GitHub, `main` protected, pull requests for every change, LF line endings |
-| Code quality | ktlint (Kotlin, in M0); detekt added once its Kotlin 2.3-compatible 2.0 release is stable; ESLint and Prettier (frontend) |
+| Code quality | ktlint (Kotlin, in M0); detekt added once its Kotlin 2.3-compatible 2.0 release is stable; oxlint and Prettier (frontend; oxlint is Vite's default, replacing ESLint) |
 | Tests | JUnit 5 unit tests; integration tests with Testcontainers PostgreSQL; architecture tests (Spring Modulith or ArchUnit) |
 | CI | GitHub Actions: build, checks and tests for backend and frontend on every push and pull request |
 | Database | PostgreSQL 18 in Docker Compose for local development; Flyway migrations only |
