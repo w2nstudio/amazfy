@@ -6,13 +6,27 @@ info:
     Contract for the Amazfy backend. Written first, then the Kotlin server interfaces
     and the TypeScript client are generated from it. Never hand-edit generated code.
 
+    Authentication: send the access token as `Authorization: Bearer <token>`.
+    The refresh token travels only in the `amazfy_refresh` cookie (HttpOnly, Secure, SameSite=Strict).
+    Errors use RFC 7807 problem details (`application/problem+json`).
+
 servers:
   - url: http://localhost:8080
     description: Local development
 
+# Every operation requires a bearer token unless it overrides this with `security: []`
+security:
+  - bearerAuth: []
+
 tags:
   - name: System
     description: Information about the running service
+  - name: Auth
+    description: Sign-up, login, tokens, email verification, password reset, Google login
+  - name: Me
+    description: The logged-in user
+  - name: Accounts
+    description: Seller accounts (one per Amazon seller account) and the user's access to them
 
 paths:
   /api/v1/system/info:
@@ -20,6 +34,7 @@ paths:
       tags: [System]
       operationId: getSystemInfo
       summary: Name and version of the running backend
+      security: []
       responses:
         "200":
           description: Service information
@@ -28,7 +43,377 @@ paths:
               schema:
                 $ref: "#/components/schemas/SystemInfo"
 
+  # ---------- Auth ----------
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Sign up with email and password; creates the user, their first account and an owner membership
+      description: Sends a verification email. The user is logged in immediately (see AuthTokens).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Registered and logged in; the refresh token is set as a cookie
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/RefreshCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokens"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          description: An account with this email already exists
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Log in with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in; the refresh token is set as a cookie
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/RefreshCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokens"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          description: Wrong email or password (the response never says which)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: refreshTokens
+      summary: Get a new access token using the refresh cookie; the refresh token is rotated
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/RefreshCookieParam"
+      responses:
+        "200":
+          description: New tokens; a new refresh cookie replaces the old one
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/RefreshCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokens"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Log out this browser; revokes the refresh token and clears the cookie
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/RefreshCookieParam"
+      responses:
+        "204":
+          description: Logged out
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/RefreshCookie"
+
+  /api/v1/auth/logout-all:
+    post:
+      tags: [Auth]
+      operationId: logoutAll
+      summary: Log out everywhere; revokes all of the user's refresh tokens
+      responses:
+        "204":
+          description: All sessions revoked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/auth/verify-email:
+    post:
+      tags: [Auth]
+      operationId: verifyEmail
+      summary: Confirm an email address with the token from the verification email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "204":
+          description: Email verified
+        "400":
+          description: Token invalid, expired or already used
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /api/v1/auth/resend-verification:
+    post:
+      tags: [Auth]
+      operationId: resendVerification
+      summary: Send the verification email again to the logged-in user
+      responses:
+        "204":
+          description: Sent (or already verified)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/auth/forgot-password:
+    post:
+      tags: [Auth]
+      operationId: forgotPassword
+      summary: Request a password-reset email
+      description: Always returns 202, whether or not the email exists, so the endpoint can't be used to find out who has an account.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequest"
+      responses:
+        "202":
+          description: If the email belongs to a user, a reset email is on its way
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/auth/reset-password:
+    post:
+      tags: [Auth]
+      operationId: resetPassword
+      summary: Set a new password with the token from the reset email; logs out all sessions
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "204":
+          description: Password changed
+        "400":
+          description: Token invalid, expired or already used, or the new password breaks the rules
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /api/v1/auth/google:
+    get:
+      tags: [Auth]
+      operationId: startGoogleLogin
+      summary: Start "Sign in with Google" (browser navigation, not a fetch call)
+      security: []
+      responses:
+        "302":
+          description: Redirect to Google's consent page
+
+  /api/v1/auth/google/callback:
+    get:
+      tags: [Auth]
+      operationId: completeGoogleLogin
+      summary: Google redirects here after consent; Amazfy logs the user in and redirects to the frontend
+      description: |
+        Sets the refresh cookie and redirects to the frontend. The frontend then calls /auth/refresh to get an access token.
+        A first-time Google user has no account yet and is redirected to the onboarding step that asks for the account name.
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to the frontend (home, or onboarding for a new user, or the login page with an error)
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/RefreshCookie"
+
+  # ---------- Me ----------
+
+  /api/v1/me:
+    get:
+      tags: [Me]
+      operationId: getMe
+      summary: The logged-in user and the accounts they can access
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ---------- Accounts ----------
+
+  /api/v1/accounts:
+    post:
+      tags: [Accounts]
+      operationId: createAccount
+      summary: Create an account; the caller becomes its owner
+      description: Used by "Add account" and by onboarding after a first Google sign-in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountRequest"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/accounts/{accountId}:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Accounts]
+      operationId: getAccount
+      summary: One account (requires membership)
+      responses:
+        "200":
+          description: Account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    patch:
+      tags: [Accounts]
+      operationId: renameAccount
+      summary: Rename an account (owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountRequest"
+      responses:
+        "200":
+          description: Account renamed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RefreshCookieParam:
+      name: amazfy_refresh
+      in: cookie
+      required: false
+      schema:
+        type: string
+
+  headers:
+    RefreshCookie:
+      description: "amazfy_refresh=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth (cleared on logout)"
+      schema:
+        type: string
+
+  responses:
+    ValidationError:
+      description: The request is invalid; `detail` and `errors` explain what to fix
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: Missing, invalid or expired credentials
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: Logged in, but no access to this account or not allowed for this role
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    TooManyRequests:
+      description: Too many attempts; try again later
+      headers:
+        Retry-After:
+          description: Seconds until the next attempt is allowed
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
   schemas:
     SystemInfo:
       type: object
@@ -40,3 +425,173 @@ components:
         version:
           type: string
           example: 0.0.1-SNAPSHOT
+
+    Problem:
+      description: RFC 7807 problem details
+      type: object
+      required: [title, status]
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Bad Request
+        status:
+          type: integer
+          example: 400
+        detail:
+          type: string
+          example: Password must be at least 10 characters.
+        instance:
+          type: string
+          example: /api/v1/auth/register
+        errors:
+          description: Field-level validation errors, when there are any
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldError"
+
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          example: password
+        message:
+          type: string
+          example: must be at least 10 characters
+
+    RegisterRequest:
+      type: object
+      required: [email, password, accountName]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          example: john@aqualife.com
+        password:
+          type: string
+          format: password
+          minLength: 10
+          maxLength: 128
+        accountName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: AquaLife US
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+          maxLength: 128
+
+    TokenRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          maxLength: 200
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token:
+          type: string
+          maxLength: 200
+        newPassword:
+          type: string
+          format: password
+          minLength: 10
+          maxLength: 128
+
+    AuthTokens:
+      description: The access token; the refresh token is only in the cookie, never in JSON
+      type: object
+      required: [accessToken, tokenType, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          enum: [Bearer]
+        expiresIn:
+          description: Seconds until the access token expires
+          type: integer
+          example: 900
+
+    Role:
+      type: string
+      enum: [OWNER, EDITOR, VIEWER]
+
+    Me:
+      type: object
+      required: [id, email, emailVerified, accounts]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        emailVerified:
+          type: boolean
+        accounts:
+          description: Accounts the user can access, with their role in each. Empty for a new Google user before onboarding.
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountAccess"
+
+    AccountAccess:
+      type: object
+      required: [account, role]
+      properties:
+        account:
+          $ref: "#/components/schemas/Account"
+        role:
+          $ref: "#/components/schemas/Role"
+
+    AccountRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: AquaLife US
+
+    Account:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: AquaLife US
+        createdAt:
+          type: string
+          format: date-time
