@@ -1,10 +1,11 @@
 package com.amazfy.account.adapter.outbound.persistence
 
+import com.amazfy.account.application.AccountAccess
+import com.amazfy.account.application.AccountSummary
+import com.amazfy.account.application.Role
 import com.amazfy.account.application.port.AccountRepository
 import com.amazfy.account.domain.Account
-import com.amazfy.account.domain.AccountAccess
 import com.amazfy.account.domain.AccountName
-import com.amazfy.account.domain.Role
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Component
@@ -48,7 +49,7 @@ class AccountPersistenceAdapter(
         membershipJpa.findWithAccountsByUserId(userId).map { row ->
             val membership = row[0] as MembershipEntity
             val account = row[1] as AccountEntity
-            AccountAccess(account.toDomain(), Role.valueOf(membership.role))
+            AccountAccess(account.toSummary(), Role.valueOf(membership.role))
         }
 
     override fun findRole(
@@ -62,3 +63,5 @@ class AccountPersistenceAdapter(
 }
 
 private fun AccountEntity.toDomain() = Account(id = id!!, name = AccountName.of(name), createdAt = createdAt!!)
+
+private fun AccountEntity.toSummary() = AccountSummary(id = id!!, name = name, createdAt = createdAt!!)

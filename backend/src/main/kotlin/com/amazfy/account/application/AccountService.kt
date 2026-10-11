@@ -2,15 +2,14 @@ package com.amazfy.account.application
 
 import com.amazfy.account.application.port.AccountRepository
 import com.amazfy.account.domain.Account
-import com.amazfy.account.domain.AccountAccess
 import com.amazfy.account.domain.AccountName
-import com.amazfy.account.domain.Role
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 /**
  * The account module's public API: other modules (e.g. auth at sign-up) and the web adapter use this.
+ * Returns API types (AccountSummary, AccountAccess, Role), never domain classes.
  * Light module: one service for all account operations instead of one class per use case.
  */
 @Service
@@ -23,18 +22,18 @@ class AccountService(
     fun createAccount(
         name: String,
         ownerUserId: UUID,
-    ): Account = accounts.createWithOwner(AccountName.of(name), ownerUserId)
+    ): AccountSummary = accounts.createWithOwner(AccountName.of(name), ownerUserId).toSummary()
 
     /** Renames an account. Callers must check that the user may manage it. */
     @Transactional
     fun renameAccount(
         accountId: UUID,
         name: String,
-    ): Account = accounts.rename(accountId, AccountName.of(name))
+    ): AccountSummary = accounts.rename(accountId, AccountName.of(name)).toSummary()
 
-    fun findAccount(accountId: UUID): Account? = accounts.findById(accountId)
+    fun findAccount(accountId: UUID): AccountSummary? = accounts.findById(accountId)?.toSummary()
 
-    /** Accounts the user can access, with their role in each. */
+    /** Accounts the user can access, with their role in each, sorted by name. */
     fun accessibleAccounts(userId: UUID): List<AccountAccess> = accounts.findAccessibleBy(userId)
 
     /** The user's role in the account, or null if they have no access. */
@@ -43,3 +42,5 @@ class AccountService(
         accountId: UUID,
     ): Role? = accounts.findRole(userId, accountId)
 }
+
+internal fun Account.toSummary() = AccountSummary(id = id, name = name.value, createdAt = createdAt)

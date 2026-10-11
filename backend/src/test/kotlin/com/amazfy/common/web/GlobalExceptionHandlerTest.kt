@@ -1,5 +1,7 @@
 package com.amazfy.common.web
 
+import com.amazfy.common.error.AppException
+import com.amazfy.common.error.ErrorKind
 import com.amazfy.common.security.SecurityConfig
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -42,8 +44,22 @@ class GlobalExceptionHandlerTest {
             }
     }
 
+    @Test
+    fun `business error returns its status and safe message`() {
+        mockMvc
+            .get("/test/conflict")
+            .andExpect {
+                status { isConflict() }
+                content { contentType(MediaType.APPLICATION_PROBLEM_JSON) }
+                jsonPath("$.detail") { value("This email is already registered.") }
+            }
+    }
+
     @RestController
     class FailingController {
+        @GetMapping("/test/conflict")
+        fun conflict(): String = throw AppException(ErrorKind.CONFLICT, "This email is already registered.")
+
         @GetMapping("/test/boom")
         fun boom(): String = error("secret internal message")
     }
