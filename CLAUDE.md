@@ -41,7 +41,8 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - **Strict** (domain has no Spring, JPA or API-client imports): channel (Google), attribution, reporting, ad matching.
 - **Light** (simple CRUD may skip layers): auth, account, catalog, audit, system.
 - `common/` holds shared infrastructure only (error handling, security config), no business logic.
-- Modules talk to each other only through their public application API, never another module's internals. Enforced by architecture tests.
+- Modules talk to each other only through their public application API, never another module's internals.
+- These rules are enforced by ArchUnit tests in `backend/src/test/kotlin/com/amazfy/ArchitectureTest.kt` (domain pure Kotlin; application never uses adapters; generated API types only in inbound web adapters; no access to another module's adapter or domain). If a rule blocks a design you need, discuss it rather than weakening the rule.
 - Every table has `account_id`; every query is scoped to the current account.
 - Daily metrics are stored per ad per day; higher levels are sums.
 

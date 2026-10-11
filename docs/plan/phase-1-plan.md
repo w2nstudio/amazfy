@@ -21,16 +21,16 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Frontend data: Orval-generated client + TanStack Query hooks, React Router, Vite `/api` proxy; home page shows backend version | Done |
 | Frontend quality: oxlint (warnings as errors) + Prettier with Tailwind plugin; frontend job in CI; Dependabot for npm | Done |
 | Backend Dockerfile: multi-stage, JRE runtime, non-root, layered jar; image build in CI | Done |
-| Architecture tests (Spring Modulith or ArchUnit) | To do (when the first real modules arrive in M1) |
+| Architecture tests | Moved to M1 (done there) |
 | Branch protection on `main`: ruleset requiring a PR and the three CI checks, no force pushes | Done |
 
 **M1: auth and accounts**
 
 | Step | Status |
 | --- | --- |
-| API contract: Auth, Me, Accounts endpoints in `api/openapi.yaml` | In review |
-| Architecture tests | To do |
-| Database migrations: users, identities, refresh tokens, accounts, memberships | To do |
+| API contract: Auth, Me, Accounts endpoints in `api/openapi.yaml` (password min 10; login allowed before email verification; 409 on duplicate sign-up) | Done |
+| Architecture tests (ArchUnit, 4 rules) | Done |
+| Database migrations: users, identities, refresh tokens, accounts, memberships | Next |
 | Email + password: register, login, refresh, logout | To do |
 | Email verification, password reset, Mailpit | To do |
 | Brute-force limits | To do |
@@ -92,7 +92,7 @@ M3 comes before the connectors on purpose: the dashboard can be built and tested
 | --- | --- |
 | Repository | Git on GitHub, `main` protected, pull requests for every change, LF line endings |
 | Code quality | ktlint (Kotlin, in M0); detekt added once its Kotlin 2.3-compatible 2.0 release is stable; oxlint and Prettier (frontend; oxlint is Vite's default, replacing ESLint) |
-| Tests | JUnit 5 unit tests; integration tests with Testcontainers PostgreSQL; architecture tests (Spring Modulith or ArchUnit) |
+| Tests | JUnit 5 unit tests; integration tests with Testcontainers PostgreSQL; architecture tests (ArchUnit) |
 | CI | GitHub Actions: build, checks and tests for backend and frontend on every push and pull request |
 | Database | PostgreSQL 18 in Docker Compose for local development; Flyway migrations only |
 | API | `api/openapi.yaml`, code generation for Kotlin and TypeScript, `/api/v1` paths, RFC 7807 errors |
