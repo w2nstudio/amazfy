@@ -2,12 +2,94 @@
 
 Amazfy helps Amazon sellers run ads outside Amazon and measure the Amazon sales those ads produce (external ROAS). Phase 1 covers Google Ads with Amazon Attribution.
 
+Stack: Spring Boot 4 + Kotlin backend, React + TypeScript (Vite) frontend, PostgreSQL 18, OpenAPI contract-first API.
+
+## Set up a development environment
+
+### 1. Install the tools
+
+| Tool | Version | Why |
+| --- | --- | --- |
+| [Git](https://git-scm.com/) | recent | Source code |
+| JDK | 17 or newer | Runs Gradle. Gradle downloads JDK 21 for compiling by itself. |
+| [Node.js](https://nodejs.org/) | 22 LTS | Frontend |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | current | Local database and backend tests. New to Docker? Read the [Docker guide](docs/guides/docker-guide.md). |
+
+Gradle itself is **not** needed: the project includes the Gradle wrapper (`gradlew`).
+
+Recommended editors: IntelliJ IDEA (Ultimate covers backend and frontend) or VS Code.
+
+### 2. Get the code
+
+```bash
+git clone git@github.com:w2nstudio/amazfy.git
+cd amazfy
+```
+
+### 3. Start the local database
+
+Start Docker Desktop and wait for *Engine running*, then in the repository root:
+
+```bash
+docker compose up -d
+```
+
+This runs PostgreSQL 18 on `localhost:5432` (database, user and password: `amazfy`). Tables are created automatically by Flyway when the backend starts.
+
+### 4. Run the backend
+
+```bash
+cd backend
+./gradlew bootRun          # Windows PowerShell: .\gradlew.bat bootRun
+```
+
+The first run downloads Gradle, JDK 21 and libraries (a few minutes). The backend starts on http://localhost:8080 with the `local` profile, which already points at the Docker database. Check it: http://localhost:8080/api/v1/system/info.
+
+### 5. Run the frontend
+
+In a second terminal:
+
+```bash
+cd frontend
+npm install                # first time, and after package.json changes
+npm run dev
+```
+
+Open http://localhost:5173. The home page should show *Backend: amazfy-backend …*. In development, Vite forwards `/api` calls to the backend on port 8080.
+
+### 6. Run the checks (same as CI)
+
+```bash
+cd backend && ./gradlew build                                   # compile, ktlint, all tests (Docker must be running)
+cd frontend && npm run lint && npm run format:check && npm run build
+```
+
+### IDE setup
+
+- **IntelliJ IDEA:** open the repository root (`amazfy/`). If the backend isn't recognised as a Gradle project, right-click `backend/build.gradle.kts` → *Link Gradle Project*. Generated API code appears after the first build; if types show red, build once and click *Reload All Gradle Projects*.
+- **VS Code:** install the EditorConfig extension so files follow `.editorconfig`.
+
+### Common problems
+
+| Problem | Fix |
+| --- | --- |
+| Backend tests fail with *Could not find a valid Docker environment* | Start Docker Desktop. |
+| `bootRun` can't connect to the database | `docker compose up -d` in the repository root. |
+| Frontend shows *Backend not reachable* | Start the backend (step 4). |
+| Docker commands hang | See *Troubleshooting* in the [Docker guide](docs/guides/docker-guide.md). |
+
+## How we work
+
+- Every change goes through a branch and a pull request; `main` is protected and needs green CI (backend, frontend, Docker image).
+- API changes start in [`api/openapi.yaml`](api/openapi.yaml); code is generated from it.
+- Database changes are Flyway migrations in `backend/src/main/resources/db/migration`.
+- Project rules and commands: [CLAUDE.md](CLAUDE.md).
+
 ## Documentation
 
 - [Phase 1 requirements](docs/requirements/phase-1-requirements.md): scope, user stories, data model, architecture, external APIs
-- [Phase 1 development plan](docs/plan/phase-1-plan.md): milestones, repository layout, prerequisites
+- [Phase 1 development plan](docs/plan/phase-1-plan.md): milestones and current progress
 - [Google Ads primer](docs/guides/google-ads-primer.md): how Google Ads works and how Amazfy maps ads to Amazon products
 - [OpenAPI and contract-first development](docs/guides/openapi-contract-first.md): how the API contract and code generation work
+- [Docker guide](docs/guides/docker-guide.md): Docker basics, our usage, commands and troubleshooting
 - [Business glossary](docs/guides/business-glossary.md): Amazon and Google Ads terms in plain language
-
-Setup instructions will be added with the project skeleton (milestone M0).
