@@ -6,7 +6,7 @@ Phase 1a ships first: real sellers can connect Google Ads and Amazon and see ROA
 
 ## Progress
 
-Current milestone: **M0 project setup**. Update this section whenever a step is merged.
+Current milestone: **M1 auth and accounts** (M0 complete except branch protection). Update this section whenever a step is merged.
 
 | Step | Status |
 | --- | --- |
@@ -23,6 +23,20 @@ Current milestone: **M0 project setup**. Update this section whenever a step is 
 | Backend Dockerfile: multi-stage, JRE runtime, non-root, layered jar; image build in CI | Done |
 | Architecture tests (Spring Modulith or ArchUnit) | To do (when the first real modules arrive in M1) |
 | Branch protection on `main` (require CI) | To do (GitHub setting, done by the repo owner) |
+
+**M1: auth and accounts**
+
+| Step | Status |
+| --- | --- |
+| API contract: Auth, Me, Accounts endpoints in `api/openapi.yaml` | In review |
+| Architecture tests | To do |
+| Database migrations: users, identities, refresh tokens, accounts, memberships | To do |
+| Email + password: register, login, refresh, logout | To do |
+| Email verification, password reset, Mailpit | To do |
+| Brute-force limits | To do |
+| Accounts, memberships, `accountAccess`, `@TenantId`, tenant-isolation tests | To do |
+| Google login | To do |
+| Frontend: login, sign-up, onboarding, account switcher | To do |
 
 ## Repository layout
 
