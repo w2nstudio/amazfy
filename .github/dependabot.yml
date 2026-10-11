@@ -13,6 +13,10 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
+    ignore:
+      # Node type definitions must match the Node version we run (22); bump them when Node is upgraded
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       frontend-dependencies:
         patterns: ["*"]
