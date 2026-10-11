@@ -17,8 +17,8 @@ Current milestone: **M0 project setup**. Update this section whenever a step is 
 | OpenAPI contract `api/openapi.yaml` + Kotlin interface generation; `GET /api/v1/system/info` | Done |
 | RFC 7807 errors, Spring Security baseline (deny by default, stateless, CORS), local/prod config | Done |
 | Frontend scaffold: Vite 8 + React 19 + TypeScript (Vite template), placeholder page | Done |
-| Frontend styling: Tailwind CSS + shadcn/ui | Next |
-| Frontend data: generated TypeScript client, TanStack Query, React Router; show `system/info` | To do |
+| Frontend styling: Tailwind CSS 4 + shadcn/ui (Radix, Nova preset), `@/` alias, TypeScript strict | Done |
+| Frontend data: generated TypeScript client, TanStack Query, React Router; show `system/info` | Next |
 | Frontend quality: linting and formatting, frontend job in CI | To do |
 | Backend Dockerfile | To do |
 | Architecture tests (Spring Modulith or ArchUnit) | To do (when the first real modules arrive in M1) |

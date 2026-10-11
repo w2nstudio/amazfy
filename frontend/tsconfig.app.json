@@ -16,7 +16,11 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Path alias: "@/..." means "src/..." (used by shadcn/ui) */
+    "paths": { "@/*": ["./src/*"] },
+
     /* Linting */
+    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
