@@ -30,8 +30,8 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | --- | --- |
 | API contract: Auth, Me, Accounts endpoints in `api/openapi.yaml` (password min 10; login allowed before email verification; 409 on duplicate sign-up) | Done |
 | Architecture tests (ArchUnit, 4 rules) | Done |
-| Database migrations: users, identities, refresh tokens, accounts, memberships | Next |
-| Email + password: register, login, refresh, logout | To do |
+| Database migrations: V2 users, identities, refresh tokens; V3 accounts, memberships (uuidv7 ids, constraints tested) | Done |
+| Email + password: register, login, refresh, logout | Next |
 | Email verification, password reset, Mailpit | To do |
 | Brute-force limits | To do |
 | Accounts, memberships, `accountAccess`, `@TenantId`, tenant-isolation tests | To do |
