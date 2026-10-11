@@ -31,6 +31,7 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | API contract: Auth, Me, Accounts endpoints in `api/openapi.yaml` (password min 10; login allowed before email verification; 409 on duplicate sign-up) | Done |
 | Architecture tests (ArchUnit, 4 rules) | Done |
 | Database migrations: V2 users, identities, refresh tokens; V3 accounts, memberships (uuidv7 ids, constraints tested) | Done |
+| Account module core: domain, AccountService, JPA adapter (create with owner, list, role, rename) | Done |
 | Email + password: register, login, refresh, logout | Next |
 | Email verification, password reset, Mailpit | To do |
 | Brute-force limits | To do |
