@@ -44,7 +44,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - **Light**: auth, account, catalog, audit, system. Same folders and ArchUnit rules as strict modules, but one application service per module (e.g. `AccountService`) instead of a class per use case, and minimal mapping. Example to copy: `account/`.
 - JPA entities: plain classes (never `data class`), only in `adapter/outbound/persistence`, IDs via `@UuidGenerator(style = VERSION_7)`; adapters map them to domain classes.
 - `common/` holds shared infrastructure only (error handling, security config), no business logic.
-- Modules talk to each other only through their public application API, never another module's internals.
+- Modules talk to each other only through their public application API, never another module's internals. A module's API (its application service) returns its own API types defined in `application/` (e.g. `AccountSummary`, `Role`), never domain classes.
 - These rules are enforced by ArchUnit tests in `backend/src/test/kotlin/com/amazfy/ArchitectureTest.kt` (domain pure Kotlin; application never uses adapters; generated API types only in inbound web adapters; no access to another module's adapter or domain). If a rule blocks a design you need, discuss it rather than weakening the rule.
 - Every table has `account_id`; every query is scoped to the current account.
 - Daily metrics are stored per ad per day; higher levels are sums.
@@ -54,6 +54,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - Contract-first: write/update `api/openapi.yaml` for a milestone's endpoints **before** implementing them.
 - Kotlin controller interfaces and the TypeScript client are generated from the spec; never hand-edit generated code.
 - Paths are versioned (`/api/v1/...`); errors use RFC 7807 problem details (`common/web/GlobalExceptionHandler`; never expose internal messages).
+- Expected business errors extend `common.error.AppException` with an `ErrorKind` (e.g. CONFLICT → 409); their message is shown to clients, so keep it safe and user-friendly.
 - Security: every endpoint requires authentication unless added to the public list in `common/security/SecurityConfig`.
 - Authentication is our own (M1), built to be swappable for a managed provider: other modules only verify JWTs and use the user ID. Authorization goes through `accountAccess` + `@PreAuthorize`; account-scoped paths are `/api/v1/accounts/{accountId}/...`. See requirements section 3.
 

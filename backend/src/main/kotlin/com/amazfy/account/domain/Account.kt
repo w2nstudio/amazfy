@@ -1,5 +1,7 @@
 package com.amazfy.account.domain
 
+import com.amazfy.common.error.AppException
+import com.amazfy.common.error.ErrorKind
 import java.time.Instant
 import java.util.UUID
 
@@ -28,23 +30,6 @@ value class AccountName private constructor(
     }
 }
 
-/** What a user may do in an account. Phase 1 creates OWNER only. */
-enum class Role {
-    OWNER,
-    EDITOR,
-    VIEWER,
-    ;
-
-    val canEdit: Boolean get() = this == OWNER || this == EDITOR
-    val canManage: Boolean get() = this == OWNER
-}
-
-/** An account a user can access, with their role in it. */
-data class AccountAccess(
-    val account: Account,
-    val role: Role,
-)
-
 class InvalidAccountNameException(
     message: String,
-) : RuntimeException(message)
+) : AppException(ErrorKind.BAD_REQUEST, message)

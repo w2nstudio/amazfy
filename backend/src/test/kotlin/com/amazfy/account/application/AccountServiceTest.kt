@@ -2,7 +2,6 @@ package com.amazfy.account.application
 
 import com.amazfy.TestcontainersConfiguration
 import com.amazfy.account.domain.InvalidAccountNameException
-import com.amazfy.account.domain.Role
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -40,7 +39,7 @@ class AccountServiceTest {
 
         val account = accountService.createAccount("  AquaLife US ", john)
 
-        assertEquals("AquaLife US", account.name.value)
+        assertEquals("AquaLife US", account.name)
         assertEquals(7, account.id.version())
         assertEquals(Role.OWNER, accountService.roleOf(john, account.id))
     }
@@ -55,7 +54,7 @@ class AccountServiceTest {
 
         val johnsAccounts = accountService.accessibleAccounts(john)
 
-        assertEquals(listOf("AquaLife EU", "AquaLife US"), johnsAccounts.map { it.account.name.value })
+        assertEquals(listOf("AquaLife EU", "AquaLife US"), johnsAccounts.map { it.account.name })
         assertTrue(johnsAccounts.all { it.role == Role.OWNER })
     }
 
@@ -73,8 +72,8 @@ class AccountServiceTest {
         val john = newUser("john@aqualife.com")
         val account = accountService.createAccount("Old Name", john)
 
-        assertEquals("New Name", accountService.renameAccount(account.id, "New Name").name.value)
-        assertEquals("New Name", accountService.findAccount(account.id)?.name?.value)
+        assertEquals("New Name", accountService.renameAccount(account.id, "New Name").name)
+        assertEquals("New Name", accountService.findAccount(account.id)?.name)
     }
 
     @Test
