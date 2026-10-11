@@ -52,7 +52,7 @@ amazfy/
 | # | Milestone | Delivers | Depends on |
 | --- | --- | --- | --- |
 | M0 | Project setup | Backend and frontend skeletons, Postgres via Docker Compose, Flyway, OpenAPI code generation, production-grade baseline (see below) | Docker Desktop and Node 22 installed |
-| M1 | Auth and accounts | Sign-up (email, password, account name), login, JWT refresh, accounts + memberships, account switcher, tenant-isolation test (A1, A2) | M0 |
+| M1 | Auth and accounts | Own authentication: email + password sign-up and login, email verification, password reset, rotating refresh tokens, brute-force limits, Google login; Mailpit for local email. Accounts + memberships, `accountAccess` authorization, `@TenantId`, account switcher, tenant-isolation tests (A1, A2) | M0 |
 | M2 | Catalog | Brands and products CRUD with ASIN + marketplace validation; UI pages (A5) | M1 |
 | M3 | Reporting core + CSV import | Campaign/AdGroup/Ad and daily metric tables; Attribution CSV import; dashboard summary, drill-down and trend chart on imported data (A10–A13) | M2, a real Attribution export (sample data until then) |
 | M4 | Google Ads connector | Google OAuth, pick Google Ads account, sync campaigns/ad groups/ads and daily spend per ad, ASIN auto-matching, unmatched-ads screen (A4, A6, A7, A9 spend) | M3, Google Test access |
