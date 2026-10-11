@@ -1,0 +1,7 @@
+# Keep the Docker build context small: only backend/ and api/ are needed for the backend image
+*
+!api/
+!backend/
+backend/build/
+backend/.gradle/
+backend/.kotlin/

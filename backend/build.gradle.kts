@@ -63,6 +63,14 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
+// One executable jar with a fixed name (used by the Dockerfile); no extra "plain" jar
+tasks.bootJar {
+    archiveFileName = "amazfy-backend.jar"
+}
+tasks.jar {
+    enabled = false
+}
+
 // Writes build-info.properties (name, version, build time) so the app can report its own version
 springBoot {
     buildInfo {

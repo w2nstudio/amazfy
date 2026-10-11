@@ -59,3 +59,11 @@ jobs:
 
       # prebuild regenerates the API client from ../api/openapi.yaml, then TypeScript check + production build
       - run: npm run build
+
+  docker:
+    name: Backend Docker image build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Build only (no push yet): catches a broken Dockerfile in every pull request
+      - run: docker build -f backend/Dockerfile -t amazfy-backend:ci .

@@ -75,6 +75,8 @@ Local database (run in repo root; needs Docker Desktop running):
 - `docker compose up -d` — start PostgreSQL 18 on localhost:5432 (db/user/password: `amazfy`)
 - `docker compose down` — stop it (data is kept in a Docker volume; `down -v` deletes it)
 
+Backend container image (run in repo root): `docker build -f backend/Dockerfile -t amazfy-backend .` (multi-stage, JRE-only runtime, non-root user, `prod` profile by default; pass `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `CORS_ALLOWED_ORIGINS` with `-e`; inside a container the local database is `host.docker.internal:5432`).
+
 Backend tests start their own throwaway PostgreSQL with Testcontainers; only Docker must be running.
 Migrations live in `backend/src/main/resources/db/migration` (`V<n>__<description>.sql`); never edit a merged one.
 

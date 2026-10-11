@@ -20,7 +20,7 @@ Current milestone: **M0 project setup**. Update this section whenever a step is 
 | Frontend styling: Tailwind CSS 4 + shadcn/ui (Radix, Nova preset), `@/` alias, TypeScript strict | Done |
 | Frontend data: Orval-generated client + TanStack Query hooks, React Router, Vite `/api` proxy; home page shows backend version | Done |
 | Frontend quality: oxlint (warnings as errors) + Prettier with Tailwind plugin; frontend job in CI; Dependabot for npm | Done |
-| Backend Dockerfile | Next |
+| Backend Dockerfile: multi-stage, JRE runtime, non-root, layered jar; image build in CI | Done |
 | Architecture tests (Spring Modulith or ArchUnit) | To do (when the first real modules arrive in M1) |
 | Branch protection on `main` (require CI) | To do (GitHub setting, done by the repo owner) |
 
