@@ -41,7 +41,8 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - Modular monolith, Spring Boot 4 + Kotlin (JDK 21), PostgreSQL. No microservices.
 - Hexagonal modules: `domain/` (pure Kotlin) · `application/` (use cases) + `application/port/` (interfaces) · `adapter/inbound/web`, `adapter/outbound/persistence`, `adapter/outbound/<service>` (not `in`/`out`: `in` is a Kotlin keyword).
 - **Strict** (domain has no Spring, JPA or API-client imports): channel (Google), attribution, reporting, ad matching.
-- **Light** (simple CRUD may skip layers): auth, account, catalog, audit, system.
+- **Light**: auth, account, catalog, audit, system. Same folders and ArchUnit rules as strict modules, but one application service per module (e.g. `AccountService`) instead of a class per use case, and minimal mapping. Example to copy: `account/`.
+- JPA entities: plain classes (never `data class`), only in `adapter/outbound/persistence`, IDs via `@UuidGenerator(style = VERSION_7)`; adapters map them to domain classes.
 - `common/` holds shared infrastructure only (error handling, security config), no business logic.
 - Modules talk to each other only through their public application API, never another module's internals.
 - These rules are enforced by ArchUnit tests in `backend/src/test/kotlin/com/amazfy/ArchitectureTest.kt` (domain pure Kotlin; application never uses adapters; generated API types only in inbound web adapters; no access to another module's adapter or domain). If a rule blocks a design you need, discuss it rather than weakening the rule.
