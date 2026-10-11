@@ -51,6 +51,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - Kotlin controller interfaces and the TypeScript client are generated from the spec; never hand-edit generated code.
 - Paths are versioned (`/api/v1/...`); errors use RFC 7807 problem details (`common/web/GlobalExceptionHandler`; never expose internal messages).
 - Security: every endpoint requires authentication unless added to the public list in `common/security/SecurityConfig`.
+- Authentication is our own (M1), built to be swappable for a managed provider: other modules only verify JWTs and use the user ID. Authorization goes through `accountAccess` + `@PreAuthorize`; account-scoped paths are `/api/v1/accounts/{accountId}/...`. See requirements section 3.
 
 ## Conventions
 

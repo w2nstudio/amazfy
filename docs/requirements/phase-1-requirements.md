@@ -58,12 +58,42 @@ User (person who logs in)
                                      └─ Products (ASIN + marketplace)
 ```
 
-- A user signs up with email and password, or with "Sign in with Google".
-- The sign-up form asks for email, password and **account name** (the business name). Amazfy creates the user, the account and an owner membership in one step.
+- A user signs up with email and password, or with "Sign in with Google" (Facebook later).
+- The email sign-up form asks for email, password and **account name** (the business name). Amazfy creates the user, the account and an owner membership in one step. A first-time Google sign-in asks for the account name in a short onboarding step instead.
 - A user can create more accounts later ("Add account") and switch between them from the top bar.
 - Products, brands, connections, campaigns and metrics all belong to an account, never to a user.
 - Phase 1 has only the **owner** role. Inviting other users (editor, viewer) is a later phase; the Membership table exists from day one so no migration is needed.
 - "Sign in with Google" (login) and "Connect Google Ads" (ad access) are separate consents, even when the same Google account is used.
+
+### Authentication (decided 2026-10-11)
+
+Amazfy builds its own authentication in Phase 1, designed so it can be replaced by a managed provider (Auth0 was the preferred candidate) later without touching the rest of the system. Reasons: budget, and understanding first-hand what a provider adds.
+
+| Part | Phase 1 approach |
+| --- | --- |
+| Email + password | bcrypt hashes (importable by Auth0 and similar providers, so users keep their passwords after a migration); minimum password rules |
+| Google login | Spring Security OAuth2 client, Google as OpenID Connect provider |
+| Facebook login | Later; needs Meta app review and business verification |
+| Tokens | Short-lived JWT access token (~15 min) + refresh token; refresh tokens stored hashed in the database, rotated on every use, revocable (logout, log out everywhere) |
+| Browser storage | Access token in memory; refresh token in a `Secure`, `HttpOnly`, `SameSite=Strict` cookie |
+| Email verification, password reset | One-time links with expiry. Local development: Mailpit in Docker Compose; production: an email-sending service (to be chosen) |
+| Brute-force protection | Failed-login limits per email and per IP, temporary lockout |
+| 2FA | Later phase |
+
+Design rules that keep a later switch cheap:
+
+1. The backend verifies standard signed JWTs (Spring resource server); only the `auth` module issues them.
+2. `user` is separate from `user_identity (user_id, provider, subject)`: password, google, facebook today; a managed provider becomes one more provider.
+3. Password hashes use a format managed providers can import.
+4. Authentication lives in the `auth` module behind ports; other modules only see the authenticated user ID.
+
+### Authorization (decided 2026-10-11)
+
+- **Who may do what** is checked in one place: an `accountAccess` component that loads the user's membership for the requested account and checks the role. Each endpoint declares the permission it needs with Spring method security, e.g. `@PreAuthorize("@accountAccess.canEdit(#accountId)")`. No scattered `if` checks.
+- Roles map to permissions in one enum: OWNER (everything), EDITOR (change data), VIEWER (read only). Phase 1 uses OWNER only.
+- Account-scoped endpoints carry the account in the path: `/api/v1/accounts/{accountId}/...`. No membership or insufficient role → 403.
+- **Data isolation:** entities mark `account_id` with Hibernate `@TenantId`, so JPA queries are filtered and inserts filled automatically. Plain SQL report queries take `accountId` as an explicit parameter. Tenant-isolation tests prove one account can never read another's data.
+- Not in Phase 1: a policy engine (Casbin, OPA, Cerbos, OpenFGA), only needed for custom roles or per-object permissions; PostgreSQL row-level security (RLS), a possible later hardening step.
 
 ### Onboarding checklist
 
@@ -141,7 +171,9 @@ The **ad** is the unit of linking, not the campaign.
 ## 6. Data model
 
 ```
-User ──< Membership >── Account
+User ──< UserIdentity (provider: password | google | facebook, subject, password hash for password)
+  ├──< RefreshToken (hashed, expiry, revoked)
+  └──< Membership (role) >── Account
                           ├── GoogleAdsConnection (customer ID, encrypted token)
                           ├── AmazonConnection (profile ID, advertiser ID, encrypted token)
                           ├── Brand ──< Product (ASIN, marketplace, name)
@@ -210,7 +242,7 @@ The rules are enforced by architecture tests (Spring Modulith or ArchUnit): the 
 | Background jobs | JobRunr (or Spring Scheduler + ShedLock) | Retries; one run per job across instances |
 | Google client | Official Google Ads API Java client library | Maintained by Google; works from Kotlin |
 | Amazon client | Spring WebClient against the REST API | No official JVM client for Attribution |
-| Auth | Spring Security, JWT access + refresh tokens | Stateless backend |
+| Auth | Own implementation: Spring Security, JWT access + rotating refresh tokens, Google via OAuth2 client (see section 3) | Stateless backend; replaceable by a managed provider later |
 | Local dev | Docker Compose for PostgreSQL | Same database version for every developer |
 | Hosting | Docker containers on AWS or GCP, managed PostgreSQL | Decide before beta |
 
@@ -253,7 +285,7 @@ Metrics: click-throughs, detail page views, add to carts, purchases, units sold,
 
 ## 9. Non-functional requirements
 
-- **Security:** OAuth tokens encrypted at rest with a key from a secrets manager; never in code or logs. Passwords hashed with Argon2 or bcrypt. HTTPS only.
+- **Security:** OAuth tokens encrypted at rest with a key from a secrets manager; never in code or logs. Passwords hashed with bcrypt. HTTPS only.
 - **Tenant isolation:** every query scoped by account; an automated test proves one account cannot read another's data.
 - **Least privilege:** request only the OAuth scopes needed. Amazfy never touches Google billing.
 - **Audit log:** every change written to Google (tag set, campaign created, budget changed) records who approved it and when.
@@ -273,6 +305,8 @@ Metrics: click-throughs, detail page views, add to carts, purchases, units sold,
 - [ ] Google OAuth consent screen verified for the Google Ads scope
 - [ ] Google Ads manager account and test accounts created
 - [ ] Login with Amazon security profile created
+- [ ] Meta app review and business verification for Facebook login (later phase)
+- [ ] Email-sending service chosen for verification and password-reset emails
 - [ ] Amazon Ads API access application submitted, naming Amazon Attribution as the use case
 - [ ] One friendly seller recruited to test Attribution end to end
 - [ ] A real Amazon Attribution report export collected
