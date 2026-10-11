@@ -6,7 +6,7 @@ Phase 1a ships first: real sellers can connect Google Ads and Amazon and see ROA
 
 ## Progress
 
-Current milestone: **M1 auth and accounts** (M0 complete except branch protection). Update this section whenever a step is merged.
+Current milestone: **M1 auth and accounts** (M0 complete). Update this section whenever a step is merged.
 
 | Step | Status |
 | --- | --- |
@@ -22,7 +22,7 @@ Current milestone: **M1 auth and accounts** (M0 complete except branch protectio
 | Frontend quality: oxlint (warnings as errors) + Prettier with Tailwind plugin; frontend job in CI; Dependabot for npm | Done |
 | Backend Dockerfile: multi-stage, JRE runtime, non-root, layered jar; image build in CI | Done |
 | Architecture tests (Spring Modulith or ArchUnit) | To do (when the first real modules arrive in M1) |
-| Branch protection on `main` (require CI) | To do (GitHub setting, done by the repo owner) |
+| Branch protection on `main`: ruleset requiring a PR and the three CI checks, no force pushes | Done |
 
 **M1: auth and accounts**
 
