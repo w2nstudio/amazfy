@@ -84,7 +84,9 @@ Frontend (run in `frontend/`; Node 22):
 - `npm run dev` — dev server on http://localhost:5173 with hot reload; `/api` is proxied to the backend on :8080 (start it with `bootRun`)
 - `npm run generate:api` — regenerate the TypeScript client and TanStack Query hooks from `api/openapi.yaml` with Orval (also runs automatically before `dev` and `build`; output in `src/api/generated/`, never committed)
 - `npm run build` — TypeScript check + production build into `dist/`
-- `npm run lint` — oxlint
+- `npm run lint` — oxlint (warnings fail too); config `.oxlintrc.json`
+- `npm run format` / `npm run format:check` — Prettier (with Tailwind class sorting); config `.prettierrc.json`
+- CI runs `npm ci`, `lint`, `format:check` and `build`; run the same before pushing
 - `npx shadcn@latest add <component>` — add a shadcn/ui component (e.g. `input`, `table`, `dialog`); its source is copied into `src/components/ui/` and is ours to edit
 
 Frontend conventions: call the backend only through the generated hooks (e.g. `useGetSystemInfo()`), never hand-written `fetch`; pages live in `src/pages/` and are registered in `src/router.tsx`; TypeScript `strict`; style with Tailwind classes and shadcn/ui components (theme colours in `src/index.css`); import from `src` with the `@/` alias (`@/components/ui/button`).

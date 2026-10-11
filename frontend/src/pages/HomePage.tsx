@@ -11,7 +11,7 @@ export function HomePage() {
       <p className="text-muted-foreground">External traffic, measured in Amazon sales.</p>
       <Button>Get started</Button>
 
-      <p className="text-muted-foreground text-sm">
+      <p className="text-sm text-muted-foreground">
         {systemInfo.isPending && 'Connecting to backend…'}
         {systemInfo.isError && 'Backend not reachable'}
         {systemInfo.isSuccess && `Backend: ${systemInfo.data.data.name} ${systemInfo.data.data.version}`}

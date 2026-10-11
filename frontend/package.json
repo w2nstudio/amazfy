@@ -9,8 +9,10 @@
     "dev": "vite",
     "prebuild": "npm run generate:api",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "lint": "oxlint --deny-warnings",
+    "preview": "vite preview",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
@@ -32,6 +34,8 @@
     "@vitejs/plugin-react": "^6.1.1",
     "orval": "^8.41.0",
     "oxlint": "^1.81.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "shadcn": "^4.21.4",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",

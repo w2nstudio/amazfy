@@ -1,0 +1,5 @@
+# Generated or installed code is not formatted
+src/api/generated/
+dist/
+node_modules/
+package-lock.json
