@@ -124,6 +124,16 @@ Spring reads the `@RequestMapping` annotations from the interface, so the contro
 
 If the YAML has an endpoint the controller doesn't implement, the build fails with "Class '…Controller' is not abstract and does not implement abstract member". That is the contract being enforced.
 
+## Frontend: the TypeScript client
+
+The frontend generates its client from the same file with [Orval](https://orval.dev) (`frontend/orval.config.ts`):
+
+- `npm run generate:api` (also automatic before `npm run dev` and `npm run build`) writes `frontend/src/api/generated/`: TypeScript types for every schema (e.g. `SystemInfo`), a fetch function per operation (`getSystemInfo()`) and a TanStack Query hook (`useGetSystemInfo()`).
+- Pages call the hooks; the hook handles loading, errors and caching.
+- In development, Vite proxies `/api` to the backend on port 8080, so the generated relative URLs just work.
+
+A contract change that breaks the frontend shows up as a TypeScript error in `npm run build`, just as a backend mismatch fails `./gradlew build`.
+
 ## IntelliJ tips
 
 - Ctrl+click a generated type (e.g. `SystemApi`) to open the generated file.

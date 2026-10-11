@@ -10,4 +10,10 @@ export default defineConfig({
     // "@/..." means "src/...", matching the paths setting in tsconfig
     alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
+  server: {
+    // In development, forward API calls to the backend so the browser sees one origin
+    proxy: {
+      '/api': 'http://localhost:8080',
+    },
+  },
 })
