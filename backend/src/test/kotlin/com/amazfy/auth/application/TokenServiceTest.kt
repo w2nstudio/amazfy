@@ -3,7 +3,7 @@ package com.amazfy.auth.application
 import com.amazfy.TestcontainersConfiguration
 import com.amazfy.auth.application.port.RefreshTokenRepository
 import com.amazfy.auth.domain.InvalidRefreshTokenException
-import com.amazfy.auth.domain.RefreshTokenCodec
+import com.amazfy.auth.domain.SecretTokenCodec
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -75,8 +75,8 @@ class TokenServiceTest {
         assertFailsWith<InvalidRefreshTokenException> { tokenService.refresh(null) }
         assertFailsWith<InvalidRefreshTokenException> { tokenService.refresh("not-a-real-token") }
 
-        val expired = RefreshTokenCodec.newToken()
-        refreshTokens.save(newUser(), UUID.randomUUID(), RefreshTokenCodec.hash(expired), Instant.now().minusSeconds(1))
+        val expired = SecretTokenCodec.newToken()
+        refreshTokens.save(newUser(), UUID.randomUUID(), SecretTokenCodec.hash(expired), Instant.now().minusSeconds(1))
         assertFailsWith<InvalidRefreshTokenException> { tokenService.refresh(expired) }
     }
 

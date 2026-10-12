@@ -37,7 +37,8 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Mailpit in Docker Compose, Spring mail starter, `MAIL_*` / `FRONTEND_BASE_URL` settings (mail health check off) | Done |
 | Database migration: V4 one-time tokens (email verification, password reset; hashed, expiring, single use) | Done |
 | Email-sending port `AuthEmailSender` + SMTP adapter (plain-text verification and reset emails, links to frontend pages), tested against a Mailpit container | Done |
-| Email verification and password reset, remaining parts: verify/resend endpoints → forgot/reset endpoints | Next |
+| Email verification: sign-up sends a 24 h link (after commit, so a mail outage never undoes a sign-up), `verify-email` (single use), `resend-verification` (old links stop working); resend rate limit comes with brute-force limits | Done |
+| Password reset: `forgot-password`, `reset-password` (logs out all sessions) | Next |
 | Brute-force limits | To do |
 | Accounts, memberships, `accountAccess`, `@TenantId`, tenant-isolation tests | To do |
 | Google login | To do |

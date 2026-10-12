@@ -57,6 +57,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - Expected business errors extend `common.error.AppException` with an `ErrorKind` (e.g. CONFLICT → 409); their message is shown to clients, so keep it safe and user-friendly.
 - Security: every endpoint requires a valid access token (JWT, checked by `common/security/JwtConfig`) unless listed in `SecurityConfig.PUBLIC_ENDPOINTS`; keep that list in sync with `security: []` in `api/openapi.yaml`. In authenticated endpoints get the user with `currentUserId()`.
 - Tokens: access token 15 min (JWT, HS256, `JWT_SECRET`); refresh token 30 days, only in the `amazfy_refresh` HttpOnly cookie, stored as a SHA-256 hash, rotated on every use (reuse revokes the family). Use the injected `Clock`, never `Instant.now()`, in application code.
+- Emails: the application calls the `AuthEmailSender` port and sends only after the transaction commits; Spring tests get `RecordingAuthEmailSender` (in `TestcontainersConfiguration`) instead of SMTP and read tokens from it.
 - Contract endpoints not built yet throw `NotImplementedYetException` (501) until their step.
 - Authentication is our own (M1), built to be swappable for a managed provider: other modules only verify JWTs and use the user ID. Authorization goes through `accountAccess` + `@PreAuthorize`; account-scoped paths are `/api/v1/accounts/{accountId}/...`. See requirements section 3.
 

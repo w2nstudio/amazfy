@@ -1,5 +1,7 @@
 package com.amazfy.auth.adapter.inbound.web
 
+import com.amazfy.RecordingAuthEmailSender
+import com.amazfy.RecordingAuthEmailSender.Kind.VERIFICATION
 import com.amazfy.TestcontainersConfiguration
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.containsString
@@ -11,10 +13,12 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
 import org.springframework.test.web.servlet.post
 import java.util.UUID
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /** The auth endpoints over real HTTP handling, through every layer, with a real PostgreSQL. */
@@ -24,6 +28,12 @@ import kotlin.test.assertTrue
 class AuthEndpointsTest {
     @Autowired
     lateinit var mockMvc: MockMvc
+
+    @Autowired
+    lateinit var emails: RecordingAuthEmailSender
+
+    @Autowired
+    lateinit var jdbc: JdbcClient
 
     private val password = "correct horse battery"
 
@@ -140,6 +150,68 @@ class AuthEndpointsTest {
         val email = uniqueEmail()
         register(email)
         assertTrue(register(email.uppercase()).response.status == 409)
+    }
+
+    private fun verifyEmail(token: String) =
+        mockMvc.post("/api/v1/auth/verify-email") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"token":"$token"}"""
+        }
+
+    private fun isEmailVerified(email: String): Boolean =
+        jdbc
+            .sql("SELECT email_verified_at IS NOT NULL FROM users WHERE email = :e")
+            .param("e", email)
+            .query(Boolean::class.java)
+            .single()
+
+    @Test
+    fun `sign-up sends a verification link that works exactly once`() {
+        val email = uniqueEmail()
+        register(email)
+        val sent = emails.sentTo(email, VERIFICATION)
+        assertEquals(1, sent.size)
+        assertTrue(!isEmailVerified(email))
+
+        verifyEmail(sent.single().token).andExpect { status { isNoContent() } }
+        assertTrue(isEmailVerified(email))
+
+        verifyEmail(sent.single().token).andExpect {
+            status { isBadRequest() }
+            content { contentType(MediaType.APPLICATION_PROBLEM_JSON) }
+        }
+    }
+
+    @Test
+    fun `an unknown verification token is rejected`() {
+        verifyEmail("made-up-token").andExpect { status { isBadRequest() } }
+    }
+
+    @Test
+    fun `resend needs a login, sends a new link and makes the old one stop working`() {
+        val email = uniqueEmail()
+        val token = register(email).accessToken()
+
+        mockMvc.post("/api/v1/auth/resend-verification").andExpect { status { isUnauthorized() } }
+        mockMvc
+            .post("/api/v1/auth/resend-verification") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
+            .andExpect { status { isNoContent() } }
+
+        val (first, second) = emails.sentTo(email, VERIFICATION)
+        verifyEmail(first.token).andExpect { status { isBadRequest() } }
+        verifyEmail(second.token).andExpect { status { isNoContent() } }
+    }
+
+    @Test
+    fun `resend sends nothing once the email is verified`() {
+        val email = uniqueEmail()
+        val token = register(email).accessToken()
+        verifyEmail(emails.sentTo(email, VERIFICATION).single().token)
+
+        mockMvc
+            .post("/api/v1/auth/resend-verification") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
+            .andExpect { status { isNoContent() } }
+        assertEquals(1, emails.sentTo(email, VERIFICATION).size)
     }
 
     @Test

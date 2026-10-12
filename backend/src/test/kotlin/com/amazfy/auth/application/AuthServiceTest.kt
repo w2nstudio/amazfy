@@ -4,9 +4,13 @@ import com.amazfy.TestcontainersConfiguration
 import com.amazfy.account.application.AccountService
 import com.amazfy.account.application.Role
 import com.amazfy.account.domain.InvalidAccountNameException
+import com.amazfy.auth.application.port.OneTimeTokenRepository
 import com.amazfy.auth.domain.EmailAlreadyRegisteredException
 import com.amazfy.auth.domain.InvalidCredentialsException
 import com.amazfy.auth.domain.InvalidEmailException
+import com.amazfy.auth.domain.InvalidOneTimeTokenException
+import com.amazfy.auth.domain.OneTimeTokenPurpose
+import com.amazfy.auth.domain.SecretTokenCodec
 import com.amazfy.auth.domain.WeakPasswordException
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -33,6 +38,9 @@ class AuthServiceTest {
 
     @Autowired
     lateinit var jdbc: JdbcClient
+
+    @Autowired
+    lateinit var oneTimeTokens: OneTimeTokenRepository
 
     private val password = "correct horse battery"
 
@@ -87,5 +95,27 @@ class AuthServiceTest {
         val malformedEmail = assertFailsWith<InvalidCredentialsException> { authService.login("nonsense", password) }
         assertEquals(wrongPassword.message, unknownEmail.message)
         assertEquals(wrongPassword.message, malformedEmail.message)
+    }
+
+    private fun storeToken(
+        purpose: OneTimeTokenPurpose,
+        expiresAt: Instant,
+    ): String {
+        val userId = authService.register("token-${purpose.name.lowercase()}@aqualife.com", password, "AquaLife US").user.id
+        val rawToken = SecretTokenCodec.newToken()
+        oneTimeTokens.save(userId, purpose, SecretTokenCodec.hash(rawToken), expiresAt)
+        return rawToken
+    }
+
+    @Test
+    fun `an expired verification link is rejected`() {
+        val expired = storeToken(OneTimeTokenPurpose.EMAIL_VERIFICATION, Instant.now().minusSeconds(1))
+        assertFailsWith<InvalidOneTimeTokenException> { authService.verifyEmail(expired) }
+    }
+
+    @Test
+    fun `a password-reset token can't verify an email`() {
+        val resetToken = storeToken(OneTimeTokenPurpose.PASSWORD_RESET, Instant.now().plusSeconds(3600))
+        assertFailsWith<InvalidOneTimeTokenException> { authService.verifyEmail(resetToken) }
     }
 }

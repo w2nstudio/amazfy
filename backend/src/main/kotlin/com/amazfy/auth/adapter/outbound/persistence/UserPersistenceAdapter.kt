@@ -12,6 +12,7 @@ import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import org.hibernate.annotations.UuidGenerator
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Component
 import java.time.Instant
@@ -63,6 +64,13 @@ interface UserJpaRepository : JpaRepository<UserEntity, UUID> {
     fun existsByEmail(email: String): Boolean
 
     fun findByEmail(email: String): UserEntity?
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("UPDATE UserEntity u SET u.emailVerifiedAt = :at, u.updatedAt = :at WHERE u.id = :id AND u.emailVerifiedAt IS NULL")
+    fun markEmailVerified(
+        id: UUID,
+        at: Instant,
+    ): Int
 }
 
 interface UserIdentityJpaRepository : JpaRepository<UserIdentityEntity, UUID> {
@@ -95,6 +103,15 @@ class UserPersistenceAdapter(
         val user = userJpa.findByEmail(email.value) ?: return null
         val identity = identityJpa.findByUserIdAndProvider(user.id!!, UserIdentityEntity.PASSWORD) ?: return null
         return PasswordLogin(user.toDomain(), identity.passwordHash!!)
+    }
+
+    override fun findById(id: UUID): User? = userJpa.findById(id).orElse(null)?.toDomain()
+
+    override fun markEmailVerified(
+        id: UUID,
+        at: Instant,
+    ) {
+        userJpa.markEmailVerified(id, at)
     }
 }
 
