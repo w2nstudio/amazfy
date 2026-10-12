@@ -113,6 +113,36 @@ class DatabaseSchemaTest {
         assertEquals(1, count("accounts"))
     }
 
+    private fun insertOneTimeToken(
+        userId: UUID,
+        purpose: String,
+    ): Int =
+        jdbc
+            .sql(
+                "INSERT INTO one_time_tokens (user_id, purpose, token_hash, expires_at) " +
+                    "VALUES (:u, :p, gen_random_uuid()::text, now() + interval '1 day')",
+            ).param("u", userId)
+            .param("p", purpose)
+            .update()
+
+    @Test
+    fun `one-time token purpose must be EMAIL_VERIFICATION or PASSWORD_RESET`() {
+        val userId = insertUser("tokens@example.com")
+        assertEquals(1, insertOneTimeToken(userId, "EMAIL_VERIFICATION"))
+        assertEquals(1, insertOneTimeToken(userId, "PASSWORD_RESET"))
+        assertFailsWith<DataIntegrityViolationException> { insertOneTimeToken(userId, "LOGIN") }
+    }
+
+    @Test
+    fun `deleting a user removes their one-time tokens`() {
+        val userId = insertUser("gone@example.com")
+        insertOneTimeToken(userId, "PASSWORD_RESET")
+
+        jdbc.sql("DELETE FROM users WHERE id = :u").param("u", userId).update()
+
+        assertEquals(0, count("one_time_tokens"))
+    }
+
     @Test
     fun `ids are generated as time-ordered UUID version 7`() {
         assertEquals(7, insertUser("v7@example.com").version())
