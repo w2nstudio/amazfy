@@ -2,6 +2,7 @@ package com.amazfy.common.web
 
 import com.amazfy.common.error.AppException
 import com.amazfy.common.error.ErrorKind
+import com.amazfy.common.error.TooManyAttemptsException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -46,6 +47,14 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
     /** Expected business errors: status from their kind, their (safe) message as detail. */
     @ExceptionHandler(AppException::class)
     fun handleAppException(ex: AppException): ProblemDetail = ProblemDetail.forStatusAndDetail(ex.kind.toHttpStatus(), ex.message)
+
+    /** 429 plus Retry-After (whole seconds, rounded up), so clients know when to try again. */
+    @ExceptionHandler(TooManyAttemptsException::class)
+    fun handleTooManyAttempts(ex: TooManyAttemptsException): ResponseEntity<ProblemDetail> =
+        ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
+            .header(HttpHeaders.RETRY_AFTER, maxOf(1, ex.retryAfter.toMillis().plus(999) / 1000).toString())
+            .body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.message))
 
     @ExceptionHandler(Exception::class)
     fun handleUnexpected(ex: Exception): ProblemDetail {
