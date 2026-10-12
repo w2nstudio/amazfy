@@ -18,6 +18,7 @@ The **Docker Engine** runs containers. The `docker` command is only a client tha
 | Use | What happens | You need |
 | --- | --- | --- |
 | **Local database** for `./gradlew bootRun` | `docker-compose.yml` runs PostgreSQL 18 on `localhost:5432` (database, user and password: `amazfy`) | Docker running **and** the `amazfy-postgres` container started |
+| **Local email** for `./gradlew bootRun` | `docker-compose.yml` also runs Mailpit: it accepts emails on `localhost:1025` (SMTP) and shows them at http://localhost:8025 instead of delivering them | The `amazfy-mailpit` container started (same `docker compose up -d`) |
 | **Backend tests** (`./gradlew build` / `test`) | Testcontainers starts a throwaway PostgreSQL per test run and removes it afterwards | Docker running only |
 | **Backend image** for deployment | `backend/Dockerfile` packages the backend; CI builds it on every pull request | Docker running, to build it locally |
 
@@ -27,10 +28,10 @@ Run Compose commands in the repository root (where `docker-compose.yml` is).
 
 | Command | What it does |
 | --- | --- |
-| `docker compose up -d` | Start the local database in the background (`-d` = detached). Same as ▶ on `amazfy-postgres` in Docker Desktop. |
-| `docker compose down` | Stop and remove the container. **Data is kept** in the volume. |
+| `docker compose up -d` | Start the local database and Mailpit in the background (`-d` = detached). Same as ▶ on the `amazfy` group in Docker Desktop. |
+| `docker compose down` | Stop and remove the containers. **Database data is kept** in the volume (Mailpit's emails are not). |
 | `docker compose down -v` | Stop and **delete the data** too (`-v` = volumes). Next start begins empty; Flyway recreates the tables. |
-| `docker compose ps` | Is the database running and healthy? |
+| `docker compose ps` | Are the database and Mailpit running (and the database healthy)? |
 | `docker compose logs -f postgres` | Follow the database log (Ctrl+C to stop following) |
 | `docker exec -it amazfy-postgres psql -U amazfy -d amazfy` | Open a SQL prompt inside the database (`\dt` lists tables, `\q` quits) |
 | `docker ps` | All running containers |
@@ -38,7 +39,7 @@ Run Compose commands in the repository root (where `docker-compose.yml` is).
 | `docker system df` | How much disk Docker uses |
 | `docker system prune` | Remove stopped containers, unused networks and dangling images (asks first; volumes are kept) |
 
-The container does not start automatically when Docker starts. After a restart of Docker or Windows, start it again with `docker compose up -d` (or ▶ in Docker Desktop).
+The containers do not start automatically when Docker starts. After a restart of Docker or Windows, start it again with `docker compose up -d` (or ▶ in Docker Desktop).
 
 ## Our backend image
 
@@ -62,10 +63,13 @@ docker run --rm -p 8081:8080 \
   -e DB_URL=jdbc:postgresql://host.docker.internal:5432/amazfy \
   -e DB_USERNAME=amazfy -e DB_PASSWORD=amazfy \
   -e CORS_ALLOWED_ORIGINS=http://localhost:5173 \
+  -e JWT_SECRET=local-development-secret-not-for-production-0123456789 \
+  -e MAIL_HOST=host.docker.internal -e MAIL_PORT=1025 \
+  -e "MAIL_FROM=Amazfy <no-reply@amazfy.local>" -e FRONTEND_BASE_URL=http://localhost:5173 \
   amazfy-backend
 ```
 
-Inside a container, `localhost` means the container itself. `host.docker.internal` is Docker Desktop's name for your computer, which is where the local database's port is published. `--rm` removes the container when it stops.
+Inside a container, `localhost` means the container itself. `host.docker.internal` is Docker Desktop's name for your computer, which is where the ports of the local database and Mailpit are published. `--rm` removes the container when it stops.
 
 ## Docker Desktop tips
 
@@ -81,6 +85,7 @@ Inside a container, `localhost` means the container itself. `host.docker.interna
 | Tests fail with *Could not find a valid Docker environment* | Docker Desktop isn't running. Start it and wait for *Engine running*. |
 | `bootRun` fails to connect to `localhost:5432` | The database container isn't started: `docker compose up -d`. |
 | `docker` commands hang; Docker Desktop shows stale information (e.g. "running for 15 hours") | The engine is frozen, often after sleep or a long uptime. 1) Docker Desktop tray icon → *Quit Docker Desktop*. 2) In PowerShell: `wsl --shutdown`. 3) If `Docker Desktop` or `com.docker.backend` processes are still in Task Manager, end them. 4) Start Docker Desktop again. A Windows restart also fixes it. |
+| Email links never arrive | Open http://localhost:8025 (Mailpit), not your real inbox. If it doesn't load: `docker compose up -d`. |
 | Port 5432 already in use | Another PostgreSQL runs on your machine. Stop it, or change the left side of `"5432:5432"` in `docker-compose.yml` and the port in `DB_URL`. |
 | Disk filling up | `docker system df` to see usage, `docker system prune` to clean up. |
 
