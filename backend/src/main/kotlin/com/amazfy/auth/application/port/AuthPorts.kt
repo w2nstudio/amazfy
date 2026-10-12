@@ -22,6 +22,12 @@ interface UserRepository {
 
     fun findById(id: UUID): User?
 
+    /** Replaces the hash of the user's password login. */
+    fun updatePasswordHash(
+        id: UUID,
+        passwordHash: String,
+    )
+
     /** Sets the verification time; a user who is already verified keeps the first time. */
     fun markEmailVerified(
         id: UUID,

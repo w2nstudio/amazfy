@@ -114,6 +114,18 @@ class AuthServiceTest {
     }
 
     @Test
+    fun `a verification token can't reset a password`() {
+        val verificationToken = storeToken(OneTimeTokenPurpose.EMAIL_VERIFICATION, Instant.now().plusSeconds(3600))
+        assertFailsWith<InvalidOneTimeTokenException> { authService.resetPassword(verificationToken, "a brand new passphrase") }
+    }
+
+    @Test
+    fun `an expired reset link is rejected`() {
+        val expired = storeToken(OneTimeTokenPurpose.PASSWORD_RESET, Instant.now().minusSeconds(1))
+        assertFailsWith<InvalidOneTimeTokenException> { authService.resetPassword(expired, "a brand new passphrase") }
+    }
+
+    @Test
     fun `a password-reset token can't verify an email`() {
         val resetToken = storeToken(OneTimeTokenPurpose.PASSWORD_RESET, Instant.now().plusSeconds(3600))
         assertFailsWith<InvalidOneTimeTokenException> { authService.verifyEmail(resetToken) }

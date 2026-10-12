@@ -1,6 +1,7 @@
 package com.amazfy.auth.adapter.inbound.web
 
 import com.amazfy.RecordingAuthEmailSender
+import com.amazfy.RecordingAuthEmailSender.Kind.PASSWORD_RESET
 import com.amazfy.RecordingAuthEmailSender.Kind.VERIFICATION
 import com.amazfy.TestcontainersConfiguration
 import jakarta.servlet.http.Cookie
@@ -16,6 +17,7 @@ import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
+import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -214,12 +216,81 @@ class AuthEndpointsTest {
         assertEquals(1, emails.sentTo(email, VERIFICATION).size)
     }
 
+    private fun forgotPassword(email: String) =
+        mockMvc.post("/api/v1/auth/forgot-password") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"email":"$email"}"""
+        }
+
+    private fun resetPassword(
+        token: String,
+        newPassword: String,
+    ) = mockMvc.post("/api/v1/auth/reset-password") {
+        contentType = MediaType.APPLICATION_JSON
+        content = """{"token":"$token","newPassword":"$newPassword"}"""
+    }
+
+    private fun login(
+        email: String,
+        password: String,
+    ) = mockMvc.post("/api/v1/auth/login") {
+        contentType = MediaType.APPLICATION_JSON
+        content = """{"email":"$email","password":"$password"}"""
+    }
+
+    @Test
+    fun `forgot-password answers 202 whether or not the email has an account`() {
+        val unknown = uniqueEmail()
+        forgotPassword(unknown).andExpect { status { isAccepted() } }
+        assertTrue(emails.sentTo(unknown, PASSWORD_RESET).isEmpty())
+
+        val email = uniqueEmail()
+        register(email)
+        forgotPassword(email.uppercase()).andExpect { status { isAccepted() } }
+        assertEquals(1, emails.sentTo(email, PASSWORD_RESET).size)
+    }
+
+    @Test
+    fun `reset-password sets the new password, logs out every session and works once`() {
+        val email = uniqueEmail()
+        val session = register(email).refreshCookie()
+        forgotPassword(email)
+        val token = emails.sentTo(email, PASSWORD_RESET).single().token
+
+        resetPassword(token, "a brand new passphrase").andExpect { status { isNoContent() } }
+
+        mockMvc.post("/api/v1/auth/refresh") { cookie(session) }.andExpect { status { isUnauthorized() } }
+        login(email, password).andExpect { status { isUnauthorized() } }
+        login(email, "a brand new passphrase").andExpect { status { isOk() } }
+        assertTrue(isEmailVerified(email), "opening the reset link proves the email")
+        resetPassword(token, "yet another passphrase").andExpect { status { isBadRequest() } }
+    }
+
+    @Test
+    fun `a new reset email makes the previous link stop working`() {
+        val email = uniqueEmail()
+        register(email)
+        forgotPassword(email)
+        forgotPassword(email)
+
+        val (first, second) = emails.sentTo(email, PASSWORD_RESET)
+        resetPassword(first.token, "a brand new passphrase").andExpect { status { isBadRequest() } }
+        resetPassword(second.token, "a brand new passphrase").andExpect { status { isNoContent() } }
+    }
+
+    @Test
+    fun `a too-short new password is rejected and the link still works`() {
+        val email = uniqueEmail()
+        register(email)
+        forgotPassword(email)
+        val token = emails.sentTo(email, PASSWORD_RESET).single().token
+
+        resetPassword(token, "short").andExpect { status { isBadRequest() } }
+        resetPassword(token, "a brand new passphrase").andExpect { status { isNoContent() } }
+    }
+
     @Test
     fun `endpoints planned for later steps return 501`() {
-        mockMvc
-            .post("/api/v1/auth/forgot-password") {
-                contentType = MediaType.APPLICATION_JSON
-                content = """{"email":"a@b.com"}"""
-            }.andExpect { status { isNotImplemented() } }
+        mockMvc.get("/api/v1/auth/google").andExpect { status { isNotImplemented() } }
     }
 }

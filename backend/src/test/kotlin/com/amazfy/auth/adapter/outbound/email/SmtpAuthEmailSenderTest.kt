@@ -38,6 +38,7 @@ class SmtpAuthEmailSenderTest {
                     it.host = mailpit.host
                     it.port = mailpit.getMappedPort(1025)
                 },
+            executor = { it.run() }, // send right away, so the email is in Mailpit when the test looks
             from = "Amazfy <no-reply@amazfy.local>",
             frontendBaseUrl = "http://localhost:5173",
         )

@@ -107,6 +107,13 @@ class UserPersistenceAdapter(
 
     override fun findById(id: UUID): User? = userJpa.findById(id).orElse(null)?.toDomain()
 
+    override fun updatePasswordHash(
+        id: UUID,
+        passwordHash: String,
+    ) {
+        identityJpa.findByUserIdAndProvider(id, UserIdentityEntity.PASSWORD)!!.passwordHash = passwordHash
+    }
+
     override fun markEmailVerified(
         id: UUID,
         at: Instant,
