@@ -39,7 +39,8 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Email-sending port `AuthEmailSender` + SMTP adapter (plain-text verification and reset emails, links to frontend pages), tested against a Mailpit container | Done |
 | Email verification: sign-up sends a 24 h link (after commit, so a mail outage never undoes a sign-up), `verify-email` (single use), `resend-verification` (old links stop working); resend rate limit comes with brute-force limits | Done |
 | Password reset: `forgot-password` (always 202), `reset-password` (1 h single-use link, logs out all sessions, counts as email verification); emails sent in the background so timing reveals nothing | Done |
-| Brute-force limits (login, plus forgot-password and resend-verification emails) | Next |
+| Brute-force limiter: V5 `auth_attempts` (hashed keys, hourly clean-up), `AttemptLimiter` (sliding window), 429 with `Retry-After` | Done |
+| Brute-force limits applied: login per email and per IP, forgot-password, resend-verification; client IP behind a proxy | Next |
 | Accounts, memberships, `accountAccess`, `@TenantId`, tenant-isolation tests | To do |
 | Google login | To do |
 | Frontend: login, sign-up, onboarding, account switcher | To do |

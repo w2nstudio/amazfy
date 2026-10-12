@@ -110,6 +110,26 @@ interface OneTimeTokenRepository {
     )
 }
 
+/** Storage for recent attempts (brute-force limits). Keys arrive already hashed. */
+interface AttemptRepository {
+    fun record(
+        keyHash: String,
+        at: Instant,
+    )
+
+    /** When the [n]-th most recent attempt after [since] happened, or null if there were fewer than [n]. */
+    fun nthLatestSince(
+        keyHash: String,
+        n: Int,
+        since: Instant,
+    ): Instant?
+
+    fun deleteAll(keyHash: String)
+
+    /** Returns how many rows were deleted. */
+    fun deleteOlderThan(cutoff: Instant): Int
+}
+
 /** A stored refresh token (only its hash). */
 data class StoredRefreshToken(
     val id: UUID,
