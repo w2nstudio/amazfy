@@ -26,7 +26,7 @@ git clone git@github.com:w2nstudio/amazfy.git
 cd amazfy
 ```
 
-### 3. Start the local database
+### 3. Start the local database and mail server
 
 Start Docker Desktop and wait for *Engine running*, then in the repository root:
 
@@ -34,7 +34,7 @@ Start Docker Desktop and wait for *Engine running*, then in the repository root:
 docker compose up -d
 ```
 
-This runs PostgreSQL 18 on `localhost:5432` (database, user and password: `amazfy`). Tables are created automatically by Flyway when the backend starts.
+This runs PostgreSQL 18 on `localhost:5432` (database, user and password: `amazfy`) and Mailpit, a fake email server. Tables are created automatically by Flyway when the backend starts. Emails the backend sends (e.g. verification links) never leave your machine: read them at http://localhost:8025.
 
 ### 4. Run the backend
 

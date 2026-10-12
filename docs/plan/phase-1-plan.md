@@ -34,7 +34,8 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Account module core: domain, AccountService, JPA adapter (create with owner, list, role, rename) | Done |
 | Auth core: users, bcrypt passwords, register and login rules (AuthService), business error mapping | Done |
 | Email + password endpoints: JWT access token, register/login/refresh/logout/logout-all over HTTP, refresh rotation with reuse detection, security wiring, field errors on 400 | Done |
-| Email verification, password reset, Mailpit | Next |
+| Mailpit in Docker Compose, Spring mail starter, `MAIL_*` / `FRONTEND_BASE_URL` settings (mail health check off) | Done |
+| Email verification and password reset, in parts: one-time token table → email-sending port + SMTP adapter → verify/resend endpoints → forgot/reset endpoints | Next |
 | Brute-force limits | To do |
 | Accounts, memberships, `accountAccess`, `@TenantId`, tenant-isolation tests | To do |
 | Google login | To do |

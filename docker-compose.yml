@@ -17,5 +17,14 @@ services:
       timeout: 3s
       retries: 10
 
+  # Fake email server: catches every email the backend sends, so nothing reaches real inboxes.
+  # Read the emails in the web UI at http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.31
+    container_name: amazfy-mailpit
+    ports:
+      - "1025:1025" # SMTP: the backend sends emails here
+      - "8025:8025" # web UI
+
 volumes:
   postgres-data:
