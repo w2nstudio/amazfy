@@ -2,6 +2,7 @@ package com.amazfy.auth.application.port
 
 import com.amazfy.auth.domain.Email
 import com.amazfy.auth.domain.User
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -40,6 +41,24 @@ interface AccessTokenIssuer {
         userId: UUID,
         expiresAt: Instant,
     ): String
+}
+
+/**
+ * Sends the auth module's emails. The application decides what to send; the adapter builds the link and the wording.
+ * `token` is the raw one-time token: it goes into the link and is never stored (only its hash is).
+ */
+interface AuthEmailSender {
+    fun sendEmailVerification(
+        to: Email,
+        token: String,
+        validFor: Duration,
+    )
+
+    fun sendPasswordReset(
+        to: Email,
+        token: String,
+        validFor: Duration,
+    )
 }
 
 /** A stored refresh token (only its hash). */
