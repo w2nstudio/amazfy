@@ -6,8 +6,11 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 
-/** Creates refresh tokens and their hashes. The raw token goes to the browser (cookie); only the hash is stored. */
-object RefreshTokenCodec {
+/**
+ * Creates secret tokens (refresh tokens, email links) and their hashes.
+ * The raw token goes to the user (cookie or email link); only the hash is stored.
+ */
+object SecretTokenCodec {
     private val random = SecureRandom()
     private const val TOKEN_BYTES = 32 // 256 bits of randomness: impossible to guess
 

@@ -1,6 +1,7 @@
 package com.amazfy.auth.application.port
 
 import com.amazfy.auth.domain.Email
+import com.amazfy.auth.domain.OneTimeTokenPurpose
 import com.amazfy.auth.domain.User
 import java.time.Duration
 import java.time.Instant
@@ -18,6 +19,14 @@ interface UserRepository {
 
     /** The user and their password hash, or null if no user with a password login has this email. */
     fun findPasswordLogin(email: Email): PasswordLogin?
+
+    fun findById(id: UUID): User?
+
+    /** Sets the verification time; a user who is already verified keeps the first time. */
+    fun markEmailVerified(
+        id: UUID,
+        at: Instant,
+    )
 }
 
 data class PasswordLogin(
@@ -58,6 +67,40 @@ interface AuthEmailSender {
         to: Email,
         token: String,
         validFor: Duration,
+    )
+}
+
+/** A stored one-time token (only its hash). */
+data class StoredOneTimeToken(
+    val id: UUID,
+    val userId: UUID,
+    val purpose: OneTimeTokenPurpose,
+    val expiresAt: Instant,
+    val usedAt: Instant?,
+)
+
+/** Storage for the tokens in emailed links (verification, password reset). */
+interface OneTimeTokenRepository {
+    fun save(
+        userId: UUID,
+        purpose: OneTimeTokenPurpose,
+        tokenHash: String,
+        expiresAt: Instant,
+    )
+
+    fun findByHash(tokenHash: String): StoredOneTimeToken?
+
+    /** Marks the token used. False if it was already used, e.g. the link was clicked twice at the same moment. */
+    fun markUsed(
+        id: UUID,
+        at: Instant,
+    ): Boolean
+
+    /** Marks the user's unused tokens of this purpose as used, so only the newest link works. */
+    fun invalidateOpen(
+        userId: UUID,
+        purpose: OneTimeTokenPurpose,
+        at: Instant,
     )
 }
 

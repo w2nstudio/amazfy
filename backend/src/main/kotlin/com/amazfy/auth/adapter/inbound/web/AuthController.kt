@@ -50,11 +50,17 @@ class AuthController(
         return ResponseEntity.noContent().build()
     }
 
+    override fun verifyEmail(tokenRequest: TokenRequest): ResponseEntity<Unit> {
+        authService.verifyEmail(tokenRequest.token)
+        return ResponseEntity.noContent().build()
+    }
+
+    override fun resendVerification(): ResponseEntity<Unit> {
+        authService.resendVerification(currentUserId())
+        return ResponseEntity.noContent().build()
+    }
+
     // Built in later M1 steps (see docs/plan/phase-1-plan.md)
-    override fun verifyEmail(tokenRequest: TokenRequest): ResponseEntity<Unit> = throw NotImplementedYetException("Email verification")
-
-    override fun resendVerification(): ResponseEntity<Unit> = throw NotImplementedYetException("Email verification")
-
     override fun forgotPassword(forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<Unit> =
         throw NotImplementedYetException("Password reset")
 
