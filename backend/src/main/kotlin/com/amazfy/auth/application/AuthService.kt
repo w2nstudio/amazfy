@@ -4,12 +4,16 @@ import com.amazfy.account.application.AccountService
 import com.amazfy.auth.application.port.AuthEmailSender
 import com.amazfy.auth.application.port.OneTimeTokenRepository
 import com.amazfy.auth.application.port.PasswordHasher
+import com.amazfy.auth.application.port.RefreshTokenRepository
+import com.amazfy.auth.application.port.StoredOneTimeToken
 import com.amazfy.auth.application.port.UserRepository
 import com.amazfy.auth.domain.Email
 import com.amazfy.auth.domain.EmailAlreadyRegisteredException
 import com.amazfy.auth.domain.InvalidCredentialsException
 import com.amazfy.auth.domain.InvalidOneTimeTokenException
+import com.amazfy.auth.domain.OneTimeTokenPurpose
 import com.amazfy.auth.domain.OneTimeTokenPurpose.EMAIL_VERIFICATION
+import com.amazfy.auth.domain.OneTimeTokenPurpose.PASSWORD_RESET
 import com.amazfy.auth.domain.RawPassword
 import com.amazfy.auth.domain.SecretTokenCodec
 import com.amazfy.auth.domain.User
@@ -21,9 +25,10 @@ import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.Clock
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
-/** Sign-up, email/password login and email verification. Tokens for a login session come from TokenService. */
+/** Sign-up, email/password login, email verification and password reset. Tokens for a login session come from TokenService. */
 @Service
 @Transactional(readOnly = true)
 class AuthService(
@@ -31,9 +36,11 @@ class AuthService(
     private val passwordHasher: PasswordHasher,
     private val accountService: AccountService,
     private val oneTimeTokens: OneTimeTokenRepository,
+    private val refreshTokens: RefreshTokenRepository,
     private val emailSender: AuthEmailSender,
     private val clock: Clock,
     @param:Value("\${amazfy.auth.email-verification-ttl}") private val emailVerificationTtl: Duration,
+    @param:Value("\${amazfy.auth.password-reset-ttl}") private val passwordResetTtl: Duration,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -82,9 +89,7 @@ class AuthService(
     @Transactional
     fun verifyEmail(rawToken: String) {
         val now = clock.instant()
-        val token = oneTimeTokens.findByHash(SecretTokenCodec.hash(rawToken))
-        val usable = token != null && token.purpose == EMAIL_VERIFICATION && token.usedAt == null && token.expiresAt.isAfter(now)
-        if (!usable || !oneTimeTokens.markUsed(token.id, now)) throw InvalidOneTimeTokenException()
+        val token = consume(rawToken, EMAIL_VERIFICATION, now)
         users.markEmailVerified(token.userId, now)
     }
 
@@ -95,15 +100,71 @@ class AuthService(
         if (!user.emailVerified) startEmailVerification(user)
     }
 
-    private fun startEmailVerification(user: User) {
+    /**
+     * Sends a reset link if the email belongs to a user with a password login. Says nothing either way (the caller
+     * always answers 202), so nobody can find out which emails have an account. Older reset links stop working.
+     */
+    @Transactional
+    fun forgotPassword(email: String) {
+        val login = runCatching { Email.of(email) }.getOrNull()?.let { users.findPasswordLogin(it) } ?: return
+        val rawToken = issueOneTimeToken(login.user.id, PASSWORD_RESET, passwordResetTtl)
+        afterCommit { sendSafely(login.user.id) { emailSender.sendPasswordReset(login.user.email, rawToken, passwordResetTtl) } }
+    }
+
+    /**
+     * Sets a new password with the token from the reset email and logs the user out everywhere (a thief who knew the
+     * old password loses access). The password rules are checked first, so a rejected password doesn't use up the link.
+     * Opening the link also proves the user owns the email, so it counts as verified.
+     */
+    @Transactional
+    fun resetPassword(
+        rawToken: String,
+        newPassword: String,
+    ) {
+        val validPassword = RawPassword.of(newPassword)
         val now = clock.instant()
-        oneTimeTokens.invalidateOpen(user.id, EMAIL_VERIFICATION, now)
+        val token = consume(rawToken, PASSWORD_RESET, now)
+        users.updatePasswordHash(token.userId, passwordHasher.hash(validPassword.value))
+        users.markEmailVerified(token.userId, now)
+        refreshTokens.revokeAllForUser(token.userId, now)
+    }
+
+    private fun startEmailVerification(user: User) {
+        val rawToken = issueOneTimeToken(user.id, EMAIL_VERIFICATION, emailVerificationTtl)
+        afterCommit { sendSafely(user.id) { emailSender.sendEmailVerification(user.email, rawToken, emailVerificationTtl) } }
+    }
+
+    /** Stores a new token (only its hash) and returns the raw one for the email link. Older open tokens stop working. */
+    private fun issueOneTimeToken(
+        userId: UUID,
+        purpose: OneTimeTokenPurpose,
+        validFor: Duration,
+    ): String {
+        val now = clock.instant()
+        oneTimeTokens.invalidateOpen(userId, purpose, now)
         val rawToken = SecretTokenCodec.newToken()
-        oneTimeTokens.save(user.id, EMAIL_VERIFICATION, SecretTokenCodec.hash(rawToken), now.plus(emailVerificationTtl))
-        afterCommit {
-            runCatching { emailSender.sendEmailVerification(user.email, rawToken, emailVerificationTtl) }
-                .onFailure { log.warn("Verification email to user {} could not be sent; they can resend it", user.id, it) }
-        }
+        oneTimeTokens.save(userId, purpose, SecretTokenCodec.hash(rawToken), now.plus(validFor))
+        return rawToken
+    }
+
+    /** Uses up a token from an email link; one error for unknown, expired, used or wrong-purpose tokens. */
+    private fun consume(
+        rawToken: String,
+        purpose: OneTimeTokenPurpose,
+        now: Instant,
+    ): StoredOneTimeToken {
+        val token = oneTimeTokens.findByHash(SecretTokenCodec.hash(rawToken))
+        val usable = token != null && token.purpose == purpose && token.usedAt == null && token.expiresAt.isAfter(now)
+        if (!usable || !oneTimeTokens.markUsed(token.id, now)) throw InvalidOneTimeTokenException()
+        return token
+    }
+
+    /** A failed email is logged, never thrown: the user can ask for a new one. */
+    private fun sendSafely(
+        userId: UUID,
+        send: () -> Unit,
+    ) {
+        runCatching(send).onFailure { log.warn("Email to user {} could not be sent; they can request it again", userId, it) }
     }
 
     /**

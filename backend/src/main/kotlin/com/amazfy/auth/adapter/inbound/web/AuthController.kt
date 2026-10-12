@@ -60,12 +60,17 @@ class AuthController(
         return ResponseEntity.noContent().build()
     }
 
-    // Built in later M1 steps (see docs/plan/phase-1-plan.md)
-    override fun forgotPassword(forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<Unit> =
-        throw NotImplementedYetException("Password reset")
+    override fun forgotPassword(forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<Unit> {
+        authService.forgotPassword(forgotPasswordRequest.email)
+        return ResponseEntity.accepted().build()
+    }
 
-    override fun resetPassword(resetPasswordRequest: ResetPasswordRequest): ResponseEntity<Unit> =
-        throw NotImplementedYetException("Password reset")
+    override fun resetPassword(resetPasswordRequest: ResetPasswordRequest): ResponseEntity<Unit> {
+        authService.resetPassword(resetPasswordRequest.token, resetPasswordRequest.newPassword)
+        return ResponseEntity.noContent().build()
+    }
+
+    // Built in a later M1 step (see docs/plan/phase-1-plan.md)
 
     override fun startGoogleLogin(): ResponseEntity<Unit> = throw NotImplementedYetException("Google login")
 
