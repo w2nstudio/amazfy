@@ -34,9 +34,11 @@ In the menu: **APIs & Services → OAuth consent screen** (Google also calls thi
 Then:
 
 - **Data access** (or *Scopes*): add `openid`, `.../auth/userinfo.email` and `.../auth/userinfo.profile`. These are "non-sensitive" scopes and need no review by Google.
-- **Audience → Test users**: add the Gmail addresses you'll test with. While the app is in **Testing** status, only these users can sign in.
+- **Audience → Test users**: add your own Gmail address and those of anyone else who will try Google sign-in (up to 100).
 
-Publishing the app for everyone ("In production") needs Google's brand verification: privacy policy, home page and an owned domain. That is a pre-beta task (see requirements, *External setup checklist*), not needed for development.
+**Why test users?** A new app starts in **Testing** status: Google lets only the listed test users sign in. Anyone else gets Google's "Access blocked" page. With an empty list, nobody can use Google sign-in, not even you. This affects only Google sign-in; email + password sign-up works for everyone.
+
+**Later, for real sellers:** Audience → **Publish app** switches the status to **In production**, and any Google account can sign in. Because Amazfy asks only for basic profile scopes (name, email), Google's full app review isn't needed, but Google may ask for brand verification (home page, privacy policy, a domain we own) before it shows the app name and logo. That is a pre-beta task (see requirements, *External setup checklist*), not needed for development.
 
 ## 3. Create the OAuth client
 
