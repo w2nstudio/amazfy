@@ -14,7 +14,7 @@ import org.springframework.web.util.UriComponentsBuilder
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** GET /auth/google with a (fake) Google client configured: redirect to Google plus the round-trip cookie. */
+/** GET /auth/google and its callback with a (fake) Google client configured. The exchange with Google: GoogleOidcProviderTest. */
 @Import(TestcontainersConfiguration::class)
 @SpringBootTest(
     properties = [
@@ -23,7 +23,7 @@ import kotlin.test.assertTrue
     ],
 )
 @AutoConfigureMockMvc
-class GoogleLoginStartTest {
+class GoogleLoginEndpointsTest {
     @Autowired
     lateinit var mockMvc: MockMvc
 
@@ -74,5 +74,44 @@ class GoogleLoginStartTest {
                 .getCookie(AuthController.GOOGLE_LOGIN_COOKIE)!!
                 .value
         assertTrue(first != second)
+    }
+
+    @Test
+    fun `callback without the round-trip cookie goes to the login page with an error and deletes the cookie`() {
+        mockMvc.get("/api/v1/auth/google/callback?state=s&code=c").andExpect {
+            status { isFound() }
+            header { string(HttpHeaders.LOCATION, "http://localhost:5173/login?error=google") }
+            cookie { maxAge(AuthController.GOOGLE_LOGIN_COOKIE, 0) }
+        }
+    }
+
+    @Test
+    fun `callback with a forged state is rejected`() {
+        val roundTrip =
+            mockMvc
+                .get("/api/v1/auth/google")
+                .andReturn()
+                .response
+                .getCookie(AuthController.GOOGLE_LOGIN_COOKIE)!!
+
+        mockMvc.get("/api/v1/auth/google/callback?state=forged&code=c") { cookie(roundTrip) }.andExpect {
+            header { string(HttpHeaders.LOCATION, "http://localhost:5173/login?error=google") }
+        }
+    }
+
+    @Test
+    fun `cancelling on Google's page goes back to the login page without an error`() {
+        val roundTrip =
+            mockMvc
+                .get("/api/v1/auth/google")
+                .andReturn()
+                .response
+                .getCookie(AuthController.GOOGLE_LOGIN_COOKIE)!!
+        val state = roundTrip.value.split(".")[0]
+
+        mockMvc.get("/api/v1/auth/google/callback?state=$state&error=access_denied") { cookie(roundTrip) }.andExpect {
+            status { isFound() }
+            header { string(HttpHeaders.LOCATION, "http://localhost:5173/login") }
+        }
     }
 }

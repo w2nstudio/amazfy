@@ -255,7 +255,14 @@ paths:
       parameters:
         - name: code
           in: query
-          required: true
+          description: One-time code from Google. Missing when the user cancelled or sign-in failed (then `error` is set).
+          required: false
+          schema:
+            type: string
+        - name: error
+          in: query
+          description: Set by Google instead of `code`, e.g. `access_denied` when the user pressed Cancel.
+          required: false
           schema:
             type: string
         - name: state

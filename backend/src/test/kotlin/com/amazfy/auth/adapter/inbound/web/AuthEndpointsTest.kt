@@ -349,9 +349,4 @@ class AuthEndpointsTest {
 
         resend().andExpect { status { isTooManyRequests() } }
     }
-
-    @Test
-    fun `endpoints planned for later steps return 501`() {
-        mockMvc.get("/api/v1/auth/google/callback?code=c&state=s").andExpect { status { isNotImplemented() } }
-    }
 }

@@ -9,11 +9,15 @@ import com.amazfy.api.generated.model.ResetPasswordRequest
 import com.amazfy.api.generated.model.TokenRequest
 import com.amazfy.auth.application.AuthService
 import com.amazfy.auth.application.GoogleLoginService
+import com.amazfy.auth.application.GoogleRoundTrip
+import com.amazfy.auth.application.GoogleSignInCancelledException
 import com.amazfy.auth.application.TokenService
 import com.amazfy.auth.application.Tokens
+import com.amazfy.auth.domain.GoogleLoginFailedException
 import com.amazfy.common.error.NotImplementedYetException
 import com.amazfy.common.security.currentUserId
 import jakarta.servlet.http.HttpServletRequest
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -31,7 +35,10 @@ class AuthController(
     private val googleLoginService: GoogleLoginService,
     private val request: HttpServletRequest, // a proxy to the current request
     @param:Value("\${amazfy.auth.cookie-secure}") private val cookieSecure: Boolean,
+    @param:Value("\${amazfy.frontend-base-url}") private val frontendBaseUrl: String,
 ) : AuthApi {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     override fun register(registerRequest: RegisterRequest): ResponseEntity<AuthTokens> {
         val registration = authService.register(registerRequest.email, registerRequest.password, registerRequest.accountName)
         return withTokens(HttpStatus.CREATED, tokenService.issueFor(registration.user.id))
@@ -80,26 +87,63 @@ class AuthController(
         val start = googleLoginService.start()
         val cookie =
             ResponseCookie
-                .from(GOOGLE_LOGIN_COOKIE, listOf(start.state, start.codeVerifier, start.nonce).joinToString("."))
+                .from(GOOGLE_LOGIN_COOKIE, with(start.roundTrip) { listOf(state, codeVerifier, nonce) }.joinToString("."))
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite("Lax") // Lax, not Strict: the browser must send it when Google redirects back to us
-                .path("/api/v1/auth/google")
+                .path(GOOGLE_LOGIN_PATH)
                 .maxAge(Duration.ofMinutes(10))
                 .build()
-        return ResponseEntity
-            .status(HttpStatus.FOUND)
-            .location(URI.create(start.redirectUrl))
-            .header(HttpHeaders.SET_COOKIE, cookie.toString())
-            .build()
+        return redirect(start.redirectUrl, cookie)
     }
 
-    // Built in a later M1 step (see docs/plan/phase-1-plan.md)
-
+    /**
+     * Google sends the browser back here. Checks the round trip and Google's ID token, then redirects to the frontend.
+     * The round-trip cookie is always deleted: each sign-in attempt can be completed only once.
+     */
     override fun completeGoogleLogin(
-        code: String,
         state: String,
-    ): ResponseEntity<Unit> = throw NotImplementedYetException("Google login")
+        code: String?,
+        error: String?,
+    ): ResponseEntity<Unit> {
+        val roundTrip =
+            request.cookies
+                ?.firstOrNull { it.name == GOOGLE_LOGIN_COOKIE }
+                ?.value
+                ?.split(".")
+                ?.takeIf { it.size == 3 }
+                ?.let { GoogleRoundTrip(state = it[0], codeVerifier = it[1], nonce = it[2]) }
+        val deleteCookie =
+            ResponseCookie
+                .from(GOOGLE_LOGIN_COOKIE, "")
+                .path(GOOGLE_LOGIN_PATH)
+                .maxAge(Duration.ZERO)
+                .build()
+
+        val frontendPath =
+            try {
+                val identity = googleLoginService.complete(code, error, state, roundTrip)
+                log.debug("Google sign-in verified for Google user {}", identity.subject)
+                // Next step: find or create the Amazfy user and log them in
+                throw NotImplementedYetException("Google login")
+            } catch (e: GoogleSignInCancelledException) {
+                "/login" // the user's own choice: no error message
+            } catch (e: GoogleLoginFailedException) {
+                log.info("Google sign-in failed: {}", e.message)
+                "/login?error=google"
+            }
+        return redirect(frontendBaseUrl + frontendPath, deleteCookie)
+    }
+
+    private fun redirect(
+        url: String,
+        cookie: ResponseCookie,
+    ): ResponseEntity<Unit> =
+        ResponseEntity
+            .status(HttpStatus.FOUND)
+            .location(URI.create(url))
+            .header(HttpHeaders.SET_COOKIE, cookie.toString())
+            .build()
 
     private fun withTokens(
         status: HttpStatus,
@@ -136,5 +180,6 @@ class AuthController(
 
         /** Holds state, PKCE code verifier and nonce during the round trip through Google (10 minutes). */
         const val GOOGLE_LOGIN_COOKIE = "amazfy_google_login"
+        private const val GOOGLE_LOGIN_PATH = "/api/v1/auth/google"
     }
 }
