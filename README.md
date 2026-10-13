@@ -91,6 +91,7 @@ cd frontend && npm run lint && npm run format:check && npm run build
 - [Phase 1 requirements](docs/requirements/phase-1-requirements.md): scope, user stories, data model, architecture, external APIs
 - [Phase 1 development plan](docs/plan/phase-1-plan.md): milestones and current progress
 - [Google Ads primer](docs/guides/google-ads-primer.md): how Google Ads works and how Amazfy maps ads to Amazon products
+- [Google login setup](docs/guides/google-login-setup.md): Google Cloud steps for "Sign in with Google" and where local secrets go
 - [OpenAPI and contract-first development](docs/guides/openapi-contract-first.md): how the API contract and code generation work
 - [Docker guide](docs/guides/docker-guide.md): Docker basics, our usage, commands and troubleshooting
 - [API testing guide](docs/guides/api-testing-guide.md): try the endpoints by hand with Postman (import, token scripts, walkthroughs)
