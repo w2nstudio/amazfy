@@ -93,4 +93,5 @@ cd frontend && npm run lint && npm run format:check && npm run build
 - [Google Ads primer](docs/guides/google-ads-primer.md): how Google Ads works and how Amazfy maps ads to Amazon products
 - [OpenAPI and contract-first development](docs/guides/openapi-contract-first.md): how the API contract and code generation work
 - [Docker guide](docs/guides/docker-guide.md): Docker basics, our usage, commands and troubleshooting
+- [API testing guide](docs/guides/api-testing-guide.md): try the endpoints by hand with Postman (import, token scripts, walkthroughs)
 - [Business glossary](docs/guides/business-glossary.md): Amazon and Google Ads terms in plain language
