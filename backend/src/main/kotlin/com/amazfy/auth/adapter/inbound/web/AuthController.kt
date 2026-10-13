@@ -12,6 +12,7 @@ import com.amazfy.auth.application.TokenService
 import com.amazfy.auth.application.Tokens
 import com.amazfy.common.error.NotImplementedYetException
 import com.amazfy.common.security.currentUserId
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -25,6 +26,7 @@ import java.time.Duration
 class AuthController(
     private val authService: AuthService,
     private val tokenService: TokenService,
+    private val request: HttpServletRequest, // a proxy to the current request
     @param:Value("\${amazfy.auth.cookie-secure}") private val cookieSecure: Boolean,
 ) : AuthApi {
     override fun register(registerRequest: RegisterRequest): ResponseEntity<AuthTokens> {
@@ -33,7 +35,7 @@ class AuthController(
     }
 
     override fun login(loginRequest: LoginRequest): ResponseEntity<AuthTokens> {
-        val user = authService.login(loginRequest.email, loginRequest.password)
+        val user = authService.login(loginRequest.email, loginRequest.password, clientIp())
         return withTokens(HttpStatus.OK, tokenService.issueFor(user.id))
     }
 
@@ -61,7 +63,7 @@ class AuthController(
     }
 
     override fun forgotPassword(forgotPasswordRequest: ForgotPasswordRequest): ResponseEntity<Unit> {
-        authService.forgotPassword(forgotPasswordRequest.email)
+        authService.forgotPassword(forgotPasswordRequest.email, clientIp())
         return ResponseEntity.accepted().build()
     }
 
@@ -87,6 +89,12 @@ class AuthController(
             .status(status)
             .header(HttpHeaders.SET_COOKIE, refreshCookie(tokens.refreshToken, tokens.refreshTokenExpiresIn))
             .body(AuthTokens(tokens.accessToken, AuthTokens.TokenType.Bearer, tokens.accessTokenExpiresIn.toSeconds().toInt()))
+
+    /**
+     * The caller's IP address. Behind the hosting platform's proxy, the prod profile makes Tomcat take it from the
+     * proxy's X-Forwarded-For header (server.forward-headers-strategy); locally it is the direct caller.
+     */
+    private fun clientIp(): String = request.remoteAddr
 
     /** HttpOnly: page scripts can't read it. SameSite=Strict: never sent by other sites. Path: only auth endpoints get it. */
     private fun refreshCookie(

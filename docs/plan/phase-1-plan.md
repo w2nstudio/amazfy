@@ -40,8 +40,8 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Email verification: sign-up sends a 24 h link (after commit, so a mail outage never undoes a sign-up), `verify-email` (single use), `resend-verification` (old links stop working); resend rate limit comes with brute-force limits | Done |
 | Password reset: `forgot-password` (always 202), `reset-password` (1 h single-use link, logs out all sessions, counts as email verification); emails sent in the background so timing reveals nothing | Done |
 | Brute-force limiter: V5 `auth_attempts` (hashed keys, hourly clean-up), `AttemptLimiter` (sliding window), 429 with `Retry-After` | Done |
-| Brute-force limits applied: login per email and per IP, forgot-password, resend-verification; client IP behind a proxy | Next |
-| Accounts, memberships, `accountAccess`, `@TenantId`, tenant-isolation tests | To do |
+| Brute-force limits applied: failed logins 5/15 min per email (cleared on success) and 20/15 min per IP; forgot-password 3/h per email and 10/h per IP; resend-verification 3/h per user; client IP via `server.forward-headers-strategy=native` in prod | Done |
+| Accounts, memberships, `accountAccess`, `@TenantId`, tenant-isolation tests | Next |
 | Google login | To do |
 | Frontend: login, sign-up, onboarding, account switcher | To do |
 

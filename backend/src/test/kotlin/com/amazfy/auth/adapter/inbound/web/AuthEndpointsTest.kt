@@ -39,6 +39,9 @@ class AuthEndpointsTest {
 
     private val password = "correct horse battery"
 
+    // Every MockMvc request comes from 127.0.0.1. A fake address per test keeps per-IP limits from adding up across tests.
+    private val ip = "test-ip-${UUID.randomUUID()}"
+
     private fun uniqueEmail() = "john-${UUID.randomUUID()}@aqualife.com"
 
     private fun register(email: String = uniqueEmail()): MvcResult =
@@ -218,6 +221,7 @@ class AuthEndpointsTest {
 
     private fun forgotPassword(email: String) =
         mockMvc.post("/api/v1/auth/forgot-password") {
+            with { it.apply { remoteAddr = ip } }
             contentType = MediaType.APPLICATION_JSON
             content = """{"email":"$email"}"""
         }
@@ -233,7 +237,9 @@ class AuthEndpointsTest {
     private fun login(
         email: String,
         password: String,
+        fromIp: String = ip,
     ) = mockMvc.post("/api/v1/auth/login") {
+        with { it.apply { remoteAddr = fromIp } }
         contentType = MediaType.APPLICATION_JSON
         content = """{"email":"$email","password":"$password"}"""
     }
@@ -287,6 +293,61 @@ class AuthEndpointsTest {
 
         resetPassword(token, "short").andExpect { status { isBadRequest() } }
         resetPassword(token, "a brand new passphrase").andExpect { status { isNoContent() } }
+    }
+
+    @Test
+    fun `after 5 wrong passwords the email is locked for a while, even with the right password`() {
+        val email = uniqueEmail()
+        register(email)
+        repeat(5) { login(email, "wrong password!").andExpect { status { isUnauthorized() } } }
+
+        login(email, password).andExpect {
+            status { isTooManyRequests() }
+            header { exists(HttpHeaders.RETRY_AFTER) }
+            content { contentType(MediaType.APPLICATION_PROBLEM_JSON) }
+            jsonPath("$.detail") { value(containsString("Too many attempts")) }
+        }
+    }
+
+    @Test
+    fun `a successful login clears the email's failed attempts`() {
+        val email = uniqueEmail()
+        register(email)
+        repeat(4) { login(email, "wrong password!") }
+        login(email, password).andExpect { status { isOk() } }
+
+        repeat(4) { login(email, "wrong password!") }
+        login(email, password).andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `after 20 failed logins from one IP that IP is refused, other IPs are not`() {
+        val email = uniqueEmail()
+        register(email)
+        repeat(20) { login(uniqueEmail(), "wrong password!").andExpect { status { isUnauthorized() } } }
+
+        login(email, password).andExpect { status { isTooManyRequests() } }
+        login(email, password, fromIp = "another-ip-${UUID.randomUUID()}").andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `forgot-password is limited to 3 emails per address per hour`() {
+        val email = uniqueEmail()
+        register(email)
+        repeat(3) { forgotPassword(email).andExpect { status { isAccepted() } } }
+
+        forgotPassword(email).andExpect { status { isTooManyRequests() } }
+        assertEquals(3, emails.sentTo(email, PASSWORD_RESET).size)
+    }
+
+    @Test
+    fun `resend-verification is limited to 3 per hour`() {
+        val email = uniqueEmail()
+        val token = register(email).accessToken()
+        val resend = { mockMvc.post("/api/v1/auth/resend-verification") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") } }
+        repeat(3) { resend().andExpect { status { isNoContent() } } }
+
+        resend().andExpect { status { isTooManyRequests() } }
     }
 
     @Test
