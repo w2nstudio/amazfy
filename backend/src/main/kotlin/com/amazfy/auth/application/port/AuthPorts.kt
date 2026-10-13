@@ -1,6 +1,7 @@
 package com.amazfy.auth.application.port
 
 import com.amazfy.auth.domain.Email
+import com.amazfy.auth.domain.GoogleIdentity
 import com.amazfy.auth.domain.OneTimeTokenPurpose
 import com.amazfy.auth.domain.User
 import java.time.Duration
@@ -124,6 +125,16 @@ interface GoogleIdentityProvider {
         codeChallenge: String,
         nonce: String,
     ): String
+
+    /**
+     * Exchanges the code from the callback for Google's ID token and verifies it: signature, issuer, audience (our
+     * client id), expiry and [nonce]. Throws GoogleLoginFailedException if anything is wrong.
+     */
+    fun exchangeCode(
+        code: String,
+        codeVerifier: String,
+        nonce: String,
+    ): GoogleIdentity
 }
 
 /** Storage for recent attempts (brute-force limits). Keys arrive already hashed. */
