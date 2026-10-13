@@ -43,7 +43,9 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Brute-force limits applied: failed logins 5/15 min per email (cleared on success) and 20/15 min per IP; forgot-password 3/h per email and 10/h per IP; resend-verification 3/h per user; client IP via `server.forward-headers-strategy=native` in prod | Done |
 | Account access: `accountAccess` (`AccountAccessGuard`: canView/canEdit/canManage) + `@PreAuthorize`, 403 for non-members; `GET /me`, `POST /accounts`, `GET`/`PATCH /accounts/{id}` | Done |
 | `@TenantId` filtering + tenant-isolation tests: moved to M2, where brands are the first account-owned table to filter | Moved to M2 |
-| Google login | Next |
+| Google login, part 1: settings (optional; 501 without a client id), `secrets-local.properties` (git-ignored), setup guide, `GET /auth/google` redirect with state + PKCE + nonce cookie | Done |
+| Google login, part 2: callback, code exchange, ID token verification | Next |
+| Google login, part 3: find/create/link user, onboarding redirect for new users, tokens | To do |
 | Frontend: login, sign-up, onboarding, account switcher | To do |
 
 ## Repository layout

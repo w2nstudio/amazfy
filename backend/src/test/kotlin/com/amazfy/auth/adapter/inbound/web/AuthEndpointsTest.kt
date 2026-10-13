@@ -352,6 +352,6 @@ class AuthEndpointsTest {
 
     @Test
     fun `endpoints planned for later steps return 501`() {
-        mockMvc.get("/api/v1/auth/google").andExpect { status { isNotImplemented() } }
+        mockMvc.get("/api/v1/auth/google/callback?code=c&state=s").andExpect { status { isNotImplemented() } }
     }
 }

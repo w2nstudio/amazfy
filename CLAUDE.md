@@ -9,6 +9,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - `docs/requirements/phase-1-requirements.md`: scope, user stories, data model, architecture. Source of truth.
 - `docs/plan/phase-1-plan.md`: milestones. Work milestone by milestone; mark progress there.
 - `docs/guides/google-ads-primer.md`: how Google Ads maps to Amazon products.
+- `docs/guides/google-login-setup.md`: Google Cloud project, consent screen, OAuth client for "Sign in with Google"; local secrets go in `backend/secrets-local.properties` (git-ignored, loaded by the local profile).
 - `docs/guides/openapi-contract-first.md`: how the API contract and code generation work; steps to add an endpoint.
 - `docs/guides/docker-guide.md`: Docker basics, how Amazfy uses Docker, commands, troubleshooting. Update it whenever Docker usage changes (the developer is learning Docker).
 - `README.md`: developer setup (install, run, check). Keep it working when setup steps change.

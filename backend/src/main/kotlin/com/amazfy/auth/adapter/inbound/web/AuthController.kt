@@ -8,6 +8,7 @@ import com.amazfy.api.generated.model.RegisterRequest
 import com.amazfy.api.generated.model.ResetPasswordRequest
 import com.amazfy.api.generated.model.TokenRequest
 import com.amazfy.auth.application.AuthService
+import com.amazfy.auth.application.GoogleLoginService
 import com.amazfy.auth.application.TokenService
 import com.amazfy.auth.application.Tokens
 import com.amazfy.common.error.NotImplementedYetException
@@ -19,6 +20,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RestController
+import java.net.URI
 import java.time.Duration
 
 /** Implements the Auth part of api/openapi.yaml. The refresh token travels only in an HttpOnly cookie. */
@@ -26,6 +28,7 @@ import java.time.Duration
 class AuthController(
     private val authService: AuthService,
     private val tokenService: TokenService,
+    private val googleLoginService: GoogleLoginService,
     private val request: HttpServletRequest, // a proxy to the current request
     @param:Value("\${amazfy.auth.cookie-secure}") private val cookieSecure: Boolean,
 ) : AuthApi {
@@ -72,9 +75,26 @@ class AuthController(
         return ResponseEntity.noContent().build()
     }
 
-    // Built in a later M1 step (see docs/plan/phase-1-plan.md)
+    /** Sends the browser to Google's sign-in page; the values to check on the way back wait in a short-lived cookie. */
+    override fun startGoogleLogin(): ResponseEntity<Unit> {
+        val start = googleLoginService.start()
+        val cookie =
+            ResponseCookie
+                .from(GOOGLE_LOGIN_COOKIE, listOf(start.state, start.codeVerifier, start.nonce).joinToString("."))
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite("Lax") // Lax, not Strict: the browser must send it when Google redirects back to us
+                .path("/api/v1/auth/google")
+                .maxAge(Duration.ofMinutes(10))
+                .build()
+        return ResponseEntity
+            .status(HttpStatus.FOUND)
+            .location(URI.create(start.redirectUrl))
+            .header(HttpHeaders.SET_COOKIE, cookie.toString())
+            .build()
+    }
 
-    override fun startGoogleLogin(): ResponseEntity<Unit> = throw NotImplementedYetException("Google login")
+    // Built in a later M1 step (see docs/plan/phase-1-plan.md)
 
     override fun completeGoogleLogin(
         code: String,
@@ -113,5 +133,8 @@ class AuthController(
 
     companion object {
         const val REFRESH_COOKIE = "amazfy_refresh"
+
+        /** Holds state, PKCE code verifier and nonce during the round trip through Google (10 minutes). */
+        const val GOOGLE_LOGIN_COOKIE = "amazfy_google_login"
     }
 }

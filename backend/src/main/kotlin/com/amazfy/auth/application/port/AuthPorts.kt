@@ -110,6 +110,22 @@ interface OneTimeTokenRepository {
     )
 }
 
+/** "Sign in with Google" (OpenID Connect). The adapter knows Google's addresses and Amazfy's client id. */
+interface GoogleIdentityProvider {
+    /** False until a client id is configured; Google login is then unavailable. */
+    val isConfigured: Boolean
+
+    /**
+     * The Google sign-in page to send the browser to. Google sends the browser back to our callback with a code and
+     * the same [state]; [codeChallenge] and [nonce] are checked when that code is exchanged (next step).
+     */
+    fun authorizationUrl(
+        state: String,
+        codeChallenge: String,
+        nonce: String,
+    ): String
+}
+
 /** Storage for recent attempts (brute-force limits). Keys arrive already hashed. */
 interface AttemptRepository {
     fun record(
