@@ -7,6 +7,7 @@ import com.amazfy.auth.application.port.PasswordHasher
 import com.amazfy.auth.application.port.RefreshTokenRepository
 import com.amazfy.auth.application.port.StoredOneTimeToken
 import com.amazfy.auth.application.port.UserRepository
+import com.amazfy.auth.domain.AttemptLimit
 import com.amazfy.auth.domain.Email
 import com.amazfy.auth.domain.EmailAlreadyRegisteredException
 import com.amazfy.auth.domain.InvalidCredentialsException
@@ -38,6 +39,7 @@ class AuthService(
     private val oneTimeTokens: OneTimeTokenRepository,
     private val refreshTokens: RefreshTokenRepository,
     private val emailSender: AuthEmailSender,
+    private val limiter: AttemptLimiter,
     private val clock: Clock,
     @param:Value("\${amazfy.auth.email-verification-ttl}") private val emailVerificationTtl: Duration,
     @param:Value("\${amazfy.auth.password-reset-ttl}") private val passwordResetTtl: Duration,
@@ -67,8 +69,32 @@ class AuthService(
         return Registration(user, account.id)
     }
 
-    /** Returns the user if email and password match; otherwise one generic error (never says which part was wrong). */
+    /**
+     * Returns the user if email and password match; otherwise one generic error (never says which part was wrong).
+     * Failed attempts count per email and per client IP; over the limit, logins are refused for a while (429), even
+     * with the right password, so guessing gains nothing. A successful login clears the email's failures.
+     */
     fun login(
+        email: String,
+        password: String,
+        clientIp: String,
+    ): User {
+        val emailKey = email.trim()
+        limiter.check(LOGIN_FAILURES_PER_IP, clientIp)
+        limiter.check(LOGIN_FAILURES_PER_EMAIL, emailKey)
+        val user =
+            try {
+                checkPassword(email, password)
+            } catch (e: InvalidCredentialsException) {
+                limiter.record(LOGIN_FAILURES_PER_IP, clientIp)
+                limiter.record(LOGIN_FAILURES_PER_EMAIL, emailKey)
+                throw e
+            }
+        limiter.reset(LOGIN_FAILURES_PER_EMAIL, emailKey)
+        return user
+    }
+
+    private fun checkPassword(
         email: String,
         password: String,
     ): User {
@@ -96,6 +122,8 @@ class AuthService(
     /** Sends a fresh link (older links stop working). Does nothing if the email is already verified. */
     @Transactional
     fun resendVerification(userId: UUID) {
+        limiter.check(VERIFICATION_EMAILS_PER_USER, userId.toString())
+        limiter.record(VERIFICATION_EMAILS_PER_USER, userId.toString())
         val user = users.findById(userId) ?: return
         if (!user.emailVerified) startEmailVerification(user)
     }
@@ -103,9 +131,18 @@ class AuthService(
     /**
      * Sends a reset link if the email belongs to a user with a password login. Says nothing either way (the caller
      * always answers 202), so nobody can find out which emails have an account. Older reset links stop working.
+     * Requests count per email and per client IP whether or not the email exists, so the limit reveals nothing either.
      */
     @Transactional
-    fun forgotPassword(email: String) {
+    fun forgotPassword(
+        email: String,
+        clientIp: String,
+    ) {
+        val emailKey = email.trim()
+        limiter.check(RESET_EMAILS_PER_IP, clientIp)
+        limiter.check(RESET_EMAILS_PER_EMAIL, emailKey)
+        limiter.record(RESET_EMAILS_PER_IP, clientIp)
+        limiter.record(RESET_EMAILS_PER_EMAIL, emailKey)
         val login = runCatching { Email.of(email) }.getOrNull()?.let { users.findPasswordLogin(it) } ?: return
         val rawToken = issueOneTimeToken(login.user.id, PASSWORD_RESET, passwordResetTtl)
         afterCommit { sendSafely(login.user.id) { emailSender.sendPasswordReset(login.user.email, rawToken, passwordResetTtl) } }
@@ -165,6 +202,15 @@ class AuthService(
         send: () -> Unit,
     ) {
         runCatching(send).onFailure { log.warn("Email to user {} could not be sent; they can request it again", userId, it) }
+    }
+
+    companion object {
+        // Brute-force limits (see AttemptLimit). Per IP is looser than per email: several people can share an office IP.
+        val LOGIN_FAILURES_PER_EMAIL = AttemptLimit("login-email", max = 5, window = Duration.ofMinutes(15))
+        val LOGIN_FAILURES_PER_IP = AttemptLimit("login-ip", max = 20, window = Duration.ofMinutes(15))
+        val RESET_EMAILS_PER_EMAIL = AttemptLimit("reset-email", max = 3, window = Duration.ofHours(1))
+        val RESET_EMAILS_PER_IP = AttemptLimit("reset-ip", max = 10, window = Duration.ofHours(1))
+        val VERIFICATION_EMAILS_PER_USER = AttemptLimit("verification-user", max = 3, window = Duration.ofHours(1))
     }
 
     /**

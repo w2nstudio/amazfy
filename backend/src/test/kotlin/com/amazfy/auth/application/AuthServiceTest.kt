@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -43,6 +44,9 @@ class AuthServiceTest {
     lateinit var oneTimeTokens: OneTimeTokenRepository
 
     private val password = "correct horse battery"
+
+    // A fresh address per test, so failed logins in one test never trip another test's limits
+    private val testIp = "test-ip-${UUID.randomUUID()}"
 
     @Test
     fun `register creates the user, a hashed password and an owned account`() {
@@ -84,15 +88,16 @@ class AuthServiceTest {
     @Test
     fun `login succeeds with the right password, email in any case`() {
         val registered = authService.register("john@aqualife.com", password, "AquaLife US").user
-        assertEquals(registered.id, authService.login("John@AquaLife.COM", password).id)
+        assertEquals(registered.id, authService.login("John@AquaLife.COM", password, testIp).id)
     }
 
     @Test
     fun `wrong password and unknown email fail the same way`() {
         authService.register("john@aqualife.com", password, "AquaLife US")
-        val wrongPassword = assertFailsWith<InvalidCredentialsException> { authService.login("john@aqualife.com", "wrong password!") }
-        val unknownEmail = assertFailsWith<InvalidCredentialsException> { authService.login("nobody@aqualife.com", password) }
-        val malformedEmail = assertFailsWith<InvalidCredentialsException> { authService.login("nonsense", password) }
+        val wrongPassword =
+            assertFailsWith<InvalidCredentialsException> { authService.login("john@aqualife.com", "wrong password!", testIp) }
+        val unknownEmail = assertFailsWith<InvalidCredentialsException> { authService.login("nobody@aqualife.com", password, testIp) }
+        val malformedEmail = assertFailsWith<InvalidCredentialsException> { authService.login("nonsense", password, testIp) }
         assertEquals(wrongPassword.message, unknownEmail.message)
         assertEquals(wrongPassword.message, malformedEmail.message)
     }
