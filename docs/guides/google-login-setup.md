@@ -15,6 +15,8 @@ What has to exist in Google Cloud so Amazfy can offer "Sign in with Google", and
 
 This is **login only**. Access to the seller's Google Ads data is a separate consent ("Connect Google Ads", milestone M4), even when it's the same Google account.
 
+How the backend implements this, including how the ID token is checked: [Google login implementation](google-login-implementation.md).
+
 ## 1. Create a Google Cloud project
 
 1. Open https://console.cloud.google.com and sign in with the Google account that will own Amazfy's setup (ideally a company account, not a personal one).
