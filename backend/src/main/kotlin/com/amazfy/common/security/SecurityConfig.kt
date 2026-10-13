@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.config.Customizer
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
@@ -17,8 +18,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 /**
  * Every endpoint requires a valid access token unless listed in PUBLIC_ENDPOINTS.
  * Keep PUBLIC_ENDPOINTS in sync with the operations marked `security: []` in api/openapi.yaml.
+ * @EnableMethodSecurity turns on @PreAuthorize, used for account access rules (account/application/AccountAccessGuard).
  */
 @Configuration
+@EnableMethodSecurity
 class SecurityConfig(
     @param:Value("\${amazfy.cors.allowed-origins}") private val allowedOrigins: List<String>,
 ) {
