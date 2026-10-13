@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -55,6 +56,11 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
             .status(HttpStatus.TOO_MANY_REQUESTS)
             .header(HttpHeaders.RETRY_AFTER, maxOf(1, ex.retryAfter.toMillis().plus(999) / 1000).toString())
             .body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.message))
+
+    /** A @PreAuthorize rule said no (e.g. not a member of the account): 403, without saying which rule. */
+    @ExceptionHandler(AccessDeniedException::class)
+    fun handleAccessDenied(ex: AccessDeniedException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "You don't have access to this.")
 
     @ExceptionHandler(Exception::class)
     fun handleUnexpected(ex: Exception): ProblemDetail {

@@ -12,6 +12,7 @@ import com.amazfy.auth.domain.Email
 import com.amazfy.auth.domain.EmailAlreadyRegisteredException
 import com.amazfy.auth.domain.InvalidCredentialsException
 import com.amazfy.auth.domain.InvalidOneTimeTokenException
+import com.amazfy.auth.domain.InvalidRefreshTokenException
 import com.amazfy.auth.domain.OneTimeTokenPurpose
 import com.amazfy.auth.domain.OneTimeTokenPurpose.EMAIL_VERIFICATION
 import com.amazfy.auth.domain.OneTimeTokenPurpose.PASSWORD_RESET
@@ -118,6 +119,9 @@ class AuthService(
         val token = consume(rawToken, EMAIL_VERIFICATION, now)
         users.markEmailVerified(token.userId, now)
     }
+
+    /** The logged-in user. A valid access token for a deleted user counts as an expired session (401). */
+    fun findUser(userId: UUID): User = users.findById(userId) ?: throw InvalidRefreshTokenException()
 
     /** Sends a fresh link (older links stop working). Does nothing if the email is already verified. */
     @Transactional

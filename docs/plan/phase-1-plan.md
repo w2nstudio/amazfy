@@ -41,8 +41,9 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Password reset: `forgot-password` (always 202), `reset-password` (1 h single-use link, logs out all sessions, counts as email verification); emails sent in the background so timing reveals nothing | Done |
 | Brute-force limiter: V5 `auth_attempts` (hashed keys, hourly clean-up), `AttemptLimiter` (sliding window), 429 with `Retry-After` | Done |
 | Brute-force limits applied: failed logins 5/15 min per email (cleared on success) and 20/15 min per IP; forgot-password 3/h per email and 10/h per IP; resend-verification 3/h per user; client IP via `server.forward-headers-strategy=native` in prod | Done |
-| Accounts, memberships, `accountAccess`, `@TenantId`, tenant-isolation tests | Next |
-| Google login | To do |
+| Account access: `accountAccess` (`AccountAccessGuard`: canView/canEdit/canManage) + `@PreAuthorize`, 403 for non-members; `GET /me`, `POST /accounts`, `GET`/`PATCH /accounts/{id}` | Done |
+| `@TenantId` filtering + tenant-isolation tests: moved to M2, where brands are the first account-owned table to filter | Moved to M2 |
+| Google login | Next |
 | Frontend: login, sign-up, onboarding, account switcher | To do |
 
 ## Repository layout
@@ -74,7 +75,7 @@ amazfy/
 | --- | --- | --- | --- |
 | M0 | Project setup | Backend and frontend skeletons, Postgres via Docker Compose, Flyway, OpenAPI code generation, production-grade baseline (see below) | Docker Desktop and Node 22 installed |
 | M1 | Auth and accounts | Own authentication: email + password sign-up and login, email verification, password reset, rotating refresh tokens, brute-force limits, Google login; Mailpit for local email. Accounts + memberships, `accountAccess` authorization, `@TenantId`, account switcher, tenant-isolation tests (A1, A2) | M0 |
-| M2 | Catalog | Brands and products CRUD with ASIN + marketplace validation; UI pages (A5) | M1 |
+| M2 | Catalog | `@TenantId` account filtering and tenant-isolation tests (from M1); brands and products CRUD with ASIN + marketplace validation; UI pages (A5) | M1 |
 | M3 | Reporting core + CSV import | Campaign/AdGroup/Ad and daily metric tables; Attribution CSV import; dashboard summary, drill-down and trend chart on imported data (A10–A13) | M2, a real Attribution export (sample data until then) |
 | M4 | Google Ads connector | Google OAuth, pick Google Ads account, sync campaigns/ad groups/ads and daily spend per ad, ASIN auto-matching, unmatched-ads screen (A4, A6, A7, A9 spend) | M3, Google Test access |
 | M5 | Amazon connector | Login with Amazon, pick advertiser, macro tag fetch and tracking-template update with approval, daily Attribution sync re-pulling 14 days (A3, A8, A9 sales) | M4, Amazon Ads API approval |
