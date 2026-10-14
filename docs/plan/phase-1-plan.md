@@ -45,8 +45,8 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | `@TenantId` filtering + tenant-isolation tests: moved to M2, where brands are the first account-owned table to filter | Moved to M2 |
 | Google login, part 1: settings (optional; 501 without a client id), `secrets-local.properties` (git-ignored), setup guide, `GET /auth/google` redirect with state + PKCE + nonce cookie | Done |
 | Google login, part 2: callback checks state (cookie), exchanges the code (PKCE + secret), verifies the ID token (signature via Google's keys, issuer, audience, expiry, nonce); cancel → `/login`, failure → `/login?error=google`; tested against a fake Google | Done |
-| Google login, part 3: find/create/link user, onboarding redirect for new users, tokens | Next |
-| Frontend: login, sign-up, onboarding, account switcher | To do |
+| Google login, part 3: user by Google `sub`, else link by verified email (never-verified password users lose their password and sessions), else new user → `/onboarding`; refresh cookie set on the callback | Done |
+| Frontend: login, sign-up, onboarding, account switcher | Next |
 
 ## Repository layout
 

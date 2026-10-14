@@ -14,7 +14,6 @@ import com.amazfy.auth.application.GoogleSignInCancelledException
 import com.amazfy.auth.application.TokenService
 import com.amazfy.auth.application.Tokens
 import com.amazfy.auth.domain.GoogleLoginFailedException
-import com.amazfy.common.error.NotImplementedYetException
 import com.amazfy.common.security.currentUserId
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
@@ -94,7 +93,7 @@ class AuthController(
                 .path(GOOGLE_LOGIN_PATH)
                 .maxAge(Duration.ofMinutes(10))
                 .build()
-        return redirect(start.redirectUrl, cookie)
+        return redirect(start.redirectUrl, listOf(cookie.toString()))
     }
 
     /**
@@ -120,29 +119,31 @@ class AuthController(
                 .maxAge(Duration.ZERO)
                 .build()
 
+        val cookies = mutableListOf(deleteCookie.toString())
         val frontendPath =
             try {
-                val identity = googleLoginService.complete(code, error, state, roundTrip)
-                log.debug("Google sign-in verified for Google user {}", identity.subject)
-                // Next step: find or create the Amazfy user and log them in
-                throw NotImplementedYetException("Google login")
+                val login = authService.loginWithGoogle(googleLoginService.complete(code, error, state, roundTrip))
+                // Logged in: the refresh cookie is set here; the frontend then calls /auth/refresh for an access token
+                val tokens = tokenService.issueFor(login.userId)
+                cookies += refreshCookie(tokens.refreshToken, tokens.refreshTokenExpiresIn)
+                if (login.needsOnboarding) "/onboarding" else "/"
             } catch (e: GoogleSignInCancelledException) {
                 "/login" // the user's own choice: no error message
             } catch (e: GoogleLoginFailedException) {
                 log.info("Google sign-in failed: {}", e.message)
                 "/login?error=google"
             }
-        return redirect(frontendBaseUrl + frontendPath, deleteCookie)
+        return redirect(frontendBaseUrl + frontendPath, cookies)
     }
 
     private fun redirect(
         url: String,
-        cookie: ResponseCookie,
+        cookies: List<String>,
     ): ResponseEntity<Unit> =
         ResponseEntity
             .status(HttpStatus.FOUND)
             .location(URI.create(url))
-            .header(HttpHeaders.SET_COOKIE, cookie.toString())
+            .header(HttpHeaders.SET_COOKIE, *cookies.toTypedArray())
             .build()
 
     private fun withTokens(

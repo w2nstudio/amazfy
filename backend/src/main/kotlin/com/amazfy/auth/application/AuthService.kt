@@ -10,6 +10,8 @@ import com.amazfy.auth.application.port.UserRepository
 import com.amazfy.auth.domain.AttemptLimit
 import com.amazfy.auth.domain.Email
 import com.amazfy.auth.domain.EmailAlreadyRegisteredException
+import com.amazfy.auth.domain.GoogleIdentity
+import com.amazfy.auth.domain.GoogleLoginFailedException
 import com.amazfy.auth.domain.InvalidCredentialsException
 import com.amazfy.auth.domain.InvalidOneTimeTokenException
 import com.amazfy.auth.domain.InvalidRefreshTokenException
@@ -120,6 +122,44 @@ class AuthService(
         users.markEmailVerified(token.userId, now)
     }
 
+    /**
+     * Finds or creates the Amazfy user for a verified Google sign-in (the identity comes from GoogleLoginService):
+     * 1. Known Google account (by Google's permanent id): that user, even if their Gmail address changed since.
+     * 2. Otherwise a user with the same email gets this Google login added ("linking"), so both ways work.
+     *    If that user never verified their email, whoever set their password never proved they own the inbox (it
+     *    could be someone who signed up with another person's address): their password is removed and their
+     *    sessions end. The Google owner has proved the inbox is theirs.
+     * 3. Otherwise a new user, email already verified, with no account yet: onboarding asks for the account name.
+     */
+    @Transactional
+    fun loginWithGoogle(identity: GoogleIdentity): GoogleLogin {
+        if (!identity.emailVerified) throw GoogleLoginFailedException("Google hasn't verified this email address")
+        val now = clock.instant()
+        val email = Email.of(identity.email)
+
+        val user =
+            users.findByIdentity(GOOGLE, identity.subject)
+                ?: users.findByEmail(email)?.also { linkGoogle(it, identity.subject) }
+                ?: users.createWithIdentity(email, GOOGLE, identity.subject, verifiedAt = now)
+        users.markEmailVerified(user.id, now)
+        return GoogleLogin(userId = user.id, needsOnboarding = accountService.accessibleAccounts(user.id).isEmpty())
+    }
+
+    private fun linkGoogle(
+        user: User,
+        googleSubject: String,
+    ) {
+        // A user has at most one Google login; a different Google account with the same email is refused
+        if (users.findIdentitySubject(user.id, GOOGLE) != null) {
+            throw GoogleLoginFailedException("this email is already linked to another Google account")
+        }
+        if (!user.emailVerified) {
+            users.removePasswordLogin(user.id)
+            refreshTokens.revokeAllForUser(user.id, clock.instant())
+        }
+        users.addIdentity(user.id, GOOGLE, googleSubject)
+    }
+
     /** The logged-in user. A valid access token for a deleted user counts as an expired session (401). */
     fun findUser(userId: UUID): User = users.findById(userId) ?: throw InvalidRefreshTokenException()
 
@@ -209,6 +249,9 @@ class AuthService(
     }
 
     companion object {
+        /** Provider name in user_identities for Google logins. */
+        const val GOOGLE = "google"
+
         // Brute-force limits (see AttemptLimit). Per IP is looser than per email: several people can share an office IP.
         val LOGIN_FAILURES_PER_EMAIL = AttemptLimit("login-email", max = 5, window = Duration.ofMinutes(15))
         val LOGIN_FAILURES_PER_IP = AttemptLimit("login-ip", max = 20, window = Duration.ofMinutes(15))
@@ -229,6 +272,12 @@ class AuthService(
         )
     }
 }
+
+/** Result of a Google sign-in: who logged in, and whether they still need to create their first account. */
+data class GoogleLogin(
+    val userId: UUID,
+    val needsOnboarding: Boolean,
+)
 
 /** Only the account id crosses into this module: another module's domain types stay inside it (ArchitectureTest). */
 data class Registration(
