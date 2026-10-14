@@ -23,6 +23,36 @@ interface UserRepository {
 
     fun findById(id: UUID): User?
 
+    /** The user with this login identity, e.g. provider "google" and Google's permanent user id. */
+    fun findByIdentity(
+        provider: String,
+        subject: String,
+    ): User?
+
+    fun findByEmail(email: Email): User?
+
+    /** The subject of the user's identity at [provider], or null if they have none there. */
+    fun findIdentitySubject(
+        userId: UUID,
+        provider: String,
+    ): String?
+
+    /** Creates a user whose only login is the given identity; the email counts as verified at [verifiedAt]. */
+    fun createWithIdentity(
+        email: Email,
+        provider: String,
+        subject: String,
+        verifiedAt: Instant,
+    ): User
+
+    fun addIdentity(
+        userId: UUID,
+        provider: String,
+        subject: String,
+    )
+
+    fun removePasswordLogin(userId: UUID)
+
     /** Replaces the hash of the user's password login. */
     fun updatePasswordHash(
         id: UUID,

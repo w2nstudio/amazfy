@@ -2,7 +2,7 @@
 
 How "Sign in with Google" works inside Amazfy: the flow, the security values, and how the ID token from Google is checked. For the Google Cloud setup (project, consent screen, client ID and secret) see [Google login setup](google-login-setup.md).
 
-Status: the round trip and the token check are built (M1, Google login parts 1 and 2). Finding or creating the Amazfy user and logging them in is part 3.
+Status: complete on the backend (M1, Google login parts 1–3). The frontend pages (login button, onboarding) come at the end of M1.
 
 ## The big picture
 
@@ -28,7 +28,9 @@ sequenceDiagram
     G-->>A: ID token (signed JWT)
     A->>G: (once, cached) Google's public keys
     A->>A: check signature, issuer, audience, expiry, nonce
-    A-->>B: 302 to the frontend (cookie deleted)
+    A->>A: find, link or create the Amazfy user; issue a refresh token
+    A-->>B: 302 to the frontend + refresh cookie (round-trip cookie deleted)
+    B->>A: POST /api/v1/auth/refresh (the frontend asks for an access token)
 ```
 
 ## Where the code lives
@@ -40,6 +42,7 @@ sequenceDiagram
 | Port | `auth/application/port/AuthPorts.kt` → `GoogleIdentityProvider` | What the application needs from Google, without knowing how |
 | Google adapter | `auth/adapter/outbound/google/GoogleOidcProvider.kt` | Builds the sign-in URL, calls Google's token endpoint, checks the ID token |
 | Result | `auth/domain/GoogleIdentity.kt` | Who Google says signed in; `GoogleLoginFailedException` |
+| Which user | `auth/application/AuthService.kt` → `loginWithGoogle` | Finds, links or creates the Amazfy user (step 6) |
 | Settings | `application.properties`, `application-local.properties`, `backend/secrets-local.properties` (git-ignored) | Client ID, secret, redirect URI, Google's endpoints |
 | Contract | `api/openapi.yaml` → `/api/v1/auth/google`, `/api/v1/auth/google/callback` | Both are browser navigations (302), not fetch calls |
 
@@ -158,20 +161,45 @@ Checks 1–4 are configured once on the decoder (`setJwtValidator(...)`); check 
 `GoogleIdentity(subject, email, emailVerified, name)`:
 
 - **`subject`** (`sub`): Google's permanent ID for the person. It **never changes**, while the email can (people rename accounts). That's why Amazfy will match Google logins by subject, stored in `user_identities (provider = 'google', subject)`, not by email.
-- **`email`, `emailVerified`**: Google says whether it verified the address. Part 3 links a Google login to an existing password user with the same email **only if** `email_verified` is true.
+- **`email`, `emailVerified`**: Google says whether it verified the address. A Google sign-in is accepted **only if** `email_verified` is true (step 6).
 - **`name`**: for display only.
 
 We never store Google's tokens: the ID token is used once and dropped. (Google Ads access, M4, is a separate consent with its own stored, encrypted token.)
+
+## Step 6: which Amazfy user (`AuthService.loginWithGoogle`)
+
+Google has told us *who* signed in; now we decide *which Amazfy user* that is. Logins are stored in `user_identities (user_id, provider, subject)`: a user can have a `password` identity, a `google` identity (subject = Google's `sub`), or both.
+
+| # | Situation | What happens |
+| --- | --- | --- |
+| 0 | Google says the email is **not verified** | Refused (`/login?error=google`): an unverified email can't be trusted for anything below |
+| 1 | A `google` identity with this `sub` exists | That user, **even if their Gmail address changed** since (we match by `sub`, never by email) |
+| 2 | No such identity, but a user **with this email** exists | **Linking**: a `google` identity is added to that user, so they can sign in with password or Google |
+| 3 | Nobody known | A **new user**: email marked verified (Google verified it), only a `google` identity, **no account yet** |
+
+Afterwards the email always counts as verified, and the result says whether the user still needs onboarding (no account yet).
+
+**The pre-registration trap (in case 2).** Someone could sign up with `victim@gmail.com` and a password they know, without ever verifying the email. If the real owner later signs in with Google and we simply linked, the squatter's password would still open the user. So when the existing user's email was **never verified**, linking also **removes their password login and revokes all their sessions** (refresh tokens). The Google owner proved the inbox is theirs; whoever set the password never did. A verified user keeps their password: they proved the inbox earlier.
+
+**One Google account per user.** If the user is already linked to a *different* Google account (another `sub`) and a second Google account with the same email signs in, it is refused rather than silently switching.
+
+## Logging the user in
+
+After step 6 the callback calls `TokenService.issueFor(userId)`, the same as a password login, and answers with **two `Set-Cookie` headers**: the refresh cookie `amazfy_refresh` (`HttpOnly`, `SameSite=Strict`, path `/api/v1/auth`) and the deleted round-trip cookie.
+
+The **access token is not in the redirect**: a URL ends up in browser history and logs. The frontend page the browser lands on calls `POST /api/v1/auth/refresh`, which uses the cookie and returns an access token, exactly like a page reload after a password login.
+
+`SameSite=Strict` doesn't get in the way here: it limits when a cookie is *sent*, not when it is *stored*. The cookie is stored from the callback response, and the frontend's own refresh call is same-site, so it is sent.
 
 ## Where the browser ends up
 
 | Outcome | Redirect | Shown to the user (frontend pages, end of M1) |
 | --- | --- | --- |
-| Signed in (part 3) | frontend home, or onboarding for a new user | — |
+| Signed in, has an account | `{FRONTEND_BASE_URL}/` | the dashboard |
+| Signed in, no account yet (new Google user) | `{FRONTEND_BASE_URL}/onboarding` | "What's your business called?" → `POST /api/v1/accounts` |
 | Cancelled on Google's page | `{FRONTEND_BASE_URL}/login` | nothing; it was their choice |
 | Any failure | `{FRONTEND_BASE_URL}/login?error=google` | a generic "Google sign-in failed, please try again" (the reason stays in the backend log, so attackers learn nothing) |
 
-Until part 3 exists, a fully verified sign-in ends with **501** "Google login is not available yet."
 
 ## Settings
 
@@ -190,6 +218,8 @@ Without a client ID, Google login is simply off (501); the rest of the backend w
 | --- | --- |
 | `GoogleOidcProviderTest` | The real adapter against a **fake Google**: a local HTTP server (JDK `HttpServer`) with a token endpoint and a JWK set, signing ID tokens with its own RSA key. Valid token accepted; wrong nonce, wrong audience, wrong issuer, expired token, a token signed by a different key with the same `kid`, and a refused code are all rejected. Also checks the exchange sends code, PKCE verifier and client credentials. |
 | `GoogleLoginServiceTest` | State mismatch is rejected **before** Google is called; missing cookie fails; Cancel is reported as cancelled; verifier and nonce from the cookie reach the exchange. |
+| `GoogleUserLinkingTest` | Step 6 against a real database: new user (verified, no account), returning user after a Gmail rename, linking to a verified user (password still works), linking to a never-verified user (password removed, sessions revoked), unverified Google email refused, second Google account refused. |
+| `GoogleLoginCompleteTest` | The whole flow over HTTP with a fake Google: callback → `/onboarding` with a refresh cookie → `refresh` gives an access token → `/me` → create the account → next sign-in goes to `/`. Also: both `Set-Cookie` headers in one response. |
 | `GoogleLoginEndpointsTest` | The redirect to Google (all parameters, cookie attributes, challenge = SHA-256 of the cookie's verifier); callback without cookie, with forged state, and after Cancel redirect to the right frontend page and delete the cookie. |
 
 Tests never call the real Google. To try the real thing, follow the setup guide and open http://localhost:8080/api/v1/auth/google in a browser.
