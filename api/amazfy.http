@@ -203,5 +203,7 @@ Content-Type: application/json
 #   http://localhost:5173/onboarding   first Google sign-in: a new user without an account yet
 #   http://localhost:5173/             a user who already has an account
 #   http://localhost:5173/login?error=google   something failed (the backend log says why)
-# The page itself only works once the frontend is built (end of M1). The login worked if the browser now has the
-# amazfy_refresh cookie: F12 → Application (Chrome) / Storage (Firefox) → Cookies → http://localhost:8080.
+# The page itself only works once the frontend is built (end of M1). To see whether the login worked, open
+# http://localhost:8080/api/v1/auth/refresh (it answers "Method 'GET' is not supported", harmless), then
+# F12 → Application (Chrome) / Storage (Firefox) → Cookies → http://localhost:8080: look for amazfy_refresh.
+# The cookie only shows on pages under /api/v1/auth, because it is only sent there (Path=/api/v1/auth).
