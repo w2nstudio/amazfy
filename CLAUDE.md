@@ -12,7 +12,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - `docs/guides/google-login-setup.md`: Google Cloud project, consent screen, OAuth client for "Sign in with Google"; local secrets go in `backend/secrets-local.properties` (git-ignored, loaded by the local profile).
 - `docs/guides/openapi-contract-first.md`: how the API contract and code generation work; steps to add an endpoint.
 - `docs/guides/docker-guide.md`: Docker basics, how Amazfy uses Docker, commands, troubleshooting. Update it whenever Docker usage changes (the developer is learning Docker).
-- `docs/guides/api-testing-guide.md`: testing endpoints by hand with Postman (import `api/openapi.yaml`, token scripts, walkthroughs per feature). Add a walkthrough when an endpoint becomes usable.
+- `docs/guides/api-testing-guide.md`: testing endpoints by hand with Postman (import `api/openapi.yaml`, token scripts, walkthroughs per feature) or VS Code REST Client (`api/amazfy.http`). When an endpoint becomes usable, add a walkthrough and a request in `api/amazfy.http`.
 - `README.md`: developer setup (install, run, check). Keep it working when setup steps change.
 - `docs/guides/business-glossary.md`: Amazon and Google Ads terms. **Append-only**: add new terms at the end (`**Term** — explanation.`) without reading or rewriting the file.
 
