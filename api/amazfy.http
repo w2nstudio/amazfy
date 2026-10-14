@@ -1,0 +1,201 @@
+### Amazfy API: requests to try by hand
+#
+# For the VS Code extension "REST Client" (humao.rest-client; VS Code suggests it for this repository).
+# Click "Send Request" above a request; the response opens on the right.
+# Before you start: docker compose up -d, then bootRun in backend/ (see docs/guides/api-testing-guide.md).
+#
+# Requests marked "# @name" keep their response, and later requests read values from it,
+# e.g. {{login.response.body.$.accessToken}}. So run them in order: Register → Login → the rest.
+# Change @email (and @otherEmail) when you start over: sign-up refuses an email that already exists (409).
+
+@baseUrl = http://localhost:8080/api/v1
+@mailpit = http://localhost:8025/api/v1
+@email = john@aqualife.com
+@password = correct horse battery
+@otherEmail = jane@othershop.com
+
+# Filled from responses; no need to edit
+@accessToken = {{login.response.body.$.accessToken}}
+@refreshCookie = {{login.response.headers.Set-Cookie}}
+@accountId = {{me.response.body.$.accounts[0].account.id}}
+
+
+############################################################
+# System
+############################################################
+
+### Is the backend up?
+GET http://localhost:8080/actuator/health
+
+### Backend version
+GET {{baseUrl}}/system/info
+
+
+############################################################
+# Sign up and log in
+############################################################
+
+### Register: creates the user, their first account and an owner membership (201)
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "accountName": "AquaLife US"
+}
+
+### Login (200): its access token and refresh cookie are used by the requests below
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Login with a wrong password (401). Five in 15 minutes lock the email: then even the right password gets 429.
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "wrong password!"
+}
+
+### Who am I? The user and their accounts (200)
+# @name me
+GET {{baseUrl}}/me
+Authorization: Bearer {{accessToken}}
+
+### Without a token (401)
+GET {{baseUrl}}/me
+
+
+############################################################
+# Session: refresh and logout
+############################################################
+
+### Refresh: a new access token and a new refresh cookie (200).
+# Works once per login: the cookie used here is now "spent"; sending it again gives 401 and ends that session
+# (reuse detection). Run Login again to get a fresh cookie.
+POST {{baseUrl}}/auth/refresh
+Cookie: {{refreshCookie}}
+
+### Logout this browser (204); refreshing afterwards gives 401
+POST {{baseUrl}}/auth/logout
+Cookie: {{refreshCookie}}
+
+### Logout everywhere: all sessions of this user (204)
+POST {{baseUrl}}/auth/logout-all
+Authorization: Bearer {{accessToken}}
+
+
+############################################################
+# Email verification (emails arrive in Mailpit: http://localhost:8025)
+############################################################
+
+### The newest email in Mailpit: find the link in "Text" and copy the part after "token="
+GET {{mailpit}}/message/latest
+
+### Verify the email with that token (204); the same token again gives 400
+# @prompt mailToken Paste the token from the email link (the part after token=)
+POST {{baseUrl}}/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "{{mailToken}}"
+}
+
+### Send a new verification link (204); older links stop working. More than 3 per hour: 429
+POST {{baseUrl}}/auth/resend-verification
+Authorization: Bearer {{accessToken}}
+
+
+############################################################
+# Forgot and reset password
+############################################################
+
+### Ask for a reset email (always 202, also for unknown emails). More than 3 per hour for one email: 429
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "{{email}}"
+}
+
+### Set a new password with the token from the reset email (204). Logs out every session.
+# Afterwards log in with the new password (and update @password above if you continue).
+# @prompt resetToken Paste the token from the reset email link (the part after token=)
+POST {{baseUrl}}/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "{{resetToken}}",
+  "newPassword": "a brand new passphrase"
+}
+
+
+############################################################
+# Accounts (run "Who am I?" first: @accountId comes from it)
+############################################################
+
+### Add a second account; the caller becomes its owner (201)
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "AquaLife EU"
+}
+
+### One account (200)
+GET {{baseUrl}}/accounts/{{accountId}}
+Authorization: Bearer {{accessToken}}
+
+### Rename it (owner only, 200)
+PATCH {{baseUrl}}/accounts/{{accountId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "AquaLife North America"
+}
+
+
+############################################################
+# Access rules: a second user can't reach the first user's account
+############################################################
+
+### Register a second user
+# @name registerOther
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{otherEmail}}",
+  "password": "{{password}}",
+  "accountName": "Other Shop"
+}
+
+### The second user reads the first user's account: 403
+GET {{baseUrl}}/accounts/{{accountId}}
+Authorization: Bearer {{registerOther.response.body.$.accessToken}}
+
+### ... and can't rename it either: 403
+PATCH {{baseUrl}}/accounts/{{accountId}}
+Authorization: Bearer {{registerOther.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Hijacked"
+}
+
+
+############################################################
+# Google login: a browser flow, not a request to send from here
+############################################################
+#
+# Open http://localhost:8080/api/v1/auth/google in your browser (needs the setup in docs/guides/google-login-setup.md).

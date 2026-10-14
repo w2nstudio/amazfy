@@ -95,5 +95,5 @@ cd frontend && npm run lint && npm run format:check && npm run build
 - [Google login implementation](docs/guides/google-login-implementation.md): the sign-in flow, its security values and how Google's ID token is checked
 - [OpenAPI and contract-first development](docs/guides/openapi-contract-first.md): how the API contract and code generation work
 - [Docker guide](docs/guides/docker-guide.md): Docker basics, our usage, commands and troubleshooting
-- [API testing guide](docs/guides/api-testing-guide.md): try the endpoints by hand with Postman (import, token scripts, walkthroughs)
+- [API testing guide](docs/guides/api-testing-guide.md): try the endpoints by hand with Postman or with `api/amazfy.http` in VS Code (REST Client)
 - [Business glossary](docs/guides/business-glossary.md): Amazon and Google Ads terms in plain language

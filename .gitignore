@@ -23,7 +23,7 @@ coverage/
 # IDEs and OS
 .idea/
 *.iml
-.vscode/
+.vscode/*
 !.vscode/extensions.json
 .DS_Store
 Thumbs.db

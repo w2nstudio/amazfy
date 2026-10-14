@@ -137,7 +137,17 @@ Each walkthrough lists the requests in order and what you should see. Use a new 
 | **400** with `errors` | Invalid input; each entry names the field (`email`, `password`, ...). |
 | No email in Mailpit | `docker compose up -d`; check http://localhost:8025 loads. Emails are sent in the background, so wait a second. |
 
-## 5. Without Postman
+## 5. In VS Code: `api/amazfy.http`
+
+`api/amazfy.http` holds ready-made requests for every endpoint, in the order of the walkthroughs above. It needs the VS Code extension **REST Client** (`humao.rest-client`); VS Code suggests it when you open the repository.
+
+1. Open `api/amazfy.http`; each request has a **Send Request** link above it. The response opens on the right.
+2. Run **Register**, then **Login**: later requests take the access token and refresh cookie from the Login response automatically (`{{login.response.body.$.accessToken}}`).
+3. Run **Who am I?** before the account requests: they take the account id from it.
+4. Requests that need a token from an email (verify, reset) ask for it in a box at the top of VS Code: run **The newest email in Mailpit** and copy the part after `token=`.
+5. To start over, change `@email` at the top of the file (sign-up refuses an existing email).
+
+## 6. Without Postman
 
 The same calls work from a terminal with `curl` (Git Bash), for example:
 
