@@ -46,7 +46,9 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Google login, part 1: settings (optional; 501 without a client id), `secrets-local.properties` (git-ignored), setup guide, `GET /auth/google` redirect with state + PKCE + nonce cookie | Done |
 | Google login, part 2: callback checks state (cookie), exchanges the code (PKCE + secret), verifies the ID token (signature via Google's keys, issuer, audience, expiry, nonce); cancel → `/login`, failure → `/login?error=google`; tested against a fake Google | Done |
 | Google login, part 3: user by Google `sub`, else link by verified email (never-verified password users lose their password and sessions), else new user → `/onboarding`; refresh cookie set on the callback | Done |
-| Frontend: login, sign-up, onboarding, account switcher | Next |
+| Frontend F1: `apiFetch` (access token in memory, auto-refresh on 401, `ApiError`), session restore on page load, `RequireAuth`, Login page, home with accounts and logout | Done |
+| Frontend F2: sign-up, verify-email, forgot/reset-password pages | Next |
+| Frontend F3: Google button, onboarding, account switcher | To do |
 
 ## Repository layout
 
