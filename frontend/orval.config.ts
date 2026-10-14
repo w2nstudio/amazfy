@@ -12,6 +12,12 @@ export default defineConfig({
       client: 'react-query',
       httpClient: 'fetch',
       clean: true,
+      override: {
+        // Every call goes through our fetch: adds the access token, renews it, throws ApiError on errors
+        mutator: { path: 'src/api/client.ts', name: 'apiFetch' },
+        // Errors are thrown (see apiFetch), so responses are typed as the success case only
+        fetch: { forceSuccessResponse: true },
+      },
     },
   },
 })
