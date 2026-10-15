@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 import { RequireAuth } from '@/auth/RequireAuth'
+import { CreateAccountPage } from '@/pages/CreateAccountPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -19,7 +20,11 @@ export const router = createBrowserRouter([
   { path: '/reset-password', element: <ResetPasswordPage /> },
   {
     element: <RequireAuth />,
-    children: [{ path: '/', element: <HomePage /> }],
+    children: [
+      { path: '/', element: <HomePage /> },
+      { path: '/onboarding', element: <CreateAccountPage firstAccount /> },
+      { path: '/accounts/new', element: <CreateAccountPage firstAccount={false} /> },
+    ],
   },
   { path: '*', element: <NotFoundPage /> },
 ])

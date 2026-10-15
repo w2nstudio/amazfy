@@ -26,5 +26,45 @@ services:
       - "1025:1025" # SMTP: the backend sends emails here
       - "8025:8025" # web UI
 
+  # Database browser: view tables and run SQL in the web UI at http://localhost:5050
+  # Runs in desktop mode (no pgAdmin login). The amazfy server is pre-registered;
+  # the first time you open it, enter password "amazfy" and tick "Save password".
+  pgadmin:
+    image: dpage/pgadmin4:9.17
+    container_name: amazfy-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@amazfy.dev
+      PGADMIN_DEFAULT_PASSWORD: amazfy # local development only
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    configs:
+      - source: pgadmin-servers
+        target: /pgadmin4/servers.json
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+configs:
+  pgadmin-servers:
+    content: |
+      {
+        "Servers": {
+          "1": {
+            "Name": "amazfy (local)",
+            "Group": "Servers",
+            "Host": "postgres",
+            "Port": 5432,
+            "MaintenanceDB": "amazfy",
+            "Username": "amazfy",
+            "SSLMode": "prefer"
+          }
+        }
+      }
+
 volumes:
   postgres-data:
+  pgadmin-data:
