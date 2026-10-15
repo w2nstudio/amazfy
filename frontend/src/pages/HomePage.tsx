@@ -1,5 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
+import { AccountSwitcher } from '@/account/AccountSwitcher'
+import { useCurrentAccount } from '@/account/currentAccount'
 import { errorMessage, setAccessToken } from '@/api/client'
 import { useLogout, useResendVerification } from '@/api/generated/auth/auth'
 import { useGetMe } from '@/api/generated/me/me'
@@ -27,6 +29,7 @@ export function HomePage() {
   }
 
   const user = me.data?.data
+  const { current } = useCurrentAccount()
 
   // Until the email is confirmed: a reminder with a way to get the link again
   const verificationBanner = user && !user.emailVerified && <VerifyEmailBanner email={user.email} />
@@ -34,7 +37,10 @@ export function HomePage() {
   return (
     <main className="mx-auto flex min-h-svh max-w-2xl flex-col gap-8 p-6">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Amazfy</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-semibold tracking-tight">Amazfy</h1>
+          <AccountSwitcher />
+        </div>
         <div className="flex items-center gap-3 text-sm">
           <span className="text-muted-foreground">{user?.email}</span>
           <Button variant="outline" size="sm" onClick={logOut} disabled={logout.isPending}>
@@ -46,14 +52,11 @@ export function HomePage() {
       {verificationBanner}
 
       <section className="flex flex-col gap-2">
-        <h2 className="font-medium">Your accounts</h2>
-        <ul className="flex flex-col gap-1 text-sm">
-          {user?.accounts.map(({ account, role }) => (
-            <li key={account.id}>
-              {account.name} <span className="text-muted-foreground">({role.toLowerCase()})</span>
-            </li>
-          ))}
-        </ul>
+        <h2 className="text-xl font-medium">{current?.account.name}</h2>
+        <p className="text-sm text-muted-foreground">
+          You are the {current?.role.toLowerCase()} of this account. Brands, products and the dashboard arrive here in
+          the next milestones.
+        </p>
       </section>
 
       <p className="mt-auto text-xs text-muted-foreground">

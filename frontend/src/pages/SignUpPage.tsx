@@ -5,6 +5,7 @@ import { errorMessage, setAccessToken } from '@/api/client'
 import { useRegister } from '@/api/generated/auth/auth'
 import { useGetMe } from '@/api/generated/me/me'
 import { AuthCard, Field, FormMessage } from '@/components/AuthCard'
+import { GoogleButton } from '@/components/GoogleButton'
 import { Button } from '@/components/ui/button'
 
 // Sign-up: creates the user, their first account (the business) and logs them in right away.
@@ -86,6 +87,9 @@ export function SignUpPage() {
           {register.isPending ? 'Creating your account…' : 'Create account'}
         </Button>
       </form>
+      <div className="mt-4">
+        <GoogleButton />
+      </div>
     </AuthCard>
   )
 }

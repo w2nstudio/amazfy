@@ -5,6 +5,7 @@ import { errorMessage, setAccessToken } from '@/api/client'
 import { useLogin } from '@/api/generated/auth/auth'
 import { useGetMe } from '@/api/generated/me/me'
 import { AuthCard, Field, FormMessage } from '@/components/AuthCard'
+import { GoogleButton } from '@/components/GoogleButton'
 import { Button } from '@/components/ui/button'
 
 // Messages for ?error=... set by the backend's redirects (e.g. a failed Google sign-in)
@@ -88,6 +89,9 @@ export function LoginPage() {
           {login.isPending ? 'Logging in…' : 'Log in'}
         </Button>
       </form>
+      <div className="mt-4">
+        <GoogleButton />
+      </div>
     </AuthCard>
   )
 }

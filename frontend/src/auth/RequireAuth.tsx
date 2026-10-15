@@ -3,7 +3,7 @@ import { ApiError } from '@/api/client'
 import { useGetMe } from '@/api/generated/me/me'
 
 // Wraps every page that needs a logged-in user (see router.tsx). Not logged in → the login page, which sends the
-// user back here afterwards (?next=...).
+// user back here afterwards (?next=...). Logged in without any account yet (e.g. a new Google user) → onboarding.
 export function RequireAuth() {
   const me = useGetMe()
   const location = useLocation()
@@ -14,6 +14,9 @@ export function RequireAuth() {
     return <Navigate to={`/login?next=${next}`} replace />
   }
   if (me.isError) return <CenteredMessage>Can't reach the Amazfy server. Please try again in a moment.</CenteredMessage>
+  if (me.data.data.accounts.length === 0 && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />
+  }
   return <Outlet />
 }
 

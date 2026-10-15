@@ -48,7 +48,7 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Google login, part 3: user by Google `sub`, else link by verified email (never-verified password users lose their password and sessions), else new user → `/onboarding`; refresh cookie set on the callback | Done |
 | Frontend F1: `apiFetch` (access token in memory, auto-refresh on 401, `ApiError`), session restore on page load, `RequireAuth`, Login page, home with accounts and logout | Done |
 | Frontend F2: sign-up, verify-email (+ reminder banner with resend on home), forgot/reset-password pages, shared `AuthCard`/`Field` form pieces | Done |
-| Frontend F3: Google button, onboarding, account switcher | Next |
+| Frontend F3: "Continue with Google" button, onboarding (`RequireAuth` sends users without an account to `/onboarding`), current account (`useCurrentAccount`, remembered in localStorage) with switcher and "Add account" | Done |
 
 ## Repository layout
 
