@@ -1,13 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router'
-import { ApiError, setAccessToken } from '@/api/client'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
+import { errorMessage, setAccessToken } from '@/api/client'
 import { useLogin } from '@/api/generated/auth/auth'
 import { useGetMe } from '@/api/generated/me/me'
+import { AuthCard, Field, FormMessage } from '@/components/AuthCard'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
 // Messages for ?error=... set by the backend's redirects (e.g. a failed Google sign-in)
 const redirectErrors: Record<string, string> = {
@@ -46,56 +44,50 @@ export function LoginPage() {
     )
   }
 
-  const redirectError = redirectErrors[searchParams.get('error') ?? '']
-  const errorMessage =
-    login.error instanceof ApiError
-      ? login.error.message
-      : login.error
-        ? 'Something went wrong. Please try again.'
-        : redirectError
+  const message = errorMessage(login.error) ?? redirectErrors[searchParams.get('error') ?? '']
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Log in to Amazfy</CardTitle>
-          <CardDescription>External traffic, measured in Amazon sales.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            {errorMessage && (
-              <p role="alert" className="text-sm text-destructive">
-                {errorMessage}
-              </p>
-            )}
-            <Button type="submit" disabled={login.isPending}>
-              {login.isPending ? 'Logging in…' : 'Log in'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </main>
+    <AuthCard
+      title="Log in to Amazfy"
+      description="External traffic, measured in Amazon sales."
+      footer={
+        <>
+          <Link to="/forgot-password" className="underline-offset-4 hover:underline">
+            Forgot your password?
+          </Link>
+          <span>
+            New to Amazfy?{' '}
+            <Link to="/signup" className="text-foreground underline-offset-4 hover:underline">
+              Create an account
+            </Link>
+          </span>
+        </>
+      }
+    >
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <Field
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <Field
+          id="password"
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <FormMessage error>{message}</FormMessage>
+        <Button type="submit" disabled={login.isPending}>
+          {login.isPending ? 'Logging in…' : 'Log in'}
+        </Button>
+      </form>
+    </AuthCard>
   )
 }

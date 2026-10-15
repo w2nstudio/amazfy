@@ -39,6 +39,12 @@ export class ApiError extends Error {
   }
 }
 
+/** The message to show for a failed request: the backend's safe text, or a generic one for network trouble. */
+export function errorMessage(error: unknown): string | undefined {
+  if (!error) return undefined
+  return error instanceof ApiError ? error.message : 'Something went wrong. Please try again.'
+}
+
 /** One refresh at a time: requests failing together all wait for the same refresh instead of each starting one. */
 let refreshing: Promise<boolean> | null = null
 
