@@ -49,3 +49,7 @@ Plain-language explanations of business terms as they come up while building Ama
 **CPA** — Cost per acquisition = spend ÷ purchases. $600 spend, 50 orders → CPA $12.
 
 **Conversion rate** — Purchases ÷ clicks × 100. 1,000 clicks, 35 orders → 3.5%.
+
+**Product (listing)** — In Amazfy, one Amazon listing in one marketplace: ASIN + marketplace + a name the seller recognises, always under one brand. The same ASIN sold on amazon.com and amazon.co.uk is two products, because sales, prices and currency differ per marketplace. Example: `B0AAA11111` in US, "Aquarium filter 40L", brand AquaLife.
+
+**Variation** — A version of a product that differs in size, colour or similar (e.g. filter 40L and filter 80L). On Amazon each variation has its own ASIN, so in Amazfy each variation the seller advertises is its own product.

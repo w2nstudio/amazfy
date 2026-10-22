@@ -27,6 +27,10 @@ tags:
     description: The logged-in user
   - name: Accounts
     description: Seller accounts (one per Amazon seller account) and the user's access to them
+  - name: Brands
+    description: The seller's brands (registered in Amazon Brand Registry). Every product belongs to one.
+  - name: Products
+    description: Amazon listings, each identified by ASIN + marketplace, linked to a brand
 
 paths:
   /api/v1/system/info:
@@ -362,6 +366,200 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  # ---------- Catalog (account-scoped: any member may read, owners and editors may change) ----------
+
+  /api/v1/accounts/{accountId}/brands:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Brands]
+      operationId: listBrands
+      summary: The account's brands, sorted by name
+      responses:
+        "200":
+          description: Brands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Brand"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Brands]
+      operationId: createBrand
+      summary: Add a brand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandRequest"
+      responses:
+        "201":
+          description: Brand created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brand"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/accounts/{accountId}/brands/{brandId}:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+      - $ref: "#/components/parameters/BrandId"
+    patch:
+      tags: [Brands]
+      operationId: renameBrand
+      summary: Rename a brand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandRequest"
+      responses:
+        "200":
+          description: Brand renamed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brand"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      tags: [Brands]
+      operationId: deleteBrand
+      summary: Remove a brand that has no products
+      description: A brand with products can't be removed (409); move or remove its products first, so no product is ever left without a brand.
+      responses:
+        "204":
+          description: Brand removed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/accounts/{accountId}/products:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Products]
+      operationId: listProducts
+      summary: The account's products, sorted by brand, then name
+      parameters:
+        - name: brandId
+          in: query
+          required: false
+          description: Only this brand's products
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Products]
+      operationId: createProduct
+      summary: Add a product (an Amazon listing) to a brand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductCreateRequest"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/accounts/{accountId}/products/{productId}:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+      - $ref: "#/components/parameters/ProductId"
+    patch:
+      tags: [Products]
+      operationId: updateProduct
+      summary: Rename a product or move it to another brand
+      description: ASIN and marketplace can't change; they identify the listing. To track a different listing, add a new product.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdateRequest"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Products]
+      operationId: deleteProduct
+      summary: Remove a product
+      responses:
+        "204":
+          description: Product removed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -372,6 +570,20 @@ components:
   parameters:
     AccountId:
       name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BrandId:
+      name: brandId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ProductId:
+      name: productId
       in: path
       required: true
       schema:
@@ -405,6 +617,18 @@ components:
             $ref: "#/components/schemas/Problem"
     Forbidden:
       description: Logged in, but no access to this account or not allowed for this role
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: No such brand or product in this account
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: Clashes with existing data, e.g. the same ASIN + marketplace already exists, or the brand still has products
       content:
         application/problem+json:
           schema:
@@ -599,6 +823,104 @@ components:
         name:
           type: string
           example: AquaLife US
+        createdAt:
+          type: string
+          format: date-time
+
+    Marketplace:
+      description: |
+        An Amazon country site. Phase 1 supports the marketplaces where Amazon Attribution is available.
+        Codes as Amazon uses them (UK, not GB): US amazon.com, CA amazon.ca, UK amazon.co.uk, DE amazon.de,
+        FR amazon.fr, IT amazon.it, ES amazon.es.
+      type: string
+      enum: [US, CA, UK, DE, FR, IT, ES]
+
+    BrandRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Unique within the account, ignoring upper/lower case
+          example: AquaLife
+
+    Brand:
+      type: object
+      required: [id, name, productCount, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: AquaLife
+        productCount:
+          type: integer
+          description: How many products the brand has (a brand with products can't be removed)
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductCreateRequest:
+      type: object
+      required: [brandId, asin, marketplace, name]
+      properties:
+        brandId:
+          type: string
+          format: uuid
+        asin:
+          type: string
+          maxLength: 20
+          description: |
+            Amazon's 10-character product id, e.g. B0AAA11111 (from the listing's address: amazon.com/dp/B0AAA11111).
+            Spaces are trimmed and letters upper-cased; then it must be "B0" plus 8 letters or digits.
+            Unique together with the marketplace within the account (409 otherwise).
+          example: B0AAA11111
+        marketplace:
+          $ref: "#/components/schemas/Marketplace"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: A short name the seller recognises, e.g. "Aquarium filter 40L"
+          example: Aquarium filter 40L
+
+    ProductUpdateRequest:
+      type: object
+      description: Only the fields that are sent change
+      properties:
+        brandId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    Product:
+      type: object
+      required: [id, brandId, asin, marketplace, name, amazonUrl, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        brandId:
+          type: string
+          format: uuid
+        asin:
+          type: string
+          example: B0AAA11111
+        marketplace:
+          $ref: "#/components/schemas/Marketplace"
+        name:
+          type: string
+          example: Aquarium filter 40L
+        amazonUrl:
+          type: string
+          format: uri
+          description: The listing on Amazon, e.g. https://www.amazon.com/dp/B0AAA11111
         createdAt:
           type: string
           format: date-time
