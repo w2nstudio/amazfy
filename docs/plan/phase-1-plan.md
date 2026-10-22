@@ -6,7 +6,7 @@ Phase 1a ships first: real sellers can connect Google Ads and Amazon and see ROA
 
 ## Progress
 
-Current milestone: **M1 auth and accounts** (M0 complete). Update this section whenever a step is merged.
+Current milestone: **M2 catalog** (M0 and M1 complete). Update this section whenever a step is merged.
 
 | Step | Status |
 | --- | --- |
@@ -49,6 +49,15 @@ Current milestone: **M1 auth and accounts** (M0 complete). Update this section w
 | Frontend F1: `apiFetch` (access token in memory, auto-refresh on 401, `ApiError`), session restore on page load, `RequireAuth`, Login page, home with accounts and logout | Done |
 | Frontend F2: sign-up, verify-email (+ reminder banner with resend on home), forgot/reset-password pages, shared `AuthCard`/`Field` form pieces | Done |
 | Frontend F3: "Continue with Google" button, onboarding (`RequireAuth` sends users without an account to `/onboarding`), current account (`useCurrentAccount`, remembered in localStorage) with switcher and "Add account" | Done |
+
+**M2: catalog**
+
+| Step | Status |
+| --- | --- |
+| API contract: Brands and Products under `/api/v1/accounts/{accountId}/...` (marketplaces US, CA, UK, DE, FR, IT, ES; ASIN + marketplace unique; ASIN/marketplace fixed after creation; a brand with products can't be removed); placeholder `CatalogController` with access rules (501) | Done |
+| `@TenantId` account filtering + tenant-isolation tests; brands table and endpoints | Next |
+| Products table and endpoints | To do |
+| Frontend: brands and products pages | To do |
 
 ## Repository layout
 
