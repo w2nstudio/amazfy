@@ -59,7 +59,7 @@ export function LoginPage() {
           <span>
             New to Amazfy?{' '}
             <Link to="/signup" className="text-foreground underline-offset-4 hover:underline">
-              Create an account
+              Sign up
             </Link>
           </span>
         </>

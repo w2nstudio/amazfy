@@ -8,7 +8,7 @@ import { AuthCard, Field, FormMessage } from '@/components/AuthCard'
 import { GoogleButton } from '@/components/GoogleButton'
 import { Button } from '@/components/ui/button'
 
-// Sign-up: creates the user, their first account (the business) and logs them in right away.
+// Sign-up: creates the user (their login), their first Amazfy account (= one Amazon seller account) and logs them in.
 // The backend also sends a verification email; the home page reminds the user until they click it.
 export function SignUpPage() {
   const navigate = useNavigate()
@@ -37,11 +37,11 @@ export function SignUpPage() {
 
   return (
     <AuthCard
-      title="Create your Amazfy account"
-      description="One account per Amazon seller account. You can add more later."
+      title="Sign up for Amazfy"
+      description="Your login, plus your first Amazon seller account. You can add more Amazon seller accounts later."
       footer={
         <span>
-          Already have an account?{' '}
+          Already signed up?{' '}
           <Link to="/login" className="text-foreground underline-offset-4 hover:underline">
             Log in
           </Link>
@@ -74,8 +74,8 @@ export function SignUpPage() {
         />
         <Field
           id="accountName"
-          label="Business name"
-          hint='How your Amazon business is called, e.g. "AquaLife US".'
+          label="Name of your Amazon seller account"
+          hint='The name you know it by, e.g. "AquaLife Inc. – North America". Brands are added later.'
           required
           maxLength={100}
           value={accountName}
@@ -84,7 +84,7 @@ export function SignUpPage() {
         />
         <FormMessage error>{errorMessage(register.error)}</FormMessage>
         <Button type="submit" disabled={register.isPending}>
-          {register.isPending ? 'Creating your account…' : 'Create account'}
+          {register.isPending ? 'Signing you up…' : 'Sign up'}
         </Button>
       </form>
       <div className="mt-4">

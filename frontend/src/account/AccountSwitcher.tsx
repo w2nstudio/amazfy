@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, Sele
 
 const ADD_ACCOUNT = 'add-account'
 
-// Header dropdown: which account (Amazon seller account) the user is working in, plus "Add account".
+// Header dropdown: which Amazon seller account the user is working in, plus "Add Amazon seller account".
+// Each entry is one Amazfy account = one Amazon seller account (brands live inside it, they are not listed here).
 export function AccountSwitcher() {
   const { current, accounts } = useCurrentAccount()
   const navigate = useNavigate()
@@ -17,7 +18,7 @@ export function AccountSwitcher() {
 
   return (
     <Select value={current.account.id} onValueChange={choose}>
-      <SelectTrigger className="w-56" aria-label="Current account">
+      <SelectTrigger className="w-56" aria-label="Current Amazon seller account">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -27,7 +28,7 @@ export function AccountSwitcher() {
           </SelectItem>
         ))}
         <SelectSeparator />
-        <SelectItem value={ADD_ACCOUNT}>+ Add account</SelectItem>
+        <SelectItem value={ADD_ACCOUNT}>+ Add Amazon seller account</SelectItem>
       </SelectContent>
     </Select>
   )

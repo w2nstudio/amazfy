@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 
 // Creates an account (one per Amazon seller account); the user becomes its owner and switches to it.
 // - /onboarding: the user has no account yet, e.g. right after their first "Sign in with Google"
-// - /accounts/new: "Add account" from the switcher, e.g. for a second Amazon seller account in Europe
+// - /accounts/new: "Add Amazon seller account" from the switcher, e.g. for a second one in Europe
 export function CreateAccountPage({ firstAccount }: { firstAccount: boolean }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -33,11 +33,11 @@ export function CreateAccountPage({ firstAccount }: { firstAccount: boolean }) {
 
   return (
     <AuthCard
-      title={firstAccount ? 'Welcome to Amazfy' : 'Add an account'}
+      title={firstAccount ? 'Welcome to Amazfy' : 'Add an Amazon seller account'}
       description={
         firstAccount
-          ? "What's your business called? You can add more Amazon seller accounts later."
-          : 'One Amazfy account per Amazon seller account, e.g. one for North America and one for Europe.'
+          ? 'Start with one Amazon seller account. You add its brands and products next, and more Amazon seller accounts any time.'
+          : 'Each Amazon seller account is kept separate, e.g. one for North America and one for Europe.'
       }
       footer={
         !firstAccount && (
@@ -50,8 +50,8 @@ export function CreateAccountPage({ firstAccount }: { firstAccount: boolean }) {
       <form onSubmit={submit} className="flex flex-col gap-4">
         <Field
           id="name"
-          label="Business name"
-          hint='For example "AquaLife US".'
+          label="Name of this Amazon seller account"
+          hint='The name you know it by, e.g. "AquaLife Inc. – North America". Brands are added separately.'
           required
           maxLength={100}
           autoFocus
@@ -61,7 +61,7 @@ export function CreateAccountPage({ firstAccount }: { firstAccount: boolean }) {
         />
         <FormMessage error>{errorMessage(create.error)}</FormMessage>
         <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? 'Creating…' : firstAccount ? 'Continue' : 'Add account'}
+          {create.isPending ? 'Creating…' : firstAccount ? 'Continue' : 'Add Amazon seller account'}
         </Button>
       </form>
     </AuthCard>

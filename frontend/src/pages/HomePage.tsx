@@ -54,8 +54,8 @@ export function HomePage() {
       <section className="flex flex-col gap-2">
         <h2 className="text-xl font-medium">{current?.account.name}</h2>
         <p className="text-sm text-muted-foreground">
-          You are the {current?.role.toLowerCase()} of this account. Brands, products and the dashboard arrive here in
-          the next milestones.
+          You are the {current?.role.toLowerCase()} of this Amazon seller account. Brands, products and the dashboard
+          arrive here in the next milestones.
         </p>
       </section>
 
