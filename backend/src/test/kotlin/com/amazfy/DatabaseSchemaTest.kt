@@ -36,9 +36,15 @@ class DatabaseSchemaTest {
             .query(UUID::class.java)
             .single()
 
-    private fun count(table: String): Int =
+    /** Rows of [table] where [column] = [id]. Never a whole-table count: other tests leave committed rows behind. */
+    private fun count(
+        table: String,
+        column: String,
+        id: UUID,
+    ): Int =
         jdbc
-            .sql("SELECT count(*) FROM $table")
+            .sql("SELECT count(*) FROM $table WHERE $column = :id")
+            .param("id", id)
             .query(Int::class.java)
             .single()
 
@@ -108,9 +114,9 @@ class DatabaseSchemaTest {
 
         jdbc.sql("DELETE FROM users WHERE id = :u").param("u", userId).update()
 
-        assertEquals(0, count("user_identities"))
-        assertEquals(0, count("memberships"))
-        assertEquals(1, count("accounts"))
+        assertEquals(0, count("user_identities", "user_id", userId))
+        assertEquals(0, count("memberships", "user_id", userId))
+        assertEquals(1, count("accounts", "id", accountId))
     }
 
     private fun insertOneTimeToken(
@@ -140,7 +146,7 @@ class DatabaseSchemaTest {
 
         jdbc.sql("DELETE FROM users WHERE id = :u").param("u", userId).update()
 
-        assertEquals(0, count("one_time_tokens"))
+        assertEquals(0, count("one_time_tokens", "user_id", userId))
     }
 
     @Test
