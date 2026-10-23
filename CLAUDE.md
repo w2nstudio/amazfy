@@ -50,7 +50,8 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - `common/` holds shared infrastructure only (error handling, security config), no business logic.
 - Modules talk to each other only through their public application API, never another module's internals. A module's API (its application service) returns its own API types defined in `application/` (e.g. `AccountSummary`, `Role`), never domain classes.
 - These rules are enforced by ArchUnit tests in `backend/src/test/kotlin/com/amazfy/ArchitectureTest.kt` (domain pure Kotlin; application never uses adapters; generated API types only in inbound web adapters; no access to another module's adapter or domain). If a rule blocks a design you need, discuss it rather than weakening the rule.
-- Every table has `account_id`; every query is scoped to the current account.
+- Every account-owned table has `account_id`; its JPA entity marks it `@TenantId` (`var accountId: UUID? = null`, never set by hand). Hibernate then filters every query and fills every insert with `CurrentAccount` (`common/tenant`), which `AccountScopeInterceptor` sets for each `/api/v1/accounts/{accountId}/...` request; background jobs use `CurrentAccount.runAs(id) { }`. Unset means `CurrentAccount.NONE`, which matches no rows. Ports of account-owned data take no account parameter. Plain SQL (reports) must filter `account_id` explicitly. Every new account-owned table gets isolation tests like `catalog/TenantIsolationTest`.
+- Tests: never assert whole-table row counts; other tests leave committed rows behind.
 - Daily metrics are stored per ad per day; higher levels are sums.
 
 ## API

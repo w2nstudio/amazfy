@@ -55,7 +55,8 @@ Current milestone: **M2 catalog** (M0 and M1 complete). Update this section when
 | Step | Status |
 | --- | --- |
 | API contract: Brands and Products under `/api/v1/accounts/{accountId}/...` (marketplaces US, CA, UK, DE, FR, IT, ES; ASIN + marketplace unique; ASIN/marketplace fixed after creation; a brand with products can't be removed); placeholder `CatalogController` with access rules (501) | Done |
-| `@TenantId` account filtering + tenant-isolation tests; brands table and endpoints | Next |
+| `@TenantId` account filtering (`CurrentAccount`, resolver, interceptor for `/accounts/{accountId}/...`), V6 brands table, brand persistence, tenant-isolation tests | Done |
+| Brand endpoints (list, create, rename, delete) | Next |
 | Products table and endpoints | To do |
 | Frontend: brands and products pages | To do |
 
