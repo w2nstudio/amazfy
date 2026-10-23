@@ -19,6 +19,7 @@ The **Docker Engine** runs containers. The `docker` command is only a client tha
 | --- | --- | --- |
 | **Local database** for `./gradlew bootRun` | `docker-compose.yml` runs PostgreSQL 18 on `localhost:5432` (database, user and password: `amazfy`) | Docker running **and** the `amazfy-postgres` container started |
 | **Local email** for `./gradlew bootRun` | `docker-compose.yml` also runs Mailpit: it accepts emails on `localhost:1025` (SMTP) and shows them at http://localhost:8025 instead of delivering them | The `amazfy-mailpit` container started (same `docker compose up -d`) |
+| **Database browser** | `docker-compose.yml` also runs pgAdmin at http://localhost:5050 to browse tables and run SQL; see the [pgAdmin guide](pgadmin-guide.md) | The `amazfy-pgadmin` container started (same `docker compose up -d`) |
 | **Backend tests** (`./gradlew build` / `test`) | Testcontainers starts a throwaway PostgreSQL per test run and removes it afterwards | Docker running only |
 | **Backend image** for deployment | `backend/Dockerfile` packages the backend; CI builds it on every pull request | Docker running, to build it locally |
 
@@ -28,7 +29,7 @@ Run Compose commands in the repository root (where `docker-compose.yml` is).
 
 | Command | What it does |
 | --- | --- |
-| `docker compose up -d` | Start the local database and Mailpit in the background (`-d` = detached). Same as ▶ on the `amazfy` group in Docker Desktop. |
+| `docker compose up -d` | Start the local database, Mailpit and pgAdmin in the background (`-d` = detached). Same as ▶ on the `amazfy` group in Docker Desktop. |
 | `docker compose down` | Stop and remove the containers. **Database data is kept** in the volume (Mailpit's emails are not). |
 | `docker compose down -v` | Stop and **delete the data** too (`-v` = volumes). Next start begins empty; Flyway recreates the tables. |
 | `docker compose ps` | Are the database and Mailpit running (and the database healthy)? |
