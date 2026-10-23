@@ -4,33 +4,12 @@ import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
-import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.UpdateTimestamp
-import org.hibernate.annotations.UuidGenerator
 import java.time.Instant
 import java.util.UUID
 
-// JPA classes for the tables in V3__accounts_memberships.sql. Used only inside this adapter;
-// the rest of the app sees the domain classes. Plain classes, not data classes (data classes break Hibernate).
-
-@Entity
-@Table(name = "accounts")
-class AccountEntity(
-    var name: String,
-) {
-    @Id
-    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
-    val id: UUID? = null
-
-    @CreationTimestamp
-    @Column(updatable = false)
-    val createdAt: Instant? = null
-
-    @UpdateTimestamp
-    val updatedAt: Instant? = null
-}
+// JPA classes for the memberships table (V3__accounts_memberships.sql), used only inside AccountPersistenceAdapter.
 
 @Embeddable
 class MembershipId(

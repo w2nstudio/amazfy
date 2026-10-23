@@ -2,37 +2,12 @@ package com.amazfy.auth.adapter.outbound.persistence
 
 import com.amazfy.auth.application.port.RefreshTokenRepository
 import com.amazfy.auth.application.port.StoredRefreshToken
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.Table
-import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.UuidGenerator
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.UUID
-
-@Entity
-@Table(name = "refresh_tokens")
-class RefreshTokenEntity(
-    val userId: UUID,
-    val familyId: UUID,
-    val tokenHash: String,
-    val expiresAt: Instant,
-) {
-    @Id
-    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
-    val id: UUID? = null
-
-    var revokedAt: Instant? = null
-
-    @CreationTimestamp
-    @Column(updatable = false)
-    val createdAt: Instant? = null
-}
 
 // The revoke queries are bulk UPDATEs that bypass Hibernate's cache of loaded rows: flush pending changes first,
 // clear the cache after, so later reads in the same transaction see the revocation.
