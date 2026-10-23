@@ -85,7 +85,7 @@ Backend (run in `backend/`; Windows: `gradlew.bat`):
 
 Local database (run in repo root; needs Docker Desktop running):
 
-- `docker compose up -d` — start PostgreSQL 18 on localhost:5432 (db/user/password: `amazfy`) and Mailpit (SMTP localhost:1025; sent emails readable at http://localhost:8025)
+- `docker compose up -d` — start PostgreSQL 18 on localhost:5432 (db/user/password: `amazfy`) Mailpit (SMTP localhost:1025; sent emails readable at http://localhost:8025) and pgAdmin (http://localhost:5050, database browser; `docs/guides/pgadmin-guide.md`)
 - `docker compose down` — stop it (data is kept in a Docker volume; `down -v` deletes it)
 
 Backend container image (run in repo root): `docker build -f backend/Dockerfile -t amazfy-backend .` (multi-stage, JRE-only runtime, non-root user, `prod` profile by default; pass `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `CORS_ALLOWED_ORIGINS`, `JWT_SECRET`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_FROM`, `FRONTEND_BASE_URL` with `-e`; inside a container the local database is `host.docker.internal:5432`).
