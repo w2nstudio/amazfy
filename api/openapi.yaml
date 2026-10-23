@@ -488,7 +488,7 @@ components:
           type: string
           minLength: 1
           maxLength: 100
-          example: AquaLife US
+          example: AquaLife Inc. – North America
 
     LoginRequest:
       type: object
@@ -587,7 +587,7 @@ components:
           type: string
           minLength: 1
           maxLength: 100
-          example: AquaLife US
+          example: AquaLife Inc. – North America
 
     Account:
       type: object
@@ -598,7 +598,7 @@ components:
           format: uuid
         name:
           type: string
-          example: AquaLife US
+          example: AquaLife Inc. – North America
         createdAt:
           type: string
           format: date-time

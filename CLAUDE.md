@@ -38,6 +38,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 - Hierarchy: Account → Brand → Product (unique by ASIN + marketplace).
 - Google structure: Campaign → AdGroup → Ad. The **Ad** is linked to a product (ASIN parsed from its final URL) or, for Brand Store links, only to a brand.
 - Always write "Google Ads account" and "Amazon seller account" in full.
+- In the UI the person signs up / logs in (never "create an account" for the login); what the account switcher lists and adds is an "Amazon seller account" ("Add Amazon seller account"); brands are a separate level inside it. Example names: seller account "AquaLife Inc. – North America", brands "AquaLife", "ClearTank".
 
 ## Architecture
 
