@@ -57,7 +57,8 @@ Current milestone: **M2 catalog** (M0 and M1 complete). Update this section when
 | API contract: Brands and Products under `/api/v1/accounts/{accountId}/...` (marketplaces US, CA, UK, DE, FR, IT, ES; ASIN + marketplace unique; ASIN/marketplace fixed after creation; a brand with products can't be removed); placeholder `CatalogController` with access rules (501) | Done |
 | `@TenantId` account filtering (`CurrentAccount`, resolver, interceptor for `/accounts/{accountId}/...`), V6 brands table, brand persistence, tenant-isolation tests | Done |
 | Brand endpoints: list (by name), create, rename, delete; 409 for a duplicate name (any case), 404 for unknown or other accounts' brands; `CatalogService` | Done |
-| Products table and endpoints (+ brand product counts, no removing a brand with products) | Next |
+| V7 products table (ASIN format, 7 marketplaces, unique ASIN + marketplace per account, brand must be in the same account via composite foreign key, brands with products can't be deleted); product domain (`Asin`, `Marketplace` with Amazon domain and currency), persistence, isolation tests | Done |
+| Product endpoints, brand product counts, 409 when removing a brand with products | Next |
 | Frontend: brands and products pages | To do |
 
 ## Repository layout

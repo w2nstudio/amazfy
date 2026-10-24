@@ -2,7 +2,11 @@ package com.amazfy.catalog
 
 import com.amazfy.TestcontainersConfiguration
 import com.amazfy.catalog.application.port.BrandRepository
+import com.amazfy.catalog.application.port.ProductRepository
+import com.amazfy.catalog.domain.Asin
 import com.amazfy.catalog.domain.BrandName
+import com.amazfy.catalog.domain.Marketplace
+import com.amazfy.catalog.domain.ProductName
 import com.amazfy.common.tenant.CurrentAccount
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,6 +31,9 @@ import kotlin.test.assertTrue
 class TenantIsolationTest {
     @Autowired
     lateinit var brands: BrandRepository
+
+    @Autowired
+    lateinit var products: ProductRepository
 
     @Autowired
     lateinit var jdbc: JdbcClient
@@ -105,6 +112,82 @@ class TenantIsolationTest {
             assertTrue(brands.nameTaken(BrandName.of("AQUALIFE")))
             // The database refuses it too, even if the check above were skipped
             assertFailsWith<DataIntegrityViolationException> { brands.create(BrandName.of("aqualife")) }
+        }
+    }
+
+    // ---------- Products ----------
+
+    private val filter = Asin.of("B0AAA11111")
+
+    /** A brand and one product of it (B0AAA11111 on amazon.com) in [accountId]. */
+    private fun brandWithProduct(accountId: UUID) =
+        CurrentAccount.runAs(accountId) {
+            val brand = brands.create(BrandName.of("AquaLife"))
+            brand to products.create(brand.id, filter, Marketplace.US, ProductName.of("Aquarium filter 40L"))
+        }
+
+    @Test
+    fun `another account can't list, read, change or delete a product`() {
+        val (_, product) = brandWithProduct(aquaLife)
+        val otherBrand = CurrentAccount.runAs(otherSeller) { brands.create(BrandName.of("Other")) }
+
+        CurrentAccount.runAs(otherSeller) {
+            assertTrue(products.findAll().isEmpty())
+            assertNull(products.findById(product.id))
+            assertTrue(products.countByBrand().isEmpty())
+            assertFailsWith<NoSuchElementException> { products.update(product.id, brandId = otherBrand.id) }
+            products.delete(product.id) // finds nothing to delete
+        }
+        CurrentAccount.runAs(aquaLife) { assertEquals(product, products.findById(product.id)) }
+    }
+
+    @Test
+    fun `a product can't be put under another account's brand, even by mistake`() {
+        val othersBrand = CurrentAccount.runAs(otherSeller) { brands.create(BrandName.of("Other")) }
+
+        CurrentAccount.runAs(aquaLife) {
+            // The database checks the brand belongs to the same account (composite foreign key)
+            assertFailsWith<DataIntegrityViolationException> {
+                products.create(othersBrand.id, filter, Marketplace.US, ProductName.of("Sneaky"))
+            }
+        }
+    }
+
+    @Test
+    fun `an ASIN is unique per marketplace within an account, not across accounts`() {
+        val (brand, _) = brandWithProduct(aquaLife)
+        brandWithProduct(otherSeller) // the same ASIN for another seller is fine
+
+        CurrentAccount.runAs(aquaLife) {
+            assertTrue(products.exists(filter, Marketplace.US))
+            assertFalse(products.exists(filter, Marketplace.UK))
+            products.create(brand.id, filter, Marketplace.UK, ProductName.of("Aquarium filter 40L (UK)")) // another marketplace
+            assertFailsWith<DataIntegrityViolationException> {
+                products.create(brand.id, filter, Marketplace.US, ProductName.of("Twice"))
+            }
+        }
+    }
+
+    @Test
+    fun `products are counted per brand of the current account`() {
+        val (brand, _) = brandWithProduct(aquaLife)
+        brandWithProduct(otherSeller)
+
+        CurrentAccount.runAs(aquaLife) {
+            products.create(brand.id, Asin.of("B0BBB22222"), Marketplace.US, ProductName.of("Aquarium heater"))
+            assertEquals(mapOf(brand.id to 2), products.countByBrand())
+        }
+    }
+
+    @Test
+    fun `the database refuses to delete a brand that still has products`() {
+        val (brand, _) = brandWithProduct(aquaLife)
+
+        CurrentAccount.runAs(aquaLife) {
+            assertFailsWith<DataIntegrityViolationException> {
+                brands.delete(brand.id)
+                brands.findAll() // the delete reaches the database at the latest when the next query flushes it
+            }
         }
     }
 }
