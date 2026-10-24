@@ -1,61 +1,32 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router'
-import { AccountSwitcher } from '@/account/AccountSwitcher'
+import { Link } from 'react-router'
 import { useCurrentAccount } from '@/account/currentAccount'
-import { errorMessage, setAccessToken } from '@/api/client'
-import { useLogout, useResendVerification } from '@/api/generated/auth/auth'
+import { errorMessage } from '@/api/client'
+import { useResendVerification } from '@/api/generated/auth/auth'
 import { useGetMe } from '@/api/generated/me/me'
 import { useGetSystemInfo } from '@/api/generated/system/system'
 import { FormMessage } from '@/components/AuthCard'
 import { Button } from '@/components/ui/button'
 
-// Placeholder home page for logged-in users (behind RequireAuth). The dashboard replaces it in M3.
+// Placeholder home page for logged-in users (inside AppLayout). The dashboard replaces it in M3.
 export function HomePage() {
   const me = useGetMe()
   const systemInfo = useGetSystemInfo()
-  const logout = useLogout()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
-
-  function logOut() {
-    // Ends the session on the server (refresh cookie revoked and cleared), then forgets everything here
-    logout.mutate(undefined, {
-      onSettled: () => {
-        setAccessToken(null)
-        queryClient.clear()
-        navigate('/login', { replace: true })
-      },
-    })
-  }
-
   const user = me.data?.data
   const { current } = useCurrentAccount()
 
-  // Until the email is confirmed: a reminder with a way to get the link again
-  const verificationBanner = user && !user.emailVerified && <VerifyEmailBanner email={user.email} />
-
   return (
-    <main className="mx-auto flex min-h-svh max-w-2xl flex-col gap-8 p-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Amazfy</h1>
-          <AccountSwitcher />
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-muted-foreground">{user?.email}</span>
-          <Button variant="outline" size="sm" onClick={logOut} disabled={logout.isPending}>
-            Log out
-          </Button>
-        </div>
-      </header>
-
-      {verificationBanner}
+    <main className="flex flex-1 flex-col gap-8">
+      {/* Until the email is confirmed: a reminder with a way to get the link again */}
+      {user && !user.emailVerified && <VerifyEmailBanner email={user.email} />}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xl font-medium">{current?.account.name}</h2>
         <p className="text-sm text-muted-foreground">
-          You are the {current?.role.toLowerCase()} of this Amazon seller account. Brands, products and the dashboard
-          arrive here in the next milestones.
+          You are the {current?.role.toLowerCase()} of this Amazon seller account. Start by adding its{' '}
+          <Link to="/brands" className="underline underline-offset-4">
+            brands
+          </Link>
+          ; products and the dashboard follow.
         </p>
       </section>
 
