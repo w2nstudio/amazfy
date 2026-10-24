@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { useCurrentAccount } from '@/account/currentAccount'
 import { errorMessage } from '@/api/client'
 import {
@@ -154,7 +155,12 @@ function BrandRow({ accountId, brand, canEdit }: { accountId: string; brand: Bra
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-col">
             <span className="font-medium">{brand.name}</span>
-            <span className="text-sm text-muted-foreground">{products}</span>
+            <Link
+              to={`/products?brand=${brand.id}`}
+              className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+            >
+              {products}
+            </Link>
           </div>
           {canEdit && !confirmingRemove && (
             <div className="flex gap-2">

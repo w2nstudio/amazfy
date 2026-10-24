@@ -7,6 +7,7 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { ProductsPage } from '@/pages/ProductsPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { SignUpPage } from '@/pages/SignUpPage'
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage'
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <HomePage /> },
           { path: '/brands', element: <BrandsPage /> },
+          { path: '/products', element: <ProductsPage /> },
         ],
       },
       { path: '/onboarding', element: <CreateAccountPage firstAccount /> },
