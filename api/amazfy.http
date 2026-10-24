@@ -192,8 +192,72 @@ Content-Type: application/json
   "name": "AquaLife Aquatics"
 }
 
-### Remove it (204); again gives 404. (Once products exist, a brand with products can't be removed: 409)
+### Remove it (204); again gives 404. A brand with products can't be removed: 409 (see Products below)
 DELETE {{baseUrl}}/accounts/{{accountId}}/brands/{{createBrand.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
+
+
+############################################################
+# Products (Amazon listings: ASIN + marketplace, under one brand). Run top to bottom.
+############################################################
+
+### A brand for the products below (201)
+# @name productBrand
+POST {{baseUrl}}/accounts/{{accountId}}/brands
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "ClearTank"
+}
+
+### Add a product (201). The ASIN is trimmed and upper-cased; amazonUrl links to the listing.
+# The same ASIN + marketplace again gives 409; the same ASIN with "marketplace": "DE" is a separate product.
+# A wrong ASIN (not B0 + 8 letters/digits) gives 400, and so does a brand that isn't one of this account's.
+# @name createProduct
+POST {{baseUrl}}/accounts/{{accountId}}/products
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "brandId": "{{productBrand.response.body.$.id}}",
+  "asin": "b0ccc11111",
+  "marketplace": "US",
+  "name": "Glass cleaner"
+}
+
+### List the account's products, sorted by brand, then name (200)
+GET {{baseUrl}}/accounts/{{accountId}}/products
+Authorization: Bearer {{accessToken}}
+
+### Only this brand's products (200)
+GET {{baseUrl}}/accounts/{{accountId}}/products?brandId={{productBrand.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
+
+### The brand list now shows "productCount": 1 for ClearTank (200)
+GET {{baseUrl}}/accounts/{{accountId}}/brands
+Authorization: Bearer {{accessToken}}
+
+### Rename the product (200). Only the fields sent change; "brandId" moves it to another brand.
+# ASIN and marketplace can't change: to track another listing, add a new product.
+PATCH {{baseUrl}}/accounts/{{accountId}}/products/{{createProduct.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Glass cleaner 500ml"
+}
+
+### The brand still has a product, so it can't be removed (409)
+DELETE {{baseUrl}}/accounts/{{accountId}}/brands/{{productBrand.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
+
+### Remove the product (204); again gives 404
+DELETE {{baseUrl}}/accounts/{{accountId}}/products/{{createProduct.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
+
+### Now the brand can be removed (204)
+DELETE {{baseUrl}}/accounts/{{accountId}}/brands/{{productBrand.response.body.$.id}}
 Authorization: Bearer {{accessToken}}
 
 

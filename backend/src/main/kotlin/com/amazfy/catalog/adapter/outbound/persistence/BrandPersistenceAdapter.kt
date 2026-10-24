@@ -42,7 +42,11 @@ class BrandPersistenceAdapter(
         return jpa.saveAndFlush(entity).toDomain()
     }
 
-    override fun delete(id: UUID) = jpa.deleteById(id)
+    /** Flushes right away, so the database's "brand still has products" refusal happens here, inside the service call. */
+    override fun delete(id: UUID) {
+        jpa.deleteById(id)
+        jpa.flush()
+    }
 }
 
 private fun BrandEntity.toDomain() = Brand(id = id!!, name = BrandName.of(name), createdAt = createdAt!!)

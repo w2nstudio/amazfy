@@ -53,3 +53,5 @@ Plain-language explanations of business terms as they come up while building Ama
 **Product (listing)** — In Amazfy, one Amazon listing in one marketplace: ASIN + marketplace + a name the seller recognises, always under one brand. The same ASIN sold on amazon.com and amazon.co.uk is two products, because sales, prices and currency differ per marketplace. Example: `B0AAA11111` in US, "Aquarium filter 40L", brand AquaLife.
 
 **Variation** — A version of a product that differs in size, colour or similar (e.g. filter 40L and filter 80L). On Amazon each variation has its own ASIN, so in Amazfy each variation the seller advertises is its own product.
+
+**Detail page** — Amazon's page for one listing, where shoppers see the photos, price and "Add to Cart". Its short address is the marketplace's site + `/dp/` + the ASIN, e.g. `https://www.amazon.com/dp/B0AAA11111` ("dp" stands for detail page). Amazfy shows this link for each product; later, ads send shoppers to this page (with an Attribution tag added).

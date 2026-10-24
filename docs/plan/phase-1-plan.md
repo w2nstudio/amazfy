@@ -58,8 +58,8 @@ Current milestone: **M2 catalog** (M0 and M1 complete). Update this section when
 | `@TenantId` account filtering (`CurrentAccount`, resolver, interceptor for `/accounts/{accountId}/...`), V6 brands table, brand persistence, tenant-isolation tests | Done |
 | Brand endpoints: list (by name), create, rename, delete; 409 for a duplicate name (any case), 404 for unknown or other accounts' brands; `CatalogService` | Done |
 | V7 products table (ASIN format, 7 marketplaces, unique ASIN + marketplace per account, brand must be in the same account via composite foreign key, brands with products can't be deleted); product domain (`Asin`, `Marketplace` with Amazon domain and currency), persistence, isolation tests | Done |
-| Product endpoints, brand product counts, 409 when removing a brand with products | Next |
-| Frontend: brands and products pages | To do |
+| Product endpoints: list (by brand, then name; optional brand filter), create (400 for a brand outside the account, 409 for a duplicate ASIN + marketplace), rename/move, delete; real brand product counts; 409 when removing a brand with products | Done |
+| Frontend: brands and products pages | Next |
 
 ## Repository layout
 

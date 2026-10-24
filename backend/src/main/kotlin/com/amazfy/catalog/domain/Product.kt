@@ -82,3 +82,6 @@ class DuplicateProductException : AppException(ErrorKind.CONFLICT, "This ASIN is
 
 /** Also for products of other accounts: they don't exist from this account's point of view. */
 class ProductNotFoundException : AppException(ErrorKind.NOT_FOUND, "This product doesn't exist.")
+
+/** The brand sent with a product isn't one of this account's brands (400: the request is wrong, not the address). */
+class UnknownBrandException : AppException(ErrorKind.BAD_REQUEST, "Choose one of your brands.")

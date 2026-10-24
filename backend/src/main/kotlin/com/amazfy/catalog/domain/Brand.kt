@@ -34,3 +34,7 @@ class DuplicateBrandNameException : AppException(ErrorKind.CONFLICT, "You alread
 
 /** Also for brands of other accounts: they simply don't exist from this account's point of view. */
 class BrandNotFoundException : AppException(ErrorKind.NOT_FOUND, "This brand doesn't exist.")
+
+/** No product is ever left without a brand: the seller moves or removes the products first. */
+class BrandHasProductsException :
+    AppException(ErrorKind.CONFLICT, "This brand still has products. Move them to another brand or remove them first.")
