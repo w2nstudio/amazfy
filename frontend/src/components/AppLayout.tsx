@@ -35,6 +35,7 @@ export function AppLayout() {
           <nav className="flex gap-1 text-sm">
             <PageLink to="/">Home</PageLink>
             <PageLink to="/brands">Brands</PageLink>
+            <PageLink to="/products">Products</PageLink>
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm">

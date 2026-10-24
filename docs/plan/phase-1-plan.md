@@ -6,7 +6,7 @@ Phase 1a ships first: real sellers can connect Google Ads and Amazon and see ROA
 
 ## Progress
 
-Current milestone: **M2 catalog** (M0 and M1 complete). Update this section whenever a step is merged.
+Current milestone: **M3 reporting core + CSV import** (M0, M1 and M2 complete). Update this section whenever a step is merged.
 
 | Step | Status |
 | --- | --- |
@@ -60,7 +60,7 @@ Current milestone: **M2 catalog** (M0 and M1 complete). Update this section when
 | V7 products table (ASIN format, 7 marketplaces, unique ASIN + marketplace per account, brand must be in the same account via composite foreign key, brands with products can't be deleted); product domain (`Asin`, `Marketplace` with Amazon domain and currency), persistence, isolation tests | Done |
 | Product endpoints: list (by brand, then name; optional brand filter), create (400 for a brand outside the account, 409 for a duplicate ASIN + marketplace), rename/move, delete; real brand product counts; 409 when removing a brand with products | Done |
 | Frontend: `AppLayout` (header, account switcher, page links) around logged-in pages; Brands page (list with product counts, add, rename, remove with confirmation; read-only for viewers) | Done |
-| Frontend: Products page | Next |
+| Frontend: Products page (filter by brand via `?brand=`, add with ASIN + marketplace, edit name/brand, remove with confirmation, link to the Amazon listing); brand product counts link to it | Done |
 
 ## Repository layout
 
