@@ -166,6 +166,38 @@ Content-Type: application/json
 
 
 ############################################################
+# Brands (in the account from "Who am I?"; owners and editors may change them)
+############################################################
+
+### Add a brand (201). The same name again, in any capitalisation, gives 409
+# @name createBrand
+POST {{baseUrl}}/accounts/{{accountId}}/brands
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "AquaLife"
+}
+
+### List the account's brands, sorted by name (200)
+GET {{baseUrl}}/accounts/{{accountId}}/brands
+Authorization: Bearer {{accessToken}}
+
+### Rename the brand added above (200); another brand's name gives 409
+PATCH {{baseUrl}}/accounts/{{accountId}}/brands/{{createBrand.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "AquaLife Aquatics"
+}
+
+### Remove it (204); again gives 404. (Once products exist, a brand with products can't be removed: 409)
+DELETE {{baseUrl}}/accounts/{{accountId}}/brands/{{createBrand.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
+
+
+############################################################
 # Access rules: a second user can't reach the first user's account
 ############################################################
 

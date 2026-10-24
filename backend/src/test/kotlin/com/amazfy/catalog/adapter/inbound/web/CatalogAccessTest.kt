@@ -13,7 +13,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.util.UUID
 
-/** The catalog endpoints' access rules work before the endpoints themselves are built (501 for members until then). */
+/** The catalog endpoints' access rules, also on endpoints not built yet (501 for members until then). */
 @Import(TestcontainersConfiguration::class)
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -41,9 +41,9 @@ class CatalogAccessTest {
     }
 
     @Test
-    fun `a member reaches the catalog endpoints (not built yet, 501)`() {
+    fun `a member reaches the product endpoints (not built yet, 501)`() {
         val (token, accountId) = signUp()
-        mockMvc.get("/api/v1/accounts/$accountId/brands") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }.andExpect {
+        mockMvc.get("/api/v1/accounts/$accountId/products") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }.andExpect {
             status { isNotImplemented() }
         }
     }
