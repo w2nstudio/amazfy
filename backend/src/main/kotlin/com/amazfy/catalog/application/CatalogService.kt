@@ -1,5 +1,6 @@
 package com.amazfy.catalog.application
 
+import com.amazfy.account.application.AccountService
 import com.amazfy.catalog.application.port.BrandRepository
 import com.amazfy.catalog.application.port.ProductRepository
 import com.amazfy.catalog.domain.Asin
@@ -9,11 +10,13 @@ import com.amazfy.catalog.domain.BrandName
 import com.amazfy.catalog.domain.BrandNotFoundException
 import com.amazfy.catalog.domain.DuplicateBrandNameException
 import com.amazfy.catalog.domain.DuplicateProductException
-import com.amazfy.catalog.domain.Marketplace
+import com.amazfy.catalog.domain.MarketplaceOutsideRegionException
 import com.amazfy.catalog.domain.Product
 import com.amazfy.catalog.domain.ProductName
 import com.amazfy.catalog.domain.ProductNotFoundException
 import com.amazfy.catalog.domain.UnknownBrandException
+import com.amazfy.common.amazon.Marketplace
+import com.amazfy.common.tenant.CurrentAccount
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -30,6 +33,7 @@ import java.util.UUID
 class CatalogService(
     private val brands: BrandRepository,
     private val products: ProductRepository,
+    private val accounts: AccountService,
 ) {
     /** The account's brands, sorted by name, each with its number of products. */
     fun listBrands(): List<BrandSummary> {
@@ -88,6 +92,8 @@ class CatalogService(
         val validAsin = Asin.of(asin)
         val productName = ProductName.of(name)
         if (brands.findById(brandId) == null) throw UnknownBrandException()
+        val region = accounts.findAccount(CurrentAccount.get())!!.region
+        if (marketplace.region != region) throw MarketplaceOutsideRegionException(region)
         if (products.exists(validAsin, marketplace)) throw DuplicateProductException()
         // Same race as brand names: the unique index on (account, ASIN, marketplace) stops the second request
         return try {

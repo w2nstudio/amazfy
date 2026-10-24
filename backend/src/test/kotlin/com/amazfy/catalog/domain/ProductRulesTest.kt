@@ -1,5 +1,6 @@
 package com.amazfy.catalog.domain
 
+import com.amazfy.common.amazon.Marketplace
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID

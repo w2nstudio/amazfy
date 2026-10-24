@@ -1,5 +1,6 @@
 package com.amazfy.account.application
 
+import com.amazfy.common.amazon.Region
 import java.time.Instant
 import java.util.UUID
 
@@ -9,6 +10,7 @@ import java.util.UUID
 data class AccountSummary(
     val id: UUID,
     val name: String,
+    val region: Region,
     val createdAt: Instant,
 )
 

@@ -1,14 +1,17 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
+import { RegionField } from '@/account/RegionField'
 import { errorMessage, setAccessToken } from '@/api/client'
 import { useRegister } from '@/api/generated/auth/auth'
 import { useGetMe } from '@/api/generated/me/me'
+import type { Region } from '@/api/generated/model'
 import { AuthCard, Field, FormMessage } from '@/components/AuthCard'
 import { GoogleButton } from '@/components/GoogleButton'
 import { Button } from '@/components/ui/button'
 
-// Sign-up: creates the user (their login), their first Amazfy account (= one Amazon seller account) and logs them in.
+// Sign-up: creates the user (their login), their first seller account (= one Amazon seller account, in one Amazon
+// region) and logs them in.
 // The backend also sends a verification email; the home page reminds the user until they click it.
 export function SignUpPage() {
   const navigate = useNavigate()
@@ -18,13 +21,16 @@ export function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [accountName, setAccountName] = useState('')
+  const [region, setRegion] = useState<Region>()
+  const [regionMissing, setRegionMissing] = useState(false)
 
   if (me.isSuccess) return <Navigate to="/" replace />
 
   function submit(event: React.FormEvent) {
     event.preventDefault()
+    if (!region) return setRegionMissing(true)
     register.mutate(
-      { data: { email, password, accountName } },
+      { data: { email, password, accountName, region } },
       {
         onSuccess: async (response) => {
           setAccessToken(response.data.accessToken)
@@ -82,6 +88,7 @@ export function SignUpPage() {
           onChange={(e) => setAccountName(e.target.value)}
           error={register.error}
         />
+        <RegionField value={region} onChange={setRegion} missing={regionMissing} />
         <FormMessage error>{errorMessage(register.error)}</FormMessage>
         <Button type="submit" disabled={register.isPending}>
           {register.isPending ? 'Signing you up…' : 'Sign up'}

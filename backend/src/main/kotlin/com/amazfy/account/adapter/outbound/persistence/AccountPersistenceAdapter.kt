@@ -6,6 +6,7 @@ import com.amazfy.account.application.Role
 import com.amazfy.account.application.port.AccountRepository
 import com.amazfy.account.domain.Account
 import com.amazfy.account.domain.AccountName
+import com.amazfy.common.amazon.Region
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Component
@@ -26,10 +27,11 @@ class AccountPersistenceAdapter(
 ) : AccountRepository {
     override fun createWithOwner(
         name: AccountName,
+        region: Region,
         ownerUserId: UUID,
     ): Account {
         // saveAndFlush so the generated id and timestamps are available immediately
-        val account = accountJpa.saveAndFlush(AccountEntity(name.value))
+        val account = accountJpa.saveAndFlush(AccountEntity(name.value, region.name))
         membershipJpa.save(MembershipEntity(MembershipId(ownerUserId, account.id!!), Role.OWNER.name))
         return account.toDomain()
     }
@@ -62,6 +64,7 @@ class AccountPersistenceAdapter(
             ?.let { Role.valueOf(it.role) }
 }
 
-private fun AccountEntity.toDomain() = Account(id = id!!, name = AccountName.of(name), createdAt = createdAt!!)
+private fun AccountEntity.toDomain() =
+    Account(id = id!!, name = AccountName.of(name), region = Region.valueOf(region), createdAt = createdAt!!)
 
-private fun AccountEntity.toSummary() = AccountSummary(id = id!!, name = name, createdAt = createdAt!!)
+private fun AccountEntity.toSummary() = AccountSummary(id = id!!, name = name, region = Region.valueOf(region), createdAt = createdAt!!)

@@ -2,7 +2,7 @@
 
 Plain-language explanations of business terms as they come up while building Amazfy. New terms are added at the end.
 
-**Amazon seller account** — A business's account in Amazon Seller Central, where it lists and sells products. Amazon gives one per region (North America, Europe, …). In Amazfy, one Amazfy account = one Amazon seller account.
+**Amazon seller account** — A business's account in Amazon Seller Central, where it lists and sells products. Amazon gives one per region (North America, Europe, …). In Amazfy it is a **seller account** (in the code: `Account`): one seller account in Amazfy = one Amazon seller account. The person who logs in is a **user**, not an account.
 
 **Brand / Brand Registry** — A brand is a registered trademark a seller sells under (e.g. "AquaLife"). Brand Registry is Amazon's program that confirms the seller owns the brand. One seller account can have several brands. Amazon Attribution is only available to Brand Registry sellers.
 
@@ -55,3 +55,7 @@ Plain-language explanations of business terms as they come up while building Ama
 **Variation** — A version of a product that differs in size, colour or similar (e.g. filter 40L and filter 80L). On Amazon each variation has its own ASIN, so in Amazfy each variation the seller advertises is its own product.
 
 **Detail page** — Amazon's page for one listing, where shoppers see the photos, price and "Add to Cart". Its short address is the marketplace's site + `/dp/` + the ASIN, e.g. `https://www.amazon.com/dp/B0AAA11111` ("dp" stands for detail page). Amazfy shows this link for each product; later, ads send shoppers to this page (with an Attribution tag added).
+
+**Region** — A group of Amazon marketplaces that one Amazon seller account covers. Amazfy supports two: **North America** (`NA`: amazon.com, amazon.ca) and **Europe** (`EU`: amazon.co.uk, .de, .fr, .it, .es). Amazon has more (e.g. Far East: Japan, Australia), not supported in Phase 1. In Amazfy each seller account has one region, chosen when it is added and fixed afterwards; its products can only be on that region's marketplaces.
+
+**Unified account** — Amazon's name for one seller account that sells in several marketplaces of a region. Example: "AquaLife Inc. – North America" registers once and sells on amazon.com and amazon.ca, so the same ASIN can be two Amazfy products there (US and CA, with sales in USD and CAD). A seller who also sells in Europe has a second Amazon seller account, so a second seller account in Amazfy.

@@ -2,9 +2,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { setCurrentAccountId } from '@/account/currentAccount'
+import { RegionField } from '@/account/RegionField'
 import { errorMessage } from '@/api/client'
 import { useCreateAccount } from '@/api/generated/accounts/accounts'
 import { getGetMeQueryKey } from '@/api/generated/me/me'
+import type { Region } from '@/api/generated/model'
 import { AuthCard, Field, FormMessage } from '@/components/AuthCard'
 import { Button } from '@/components/ui/button'
 
@@ -16,11 +18,14 @@ export function CreateAccountPage({ firstAccount }: { firstAccount: boolean }) {
   const queryClient = useQueryClient()
   const create = useCreateAccount()
   const [name, setName] = useState('')
+  const [region, setRegion] = useState<Region>()
+  const [regionMissing, setRegionMissing] = useState(false)
 
   function submit(event: React.FormEvent) {
     event.preventDefault()
+    if (!region) return setRegionMissing(true)
     create.mutate(
-      { data: { name } },
+      { data: { name, region } },
       {
         onSuccess: async (response) => {
           setCurrentAccountId(response.data.id)
@@ -59,6 +64,7 @@ export function CreateAccountPage({ firstAccount }: { firstAccount: boolean }) {
           onChange={(e) => setName(e.target.value)}
           error={create.error}
         />
+        <RegionField value={region} onChange={setRegion} missing={regionMissing} />
         <FormMessage error>{errorMessage(create.error)}</FormMessage>
         <Button type="submit" disabled={create.isPending}>
           {create.isPending ? 'Creating…' : firstAccount ? 'Continue' : 'Add Amazon seller account'}

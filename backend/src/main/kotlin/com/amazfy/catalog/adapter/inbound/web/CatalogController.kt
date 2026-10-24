@@ -10,7 +10,7 @@ import com.amazfy.api.generated.model.ProductUpdateRequest
 import com.amazfy.catalog.application.BrandSummary
 import com.amazfy.catalog.application.CatalogService
 import com.amazfy.catalog.application.ProductSummary
-import com.amazfy.catalog.domain.Marketplace
+import com.amazfy.common.amazon.Marketplace
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize

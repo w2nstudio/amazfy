@@ -48,7 +48,7 @@ class AuthEndpointsTest {
         mockMvc
             .post("/api/v1/auth/register") {
                 contentType = MediaType.APPLICATION_JSON
-                content = """{"email":"$email","password":"$password","accountName":"AquaLife US"}"""
+                content = """{"email":"$email","password":"$password","accountName":"AquaLife US","region":"NA"}"""
             }.andReturn()
 
     private fun MvcResult.refreshCookie(): Cookie = response.getCookie(AuthController.REFRESH_COOKIE)!!
@@ -142,7 +142,7 @@ class AuthEndpointsTest {
         mockMvc
             .post("/api/v1/auth/register") {
                 contentType = MediaType.APPLICATION_JSON
-                content = """{"email":"not-an-email","password":"short","accountName":"Shop"}"""
+                content = """{"email":"not-an-email","password":"short","accountName":"Shop","region":"NA"}"""
             }.andExpect {
                 status { isBadRequest() }
                 content { contentType(MediaType.APPLICATION_PROBLEM_JSON) }

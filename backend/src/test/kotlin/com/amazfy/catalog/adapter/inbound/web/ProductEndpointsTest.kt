@@ -26,7 +26,9 @@ class ProductEndpointsTest {
     lateinit var mockMvc: MockMvc
 
     /** A signed-up seller: access token and the id of the Amazon seller account created at sign-up. */
-    private inner class Seller {
+    private inner class Seller(
+        region: String = "NA",
+    ) {
         val token: String
         val accountId: String
 
@@ -37,7 +39,7 @@ class ProductEndpointsTest {
                         contentType = MediaType.APPLICATION_JSON
                         content =
                             """{"email":"products-${UUID.randomUUID()}@aqualife.com","password":"correct horse battery",""" +
-                            """"accountName":"AquaLife Inc. – North America"}"""
+                            """"accountName":"AquaLife Inc.","region":"$region"}"""
                     }.andReturn()
                     .response.contentAsString
             token = Regex(""""accessToken":"([^"]+)"""").find(body)!!.groupValues[1]
@@ -112,13 +114,13 @@ class ProductEndpointsTest {
         val seller = Seller()
         val aquaLife = seller.brand("AquaLife")
 
-        seller.create(aquaLife, " b0aaa11111 ", " Aquarium filter 40L ", marketplace = "UK").andExpect {
+        seller.create(aquaLife, " b0aaa11111 ", " Aquarium filter 40L ", marketplace = "CA").andExpect {
             status { isCreated() }
             jsonPath("$.brandId") { value(aquaLife) }
             jsonPath("$.asin") { value("B0AAA11111") }
-            jsonPath("$.marketplace") { value("UK") }
+            jsonPath("$.marketplace") { value("CA") }
             jsonPath("$.name") { value("Aquarium filter 40L") }
-            jsonPath("$.amazonUrl") { value("https://www.amazon.co.uk/dp/B0AAA11111") }
+            jsonPath("$.amazonUrl") { value("https://www.amazon.ca/dp/B0AAA11111") }
         }
     }
 
@@ -160,7 +162,7 @@ class ProductEndpointsTest {
             jsonPath("$.detail") { value("This ASIN is already in your catalog for this marketplace.") }
         }
         // The same listing on another Amazon site is a separate product
-        seller.create(aquaLife, "B0AAA11111", "Filter 40L (Germany)", marketplace = "DE").andExpect { status { isCreated() } }
+        seller.create(aquaLife, "B0AAA11111", "Filter 40L (Canada)", marketplace = "CA").andExpect { status { isCreated() } }
     }
 
     @Test
@@ -171,6 +173,21 @@ class ProductEndpointsTest {
         seller.create(aquaLife, "B0AAA1111", "Filter").andExpect { status { isBadRequest() } }
         seller.create(aquaLife, "B0AAA11111", "   ").andExpect { status { isBadRequest() } }
         seller.create(aquaLife, "B0AAA11111", "Filter", marketplace = "GB").andExpect { status { isBadRequest() } }
+    }
+
+    @Test
+    fun `products can only be on marketplaces of the seller account's region`() {
+        val northAmerica = Seller(region = "NA")
+        val naBrand = northAmerica.brand("AquaLife")
+        northAmerica.create(naBrand, "B0AAA11111", "Filter", marketplace = "DE").andExpect {
+            status { isBadRequest() }
+            jsonPath("$.detail") { value("This seller account is in North America, so its products can be on amazon.com, amazon.ca only.") }
+        }
+
+        val europe = Seller(region = "EU")
+        val euBrand = europe.brand("AquaLife")
+        europe.create(euBrand, "B0AAA11111", "Filter", marketplace = "DE").andExpect { status { isCreated() } }
+        europe.create(euBrand, "B0AAA11111", "Filter", marketplace = "US").andExpect { status { isBadRequest() } }
     }
 
     @Test

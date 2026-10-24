@@ -14,6 +14,7 @@ import com.amazfy.auth.application.GoogleSignInCancelledException
 import com.amazfy.auth.application.TokenService
 import com.amazfy.auth.application.Tokens
 import com.amazfy.auth.domain.GoogleLoginFailedException
+import com.amazfy.common.amazon.Region
 import com.amazfy.common.security.currentUserId
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
@@ -39,7 +40,7 @@ class AuthController(
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun register(registerRequest: RegisterRequest): ResponseEntity<AuthTokens> {
-        val registration = authService.register(registerRequest.email, registerRequest.password, registerRequest.accountName)
+        val registration = with(registerRequest) { authService.register(email, password, accountName, Region.valueOf(region.value)) }
         return withTokens(HttpStatus.CREATED, tokenService.issueFor(registration.user.id))
     }
 

@@ -34,7 +34,7 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 ## Domain naming (use everywhere: code, schema, UI, docs)
 
 - **User** = a person who logs in. Never call it "account".
-- **Account** = one seller business = exactly one Amazon seller account. Users ↔ accounts are many-to-many via **Membership** (role: owner in Phase 1).
+- **Account** (in prose and UI: "seller account") = exactly one Amazon seller account, so it has one Amazon **Region** (`NA` / `EU`, fixed at creation); its products may only use that region's marketplaces (`common/amazon/Marketplace.kt`). Never write "Amazfy account" (it reads like the login). Users ↔ accounts are many-to-many via **Membership** (role: owner in Phase 1).
 - Hierarchy: Account → Brand → Product (unique by ASIN + marketplace).
 - Google structure: Campaign → AdGroup → Ad. The **Ad** is linked to a product (ASIN parsed from its final URL) or, for Brand Store links, only to a brand.
 - Always write "Google Ads account" and "Amazon seller account" in full.
