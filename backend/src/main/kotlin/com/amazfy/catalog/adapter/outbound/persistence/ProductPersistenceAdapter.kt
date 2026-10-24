@@ -2,9 +2,9 @@ package com.amazfy.catalog.adapter.outbound.persistence
 
 import com.amazfy.catalog.application.port.ProductRepository
 import com.amazfy.catalog.domain.Asin
-import com.amazfy.catalog.domain.Marketplace
 import com.amazfy.catalog.domain.Product
 import com.amazfy.catalog.domain.ProductName
+import com.amazfy.common.amazon.Marketplace
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Component

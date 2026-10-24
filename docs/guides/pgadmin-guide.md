@@ -20,7 +20,7 @@ The server is registered automatically (from the `configs` part of `docker-compo
 | --- | --- |
 | `users` | People who log in (email, when the email was verified) |
 | `user_identities` | How each user logs in: `password` (with the bcrypt hash) and/or `google` (Google's user id) |
-| `accounts` | Amazfy accounts, one per Amazon seller account |
+| `accounts` | Seller accounts, one per Amazon seller account, each with its Amazon region (`NA` / `EU`) |
 | `memberships` | Which user can access which account, and their role |
 | `refresh_tokens`, `one_time_tokens` | Sessions and emailed links; only hashes, never the real tokens |
 | `auth_attempts` | Recent failed logins and email requests for the brute-force limits (hashed keys) |

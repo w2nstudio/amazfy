@@ -1,9 +1,9 @@
 package com.amazfy.catalog.application.port
 
 import com.amazfy.catalog.domain.Asin
-import com.amazfy.catalog.domain.Marketplace
 import com.amazfy.catalog.domain.Product
 import com.amazfy.catalog.domain.ProductName
+import com.amazfy.common.amazon.Marketplace
 import java.util.UUID
 
 /** Storage for products. Like BrandRepository, always within CurrentAccount (@TenantId): no account parameter. */

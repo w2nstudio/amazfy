@@ -21,6 +21,7 @@ import com.amazfy.auth.domain.OneTimeTokenPurpose.PASSWORD_RESET
 import com.amazfy.auth.domain.RawPassword
 import com.amazfy.auth.domain.SecretTokenCodec
 import com.amazfy.auth.domain.User
+import com.amazfy.common.amazon.Region
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -61,13 +62,14 @@ class AuthService(
         email: String,
         password: String,
         accountName: String,
+        region: Region,
     ): Registration {
         val validEmail = Email.of(email)
         val validPassword = RawPassword.of(password)
         if (users.existsByEmail(validEmail)) throw EmailAlreadyRegisteredException()
 
         val user = users.createWithPassword(validEmail, passwordHasher.hash(validPassword.value))
-        val account = accountService.createAccount(accountName, user.id)
+        val account = accountService.createAccount(accountName, region, user.id)
         startEmailVerification(user)
         return Registration(user, account.id)
     }

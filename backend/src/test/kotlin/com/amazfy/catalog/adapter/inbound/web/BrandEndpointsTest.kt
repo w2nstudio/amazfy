@@ -37,7 +37,7 @@ class BrandEndpointsTest {
                         contentType = MediaType.APPLICATION_JSON
                         content =
                             """{"email":"brands-${UUID.randomUUID()}@aqualife.com","password":"correct horse battery",""" +
-                            """"accountName":"AquaLife Inc. – North America"}"""
+                            """"accountName":"AquaLife Inc. – North America","region":"NA"}"""
                     }.andReturn()
                     .response.contentAsString
             token = Regex(""""accessToken":"([^"]+)"""").find(body)!!.groupValues[1]

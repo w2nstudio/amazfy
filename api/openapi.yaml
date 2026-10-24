@@ -311,7 +311,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AccountRequest"
+              $ref: "#/components/schemas/AccountCreateRequest"
       responses:
         "201":
           description: Account created
@@ -346,6 +346,7 @@ paths:
       tags: [Accounts]
       operationId: renameAccount
       summary: Rename an account (owner only)
+      description: Only the name changes; the region is fixed, like the Amazon seller account's.
       requestBody:
         required: true
         content:
@@ -696,7 +697,7 @@ components:
 
     RegisterRequest:
       type: object
-      required: [email, password, accountName]
+      required: [email, password, accountName, region]
       properties:
         email:
           type: string
@@ -713,6 +714,8 @@ components:
           minLength: 1
           maxLength: 100
           example: AquaLife Inc. – North America
+        region:
+          $ref: "#/components/schemas/Region"
 
     LoginRequest:
       type: object
@@ -813,9 +816,21 @@ components:
           maxLength: 100
           example: AquaLife Inc. – North America
 
+    AccountCreateRequest:
+      type: object
+      required: [name, region]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: AquaLife Inc. – North America
+        region:
+          $ref: "#/components/schemas/Region"
+
     Account:
       type: object
-      required: [id, name, createdAt]
+      required: [id, name, region, createdAt]
       properties:
         id:
           type: string
@@ -823,6 +838,8 @@ components:
         name:
           type: string
           example: AquaLife Inc. – North America
+        region:
+          $ref: "#/components/schemas/Region"
         createdAt:
           type: string
           format: date-time
@@ -834,6 +851,14 @@ components:
         FR amazon.fr, IT amazon.it, ES amazon.es.
       type: string
       enum: [US, CA, UK, DE, FR, IT, ES]
+
+    Region:
+      description: |
+        The Amazon region of a seller account. Amazon gives one seller account per region ("unified account"),
+        and it sells in that region's marketplaces only: NA (North America) US, CA; EU (Europe) UK, DE, FR, IT, ES.
+        A product's marketplace must be in its account's region (400 otherwise). Fixed once the account exists.
+      type: string
+      enum: [NA, EU]
 
     BrandRequest:
       type: object
@@ -877,6 +902,7 @@ components:
             Amazon's 10-character product id, e.g. B0AAA11111 (from the listing's address: amazon.com/dp/B0AAA11111).
             Spaces are trimmed and letters upper-cased; then it must be "B0" plus 8 letters or digits.
             Unique together with the marketplace within the account (409 otherwise).
+            The marketplace must be in the account's region (400 otherwise).
           example: B0AAA11111
         marketplace:
           $ref: "#/components/schemas/Marketplace"

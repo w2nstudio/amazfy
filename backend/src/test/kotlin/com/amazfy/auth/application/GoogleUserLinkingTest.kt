@@ -4,6 +4,7 @@ import com.amazfy.TestcontainersConfiguration
 import com.amazfy.auth.domain.GoogleIdentity
 import com.amazfy.auth.domain.GoogleLoginFailedException
 import com.amazfy.auth.domain.InvalidCredentialsException
+import com.amazfy.common.amazon.Region
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -72,7 +73,7 @@ class GoogleUserLinkingTest {
 
     @Test
     fun `Google sign-in is linked to an existing verified user with the same email, whose password keeps working`() {
-        val registered = authService.register("john@aqualife.com", password, "AquaLife US").user
+        val registered = authService.register("john@aqualife.com", password, "AquaLife US", Region.NA).user
         markVerified(registered.id)
 
         val login = authService.loginWithGoogle(google("John@AquaLife.com"))
@@ -85,7 +86,7 @@ class GoogleUserLinkingTest {
     @Test
     fun `linking to a never-verified user removes their password and ends their sessions`() {
         // Someone signed up with this address but never proved they own it
-        val registered = authService.register("victim@gmail.com", password, "Squatter Shop").user
+        val registered = authService.register("victim@gmail.com", password, "Squatter Shop", Region.NA).user
         val squatterSession = tokenService.issueFor(registered.id)
 
         val login = authService.loginWithGoogle(google("victim@gmail.com"))
