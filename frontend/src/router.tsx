@@ -1,5 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { RequireAuth } from '@/auth/RequireAuth'
+import { AppLayout } from '@/components/AppLayout'
+import { BrandsPage } from '@/pages/BrandsPage'
 import { CreateAccountPage } from '@/pages/CreateAccountPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { HomePage } from '@/pages/HomePage'
@@ -21,7 +23,14 @@ export const router = createBrowserRouter([
   {
     element: <RequireAuth />,
     children: [
-      { path: '/', element: <HomePage /> },
+      {
+        // Header with account switcher and page links around these pages
+        element: <AppLayout />,
+        children: [
+          { path: '/', element: <HomePage /> },
+          { path: '/brands', element: <BrandsPage /> },
+        ],
+      },
       { path: '/onboarding', element: <CreateAccountPage firstAccount /> },
       { path: '/accounts/new', element: <CreateAccountPage firstAccount={false} /> },
     ],
