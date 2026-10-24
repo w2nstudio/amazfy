@@ -3,6 +3,7 @@ package com.amazfy.account.application
 import com.amazfy.account.application.port.AccountRepository
 import com.amazfy.account.domain.Account
 import com.amazfy.account.domain.AccountName
+import com.amazfy.common.amazon.Region
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -17,14 +18,18 @@ import java.util.UUID
 class AccountService(
     private val accounts: AccountRepository,
 ) {
-    /** Creates an account; the user becomes its owner. Throws InvalidAccountNameException for a bad name. */
+    /**
+     * Creates an account in an Amazon region; the user becomes its owner. Throws InvalidAccountNameException for a bad
+     * name. The region can't change later.
+     */
     @Transactional
     fun createAccount(
         name: String,
+        region: Region,
         ownerUserId: UUID,
-    ): AccountSummary = accounts.createWithOwner(AccountName.of(name), ownerUserId).toSummary()
+    ): AccountSummary = accounts.createWithOwner(AccountName.of(name), region, ownerUserId).toSummary()
 
-    /** Renames an account. Callers must check that the user may manage it. */
+    /** Renames an account (the region stays). Callers must check that the user may manage it. */
     @Transactional
     fun renameAccount(
         accountId: UUID,
@@ -43,4 +48,4 @@ class AccountService(
     ): Role? = accounts.findRole(userId, accountId)
 }
 
-internal fun Account.toSummary() = AccountSummary(id = id, name = name.value, createdAt = createdAt)
+internal fun Account.toSummary() = AccountSummary(id = id, name = name.value, region = region, createdAt = createdAt)

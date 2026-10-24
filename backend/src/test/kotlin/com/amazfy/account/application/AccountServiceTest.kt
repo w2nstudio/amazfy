@@ -2,6 +2,7 @@ package com.amazfy.account.application
 
 import com.amazfy.TestcontainersConfiguration
 import com.amazfy.account.domain.InvalidAccountNameException
+import com.amazfy.common.amazon.Region
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -37,7 +38,7 @@ class AccountServiceTest {
     fun `creating an account makes the user its owner`() {
         val john = newUser("john@aqualife.com")
 
-        val account = accountService.createAccount("  AquaLife US ", john)
+        val account = accountService.createAccount("  AquaLife US ", Region.NA, john)
 
         assertEquals("AquaLife US", account.name)
         assertEquals(7, account.id.version())
@@ -48,9 +49,9 @@ class AccountServiceTest {
     fun `a user sees only the accounts they belong to, sorted by name`() {
         val john = newUser("john@aqualife.com")
         val maria = newUser("maria@example.com")
-        accountService.createAccount("AquaLife US", john)
-        accountService.createAccount("AquaLife EU", john)
-        accountService.createAccount("Maria's Shop", maria)
+        accountService.createAccount("AquaLife US", Region.NA, john)
+        accountService.createAccount("AquaLife EU", Region.NA, john)
+        accountService.createAccount("Maria's Shop", Region.NA, maria)
 
         val johnsAccounts = accountService.accessibleAccounts(john)
 
@@ -62,7 +63,7 @@ class AccountServiceTest {
     fun `a user has no role in someone else's account`() {
         val john = newUser("john@aqualife.com")
         val maria = newUser("maria@example.com")
-        val mariasAccount = accountService.createAccount("Maria's Shop", maria)
+        val mariasAccount = accountService.createAccount("Maria's Shop", Region.NA, maria)
 
         assertNull(accountService.roleOf(john, mariasAccount.id))
     }
@@ -70,7 +71,7 @@ class AccountServiceTest {
     @Test
     fun `renaming changes the name`() {
         val john = newUser("john@aqualife.com")
-        val account = accountService.createAccount("Old Name", john)
+        val account = accountService.createAccount("Old Name", Region.NA, john)
 
         assertEquals("New Name", accountService.renameAccount(account.id, "New Name").name)
         assertEquals("New Name", accountService.findAccount(account.id)?.name)
@@ -79,7 +80,7 @@ class AccountServiceTest {
     @Test
     fun `invalid name is rejected before anything is stored`() {
         val john = newUser("john@aqualife.com")
-        assertFailsWith<InvalidAccountNameException> { accountService.createAccount("   ", john) }
+        assertFailsWith<InvalidAccountNameException> { accountService.createAccount("   ", Region.NA, john) }
         assertTrue(accountService.accessibleAccounts(john).isEmpty())
     }
 }

@@ -12,6 +12,7 @@ import com.amazfy.auth.domain.InvalidOneTimeTokenException
 import com.amazfy.auth.domain.OneTimeTokenPurpose
 import com.amazfy.auth.domain.SecretTokenCodec
 import com.amazfy.auth.domain.WeakPasswordException
+import com.amazfy.common.amazon.Region
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -50,7 +51,7 @@ class AuthServiceTest {
 
     @Test
     fun `register creates the user, a hashed password and an owned account`() {
-        val registration = authService.register("  John@AquaLife.com ", password, "AquaLife US")
+        val registration = authService.register("  John@AquaLife.com ", password, "AquaLife US", Region.NA)
 
         assertEquals("john@aqualife.com", registration.user.email.value)
         assertFalse(registration.user.emailVerified)
@@ -68,32 +69,32 @@ class AuthServiceTest {
 
     @Test
     fun `registering the same email twice is a conflict, whatever the case`() {
-        authService.register("john@aqualife.com", password, "AquaLife US")
-        assertFailsWith<EmailAlreadyRegisteredException> { authService.register("JOHN@aqualife.com", password, "Another") }
+        authService.register("john@aqualife.com", password, "AquaLife US", Region.NA)
+        assertFailsWith<EmailAlreadyRegisteredException> { authService.register("JOHN@aqualife.com", password, "Another", Region.NA) }
     }
 
     @Test
     fun `invalid input is rejected before anything is stored`() {
-        assertFailsWith<InvalidEmailException> { authService.register("not-an-email", password, "Shop") }
-        assertFailsWith<WeakPasswordException> { authService.register("a@b.com", "short", "Shop") }
+        assertFailsWith<InvalidEmailException> { authService.register("not-an-email", password, "Shop", Region.NA) }
+        assertFailsWith<WeakPasswordException> { authService.register("a@b.com", "short", "Shop", Region.NA) }
         assertEquals(0, jdbc.sql("SELECT count(*) FROM users").query(Int::class.java).single())
     }
 
     @Test
     fun `an invalid account name fails the registration`() {
         // In production the whole registration is one transaction, so the user row is rolled back too
-        assertFailsWith<InvalidAccountNameException> { authService.register("a@b.com", password, "  ") }
+        assertFailsWith<InvalidAccountNameException> { authService.register("a@b.com", password, "  ", Region.NA) }
     }
 
     @Test
     fun `login succeeds with the right password, email in any case`() {
-        val registered = authService.register("john@aqualife.com", password, "AquaLife US").user
+        val registered = authService.register("john@aqualife.com", password, "AquaLife US", Region.NA).user
         assertEquals(registered.id, authService.login("John@AquaLife.COM", password, testIp).id)
     }
 
     @Test
     fun `wrong password and unknown email fail the same way`() {
-        authService.register("john@aqualife.com", password, "AquaLife US")
+        authService.register("john@aqualife.com", password, "AquaLife US", Region.NA)
         val wrongPassword =
             assertFailsWith<InvalidCredentialsException> { authService.login("john@aqualife.com", "wrong password!", testIp) }
         val unknownEmail = assertFailsWith<InvalidCredentialsException> { authService.login("nobody@aqualife.com", password, testIp) }
@@ -106,7 +107,7 @@ class AuthServiceTest {
         purpose: OneTimeTokenPurpose,
         expiresAt: Instant,
     ): String {
-        val userId = authService.register("token-${purpose.name.lowercase()}@aqualife.com", password, "AquaLife US").user.id
+        val userId = authService.register("token-${purpose.name.lowercase()}@aqualife.com", password, "AquaLife US", Region.NA).user.id
         val rawToken = SecretTokenCodec.newToken()
         oneTimeTokens.save(userId, purpose, SecretTokenCodec.hash(rawToken), expiresAt)
         return rawToken

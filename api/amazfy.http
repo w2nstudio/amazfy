@@ -43,7 +43,8 @@ Content-Type: application/json
 {
   "email": "{{email}}",
   "password": "{{password}}",
-  "accountName": "AquaLife US"
+  "accountName": "AquaLife US",
+  "region": "NA"
 }
 
 ### Login (200): its access token and refresh cookie are used by the requests below
@@ -142,13 +143,14 @@ Content-Type: application/json
 # Accounts (run "Who am I?" first: @accountId comes from it)
 ############################################################
 
-### Add a second account; the caller becomes its owner (201)
+### Add a second account, in Europe; the caller becomes its owner (201). Region: NA or EU, fixed afterwards
 POST {{baseUrl}}/accounts
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "name": "AquaLife EU"
+  "name": "AquaLife EU",
+  "region": "EU"
 }
 
 ### One account (200)
@@ -212,8 +214,9 @@ Content-Type: application/json
 }
 
 ### Add a product (201). The ASIN is trimmed and upper-cased; amazonUrl links to the listing.
-# The same ASIN + marketplace again gives 409; the same ASIN with "marketplace": "DE" is a separate product.
-# A wrong ASIN (not B0 + 8 letters/digits) gives 400, and so does a brand that isn't one of this account's.
+# The same ASIN + marketplace again gives 409; the same ASIN with "marketplace": "CA" is a separate product.
+# A wrong ASIN (not B0 + 8 letters/digits) gives 400, and so do a brand that isn't one of this account's and a
+# marketplace outside the account's region (this NA account: US or CA; e.g. "DE" gives 400).
 # @name createProduct
 POST {{baseUrl}}/accounts/{{accountId}}/products
 Authorization: Bearer {{accessToken}}
@@ -273,7 +276,8 @@ Content-Type: application/json
 {
   "email": "{{otherEmail}}",
   "password": "{{password}}",
-  "accountName": "Other Shop"
+  "accountName": "Other Shop",
+  "region": "NA"
 }
 
 ### The second user reads the first user's account: 403

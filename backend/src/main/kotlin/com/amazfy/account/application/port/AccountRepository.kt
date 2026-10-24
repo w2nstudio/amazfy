@@ -4,6 +4,7 @@ import com.amazfy.account.application.AccountAccess
 import com.amazfy.account.application.Role
 import com.amazfy.account.domain.Account
 import com.amazfy.account.domain.AccountName
+import com.amazfy.common.amazon.Region
 import java.util.UUID
 
 /** Storage the account module needs. Implemented by the persistence adapter. */
@@ -11,6 +12,7 @@ interface AccountRepository {
     /** Creates an account and gives [ownerUserId] the OWNER role in it. */
     fun createWithOwner(
         name: AccountName,
+        region: Region,
         ownerUserId: UUID,
     ): Account
 

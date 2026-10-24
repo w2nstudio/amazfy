@@ -106,7 +106,7 @@ class GoogleLoginCompleteTest {
             .post("/api/v1/accounts") {
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
-                content = """{"name":"AquaLife US"}"""
+                content = """{"name":"AquaLife US","region":"NA"}"""
             }.andExpect { status { isCreated() } }
 
         // Next time: straight to the home page

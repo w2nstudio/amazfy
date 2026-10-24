@@ -85,7 +85,7 @@ Each walkthrough lists the requests in order and what you should see. Use a new 
 
 ### Sign up and look around
 
-1. **Register**: `{"email": "john@aqualife.com", "password": "correct horse battery", "accountName": "AquaLife US"}` → **201**, `accessToken` saved.
+1. **Register**: `{"email": "john@aqualife.com", "password": "correct horse battery", "accountName": "AquaLife US", "region": "NA"}` → **201**, `accessToken` saved.
 2. **Get me** → **200**: your email, `"emailVerified": false`, one account *AquaLife US* with role `OWNER`. Copy the account's `id`.
 3. **Get account** with that id → **200**.
 

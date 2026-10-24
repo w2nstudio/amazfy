@@ -1,14 +1,19 @@
 package com.amazfy.account.domain
 
+import com.amazfy.common.amazon.Region
 import com.amazfy.common.error.AppException
 import com.amazfy.common.error.ErrorKind
 import java.time.Instant
 import java.util.UUID
 
-/** One seller business = exactly one Amazon seller account (see CLAUDE.md, Domain naming). */
+/**
+ * One seller account = exactly one Amazon seller account (see CLAUDE.md, Domain naming), so it has one Amazon
+ * [region], fixed at creation.
+ */
 data class Account(
     val id: UUID,
     val name: AccountName,
+    val region: Region,
     val createdAt: Instant,
 )
 

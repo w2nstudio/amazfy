@@ -31,7 +31,7 @@ class DatabaseSchemaTest {
 
     private fun insertAccount(name: String): UUID =
         jdbc
-            .sql("INSERT INTO accounts (name) VALUES (:name) RETURNING id")
+            .sql("INSERT INTO accounts (name, region) VALUES (:name, 'NA') RETURNING id")
             .param("name", name)
             .query(UUID::class.java)
             .single()

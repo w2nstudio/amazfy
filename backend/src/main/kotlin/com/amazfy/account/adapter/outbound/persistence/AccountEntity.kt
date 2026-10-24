@@ -17,6 +17,8 @@ import java.util.UUID
 @Table(name = "accounts")
 class AccountEntity(
     var name: String,
+    @Column(updatable = false)
+    val region: String,
 ) {
     @Id
     @UuidGenerator(style = UuidGenerator.Style.VERSION_7)

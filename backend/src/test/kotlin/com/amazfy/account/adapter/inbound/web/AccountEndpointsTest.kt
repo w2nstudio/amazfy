@@ -36,7 +36,7 @@ class AccountEndpointsTest {
             mockMvc
                 .post("/api/v1/auth/register") {
                     contentType = MediaType.APPLICATION_JSON
-                    content = """{"email":"$email","password":"correct horse battery","accountName":"$accountName"}"""
+                    content = """{"email":"$email","password":"correct horse battery","accountName":"$accountName","region":"NA"}"""
                 }.andReturn()
                 .response.contentAsString
         val token = Regex(""""accessToken":"([^"]+)"""").find(body)!!.groupValues[1]
@@ -79,10 +79,11 @@ class AccountEndpointsTest {
             .post("/api/v1/accounts") {
                 header(HttpHeaders.AUTHORIZATION, seller.auth())
                 contentType = MediaType.APPLICATION_JSON
-                content = """{"name":"AquaLife EU"}"""
+                content = """{"name":"AquaLife EU","region":"EU"}"""
             }.andExpect {
                 status { isCreated() }
                 jsonPath("$.name") { value("AquaLife EU") }
+                jsonPath("$.region") { value("EU") }
             }
 
         mockMvc.get("/api/v1/me") { header(HttpHeaders.AUTHORIZATION, seller.auth()) }.andExpect {

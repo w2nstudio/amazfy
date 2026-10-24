@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
+import { AMAZON_SITES, REGIONS } from '@/account/amazon'
 import { useCurrentAccount } from '@/account/currentAccount'
 import { errorMessage } from '@/api/client'
 import { getListBrandsQueryKey, useListBrands } from '@/api/generated/brands/brands'
-import { Marketplace, Role, type Brand, type Product } from '@/api/generated/model'
+import { Role, type Brand, type Marketplace, type Product, type Region } from '@/api/generated/model'
 import {
   getListProductsQueryKey,
   useCreateProduct,
@@ -21,27 +22,23 @@ import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, Sele
 // The products of the current Amazon seller account: one per Amazon listing (ASIN + marketplace), under a brand.
 // /products shows all, /products?brand=<id> one brand's (the Brands page links there). Viewers only see the list.
 
-/** The Amazon site of each marketplace, as sellers know them (the codes are Amazon's own: UK, not GB). */
-const AMAZON_SITES: Record<Marketplace, string> = {
-  US: 'amazon.com',
-  CA: 'amazon.ca',
-  UK: 'amazon.co.uk',
-  DE: 'amazon.de',
-  FR: 'amazon.fr',
-  IT: 'amazon.it',
-  ES: 'amazon.es',
-}
-
 const ALL_BRANDS = 'all'
 
 export function ProductsPage() {
   const { current } = useCurrentAccount()
   if (!current) return null
   // key: switching accounts starts the page fresh (no half-filled form carried over to the other account)
-  return <Products key={current.account.id} accountId={current.account.id} canEdit={current.role !== Role.VIEWER} />
+  return (
+    <Products
+      key={current.account.id}
+      accountId={current.account.id}
+      region={current.account.region}
+      canEdit={current.role !== Role.VIEWER}
+    />
+  )
 }
 
-function Products({ accountId, canEdit }: { accountId: string; canEdit: boolean }) {
+function Products({ accountId, region, canEdit }: { accountId: string; region: Region; canEdit: boolean }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const brands = useListBrands(accountId)
   const brandList = brands.data?.data ?? []
@@ -75,7 +72,12 @@ function Products({ accountId, canEdit }: { accountId: string; canEdit: boolean 
       ) : (
         <>
           {canEdit && brandList.length > 0 && (
-            <AddProductForm accountId={accountId} brands={brandList} defaultBrandId={brandId ?? brandList[0].id} />
+            <AddProductForm
+              accountId={accountId}
+              region={region}
+              brands={brandList}
+              defaultBrandId={brandId ?? brandList[0].id}
+            />
           )}
 
           <div className="flex items-center gap-2 text-sm">
@@ -136,10 +138,12 @@ function useRefreshCatalog(accountId: string) {
 
 function AddProductForm({
   accountId,
+  region,
   brands,
   defaultBrandId,
 }: {
   accountId: string
+  region: Region
   brands: Brand[]
   defaultBrandId: string
 }) {
@@ -147,7 +151,9 @@ function AddProductForm({
   const refresh = useRefreshCatalog(accountId)
   const [brandId, setBrandId] = useState(defaultBrandId)
   const [asin, setAsin] = useState('')
-  const [marketplace, setMarketplace] = useState<Marketplace>(Marketplace.US)
+  // Only the marketplaces of the seller account's region (the backend refuses others)
+  const marketplaces = REGIONS[region].marketplaces
+  const [marketplace, setMarketplace] = useState<Marketplace>(marketplaces[0])
   const [name, setName] = useState('')
 
   function submit(event: React.FormEvent) {
@@ -190,14 +196,16 @@ function AddProductForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(Marketplace).map((code) => (
+              {marketplaces.map((code) => (
                 <SelectItem key={code} value={code}>
                   {code} · {AMAZON_SITES[code]}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">The Amazon site where this listing sells.</p>
+          <p className="text-xs text-muted-foreground">
+            The Amazon site where this listing sells, in {REGIONS[region].name}.
+          </p>
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="name">Name</Label>

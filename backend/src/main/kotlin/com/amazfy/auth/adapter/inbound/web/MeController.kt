@@ -4,6 +4,7 @@ import com.amazfy.account.application.AccountService
 import com.amazfy.api.generated.MeApi
 import com.amazfy.api.generated.model.Account
 import com.amazfy.api.generated.model.Me
+import com.amazfy.api.generated.model.Region
 import com.amazfy.api.generated.model.Role
 import com.amazfy.auth.application.AuthService
 import com.amazfy.common.security.currentUserId
@@ -30,6 +31,7 @@ class MeController(
                         Account(
                             id = it.account.id,
                             name = it.account.name,
+                            region = Region.forValue(it.account.region.name),
                             createdAt = it.account.createdAt.atOffset(ZoneOffset.UTC),
                         ),
                     role = Role.entries.first { role -> role.value == it.role.name },

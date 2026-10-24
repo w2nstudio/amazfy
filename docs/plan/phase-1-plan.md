@@ -61,6 +61,7 @@ Current milestone: **M3 reporting core + CSV import** (M0, M1 and M2 complete). 
 | Product endpoints: list (by brand, then name; optional brand filter), create (400 for a brand outside the account, 409 for a duplicate ASIN + marketplace), rename/move, delete; real brand product counts; 409 when removing a brand with products | Done |
 | Frontend: `AppLayout` (header, account switcher, page links) around logged-in pages; Brands page (list with product counts, add, rename, remove with confirmation; read-only for viewers) | Done |
 | Frontend: Products page (filter by brand via `?brand=`, add with ASIN + marketplace, edit name/brand, remove with confirmation, link to the Amazon listing); brand product counts link to it | Done |
+| Account region (follow-up): V8 `accounts.region` (NA/EU, existing accounts NA, fixed after creation), chosen at sign-up and "Add Amazon seller account"; products only on the region's marketplaces (400); shared `common/amazon` Region + Marketplace; product form shows only the region's marketplaces | Done |
 
 ## Repository layout
 

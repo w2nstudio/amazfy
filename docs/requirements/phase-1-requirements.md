@@ -45,7 +45,7 @@ The company-supplied prototype (`amazfy_mvp`, FastAPI with Meta and CSV import) 
 | **Attribution tag** | Tracking parameters Amazon generates; added to an ad's link so Amazon can report the sales it caused. |
 | **Brand-level spend** | Spend on ads that link to a Brand Store page rather than one product. |
 
-Amazon gives a seller one seller account **per region** (North America, Europe, …). A seller in the US and the UK therefore has two Amazfy accounts. Phase 1 launches in the US only.
+Amazon gives a seller one seller account **per region** (North America, Europe, …). A seller in the US and the UK therefore has two seller accounts in Amazfy, one per region. Each seller account has its region (NA or EU), fixed at creation, and its products can only be on that region's marketplaces. Phase 1 launches in the US only.
 
 ## 3. Users, accounts and onboarding
 

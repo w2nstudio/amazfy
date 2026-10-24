@@ -28,7 +28,7 @@ class CatalogAccessTest {
             mockMvc
                 .post("/api/v1/auth/register") {
                     contentType = MediaType.APPLICATION_JSON
-                    content = """{"email":"$email","password":"correct horse battery","accountName":"AquaLife US"}"""
+                    content = """{"email":"$email","password":"correct horse battery","accountName":"AquaLife US","region":"NA"}"""
                 }.andReturn()
                 .response.contentAsString
         val token = Regex(""""accessToken":"([^"]+)"""").find(body)!!.groupValues[1]

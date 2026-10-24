@@ -1,5 +1,7 @@
 package com.amazfy.catalog.domain
 
+import com.amazfy.common.amazon.Marketplace
+import com.amazfy.common.amazon.Region
 import com.amazfy.common.error.AppException
 import com.amazfy.common.error.ErrorKind
 import java.time.Instant
@@ -41,23 +43,6 @@ value class Asin private constructor(
     }
 }
 
-/**
- * An Amazon country site. Phase 1: the marketplaces where Amazon Attribution is available.
- * The code is Amazon's own (UK, not the ISO code GB). Sales are in the marketplace's currency and never summed across.
- */
-enum class Marketplace(
-    val amazonDomain: String,
-    val currency: String,
-) {
-    US("amazon.com", "USD"),
-    CA("amazon.ca", "CAD"),
-    UK("amazon.co.uk", "GBP"),
-    DE("amazon.de", "EUR"),
-    FR("amazon.fr", "EUR"),
-    IT("amazon.it", "EUR"),
-    ES("amazon.es", "EUR"),
-}
-
 /** A short product name the seller recognises: trimmed, 1–200 characters. */
 @JvmInline
 value class ProductName private constructor(
@@ -85,3 +70,12 @@ class ProductNotFoundException : AppException(ErrorKind.NOT_FOUND, "This product
 
 /** The brand sent with a product isn't one of this account's brands (400: the request is wrong, not the address). */
 class UnknownBrandException : AppException(ErrorKind.BAD_REQUEST, "Choose one of your brands.")
+
+/** A seller account sells only in its Amazon region, e.g. a North America account can't list on amazon.de. */
+class MarketplaceOutsideRegionException(
+    region: Region,
+) : AppException(
+        ErrorKind.BAD_REQUEST,
+        "This seller account is in ${region.displayName}, so its products can be on " +
+            region.marketplaces.joinToString(", ") { it.amazonDomain } + " only.",
+    )

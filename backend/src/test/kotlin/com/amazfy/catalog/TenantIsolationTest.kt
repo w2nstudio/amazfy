@@ -5,8 +5,8 @@ import com.amazfy.catalog.application.port.BrandRepository
 import com.amazfy.catalog.application.port.ProductRepository
 import com.amazfy.catalog.domain.Asin
 import com.amazfy.catalog.domain.BrandName
-import com.amazfy.catalog.domain.Marketplace
 import com.amazfy.catalog.domain.ProductName
+import com.amazfy.common.amazon.Marketplace
 import com.amazfy.common.tenant.CurrentAccount
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -40,7 +40,7 @@ class TenantIsolationTest {
 
     private fun newAccount(name: String): UUID =
         jdbc
-            .sql("INSERT INTO accounts (name) VALUES (:name) RETURNING id")
+            .sql("INSERT INTO accounts (name, region) VALUES (:name, 'NA') RETURNING id")
             .param("name", name)
             .query(UUID::class.java)
             .single()
