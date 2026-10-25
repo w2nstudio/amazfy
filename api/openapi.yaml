@@ -31,6 +31,8 @@ tags:
     description: The seller's brands (registered in Amazon Brand Registry). Every product belongs to one.
   - name: Products
     description: Amazon listings, each identified by ASIN + marketplace, linked to a brand
+  - name: Development
+    description: Helpers for local development only. Production servers don't have them (404).
 
 paths:
   /api/v1/system/info:
@@ -561,6 +563,35 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ---------- Development (local only) ----------
+
+  /api/v1/accounts/{accountId}/dev/sample-data:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    post:
+      tags: [Development]
+      operationId: createSampleData
+      summary: Fill the seller account with sample campaigns, spend and Attribution numbers (local only)
+      description: |
+        Replaces the account's campaigns, ad groups, ads, daily spend and Attribution numbers with about 90 days of
+        made-up but realistic data for its products, so reports can be built and tried before the Google and Amazon
+        connections exist. An account without products first gets sample brands and products.
+        Includes the cases reports must handle: ads linked to products, a Brand Store ad (brand-level spend), an
+        unmatched ad and an Attribution line that matches no ad. Owner only. Only on local development servers.
+      responses:
+        "200":
+          description: Sample data created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleDataResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -859,6 +890,31 @@ components:
         A product's marketplace must be in its account's region (400 otherwise). Fixed once the account exists.
       type: string
       enum: [NA, EU]
+
+    SampleDataResult:
+      type: object
+      description: What the sample data contains
+      required: [fromDate, toDate, products, campaigns, ads, spendRows, attributionRows]
+      properties:
+        fromDate:
+          type: string
+          format: date
+        toDate:
+          type: string
+          format: date
+        products:
+          type: integer
+          description: Products the data was made for
+        campaigns:
+          type: integer
+        ads:
+          type: integer
+        spendRows:
+          type: integer
+          description: Rows of daily spend (one per ad and day)
+        attributionRows:
+          type: integer
+          description: Rows of daily Attribution numbers
 
     BrandRequest:
       type: object
