@@ -66,3 +66,13 @@ Plain-language explanations of business terms as they come up while building Ama
 
 **Unmatched ad** — A Google ad Amazfy can't link to a product or brand yet, e.g. its final URL is a short link. Its spend is still counted for its campaign, but not for any product until the seller links it.
 
+**Click-through** — In Attribution reports: one click on a tagged link that brought someone to Amazon. Usually a little lower than Google's click count for the same ad (some people leave before Amazon's page loads); conversion rate uses Amazon's number.
+
+**Creative** — Amazon Attribution's word for an ad. In a report a *creative* row is one Google ad, a *campaign* and *ad group* row the Google campaign and ad group, identified by Google's ids when Amazon's Google macro tag is used.
+
+**Publisher** — In Attribution: the channel the traffic came from, e.g. "Google Ads". Set when the Attribution tag is created.
+
+**Promoted product vs brand halo** — Attribution counts purchases of the *promoted product* (the one the ad linked to) separately from *brand halo* purchases: other products of the same brand bought after the click (the shopper clicked the filter ad and bought the heater). Amazfy's numbers are the promoted product's; brand halo may be added later.
+
+**New-to-brand** — A purchase by a shopper who hadn't bought from the brand on Amazon in the last 12 months. Attribution reports it separately; shows whether ads bring new customers. Not stored in Phase 1 yet.
+

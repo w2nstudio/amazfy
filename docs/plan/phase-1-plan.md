@@ -73,8 +73,8 @@ The CSV importer reads columns through a name mapping and is checked against a r
 | Step | Status |
 | --- | --- |
 | V9 channel tables: campaigns → ad groups → ads (channel + external id; ad links to a product, a brand or nothing; removing a product makes its ads unmatched), daily spend per ad (micros, currency; one row per ad and day) | Done |
-| V10 Attribution table: daily numbers per Attribution campaign / ad group / creative and marketplace (click-throughs, detail page views, add to carts, purchases, units, sales), linked to the Google ad when matched, kept when not | Next |
-| Sample data for local development: realistic campaigns, ads, spend and Attribution numbers for the seller account's products (never in production) | To do |
+| V10 Attribution table: daily numbers per Attribution campaign / ad group / creative and marketplace (click-throughs, detail page views, add to carts, purchases, units, sales), linked to the Google ad when matched, kept when not; one row per reported line and day | Done |
+| Sample data for local development: realistic campaigns, ads, spend and Attribution numbers for the seller account's products (never in production) | Next |
 | Reporting API: summary for a date range (spend, sales, orders, ROAS, CPA, conversion rate; per currency; default last 30 days) | To do |
 | Reporting API: drill-down (brand → product → campaign → ad group → ad, brand-level spend as its own row) and daily trend | To do |
 | Frontend: dashboard summary with date range | To do |
