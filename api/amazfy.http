@@ -265,6 +265,16 @@ Authorization: Bearer {{accessToken}}
 
 
 ############################################################
+# Development (local servers only; other servers answer 404)
+############################################################
+
+### Fill the account with 90 days of sample ads, spend and Attribution numbers (200, owner only).
+# Adds sample brands and products if the account has none. Running it again replaces the earlier sample data.
+POST {{baseUrl}}/accounts/{{accountId}}/dev/sample-data
+Authorization: Bearer {{accessToken}}
+
+
+############################################################
 # Access rules: a second user can't reach the first user's account
 ############################################################
 

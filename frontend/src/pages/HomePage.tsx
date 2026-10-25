@@ -4,8 +4,10 @@ import { useCurrentAccount } from '@/account/currentAccount'
 import { errorMessage } from '@/api/client'
 import { useResendVerification } from '@/api/generated/auth/auth'
 import { useGetMe } from '@/api/generated/me/me'
+import { Role } from '@/api/generated/model'
 import { useGetSystemInfo } from '@/api/generated/system/system'
 import { FormMessage } from '@/components/AuthCard'
+import { SampleDataPanel } from '@/components/SampleDataPanel'
 import { Button } from '@/components/ui/button'
 
 // Placeholder home page for logged-in users (inside AppLayout). The dashboard replaces it in M3.
@@ -32,6 +34,9 @@ export function HomePage() {
           ; products and the dashboard follow.
         </p>
       </section>
+
+      {/* import.meta.env.DEV: true only under `npm run dev`; a production build leaves this out entirely */}
+      {import.meta.env.DEV && current?.role === Role.OWNER && <SampleDataPanel accountId={current.account.id} />}
 
       <p className="mt-auto text-xs text-muted-foreground">
         {systemInfo.isSuccess && `Backend: ${systemInfo.data.data.name} ${systemInfo.data.data.version}`}
