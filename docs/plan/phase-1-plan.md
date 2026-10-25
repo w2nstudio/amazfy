@@ -64,6 +64,23 @@ Current milestone: **M3 reporting core + CSV import** (M0, M1 and M2 complete). 
 | Account region (follow-up): V8 `accounts.region` (NA/EU, existing accounts NA, fixed after creation), chosen at sign-up and "Add Amazon seller account"; products only on the region's marketplaces (400); shared `common/amazon` Region + Marketplace; product form shows only the region's marketplaces | Done |
 | Error page (follow-up): `ErrorPage` for crashed pages (full page, or inside the header for app pages; details only in the console), unknown regions don't crash; Dependabot skips Kotlin 2.4 until ktlint supports it | Done |
 
+**M3: reporting core + CSV import**
+
+No Google connection yet (M4) and no real Attribution export yet: the dashboard is built on sample data, and the
+Attribution table follows the report's documented fields (Amazon's reporting API and connector docs agree on them).
+The CSV importer reads columns through a name mapping and is checked against a real export before A10 counts as done.
+
+| Step | Status |
+| --- | --- |
+| V9 channel tables: campaigns → ad groups → ads (channel + external id; ad links to a product, a brand or nothing; removing a product makes its ads unmatched), daily spend per ad (micros, currency; one row per ad and day) | Done |
+| V10 Attribution table: daily numbers per Attribution campaign / ad group / creative and marketplace (click-throughs, detail page views, add to carts, purchases, units, sales), linked to the Google ad when matched, kept when not | Next |
+| Sample data for local development: realistic campaigns, ads, spend and Attribution numbers for the seller account's products (never in production) | To do |
+| Reporting API: summary for a date range (spend, sales, orders, ROAS, CPA, conversion rate; per currency; default last 30 days) | To do |
+| Reporting API: drill-down (brand → product → campaign → ad group → ad, brand-level spend as its own row) and daily trend | To do |
+| Frontend: dashboard summary with date range | To do |
+| Frontend: drill-down tables and trend chart | To do |
+| Attribution CSV import (A10): upload, column mapping, re-upload updates rows; verified against a real export | To do |
+
 ## Repository layout
 
 ```
