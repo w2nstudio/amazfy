@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { REGIONS } from '@/account/amazon'
+import { regionName } from '@/account/amazon'
 import { useCurrentAccount } from '@/account/currentAccount'
 import { errorMessage } from '@/api/client'
 import { useResendVerification } from '@/api/generated/auth/auth'
@@ -14,6 +14,7 @@ export function HomePage() {
   const systemInfo = useGetSystemInfo()
   const user = me.data?.data
   const { current } = useCurrentAccount()
+  const region = current && regionName(current.account.region)
 
   return (
     <main className="flex flex-1 flex-col gap-8">
@@ -24,7 +25,7 @@ export function HomePage() {
         <h2 className="text-xl font-medium">{current?.account.name}</h2>
         <p className="text-sm text-muted-foreground">
           You are the {current?.role.toLowerCase()} of this Amazon seller account
-          {current && ` in ${REGIONS[current.account.region].name}`}. Start by adding its{' '}
+          {region && ` in ${region}`}. Start by adding its{' '}
           <Link to="/brands" className="underline underline-offset-4">
             brands
           </Link>
