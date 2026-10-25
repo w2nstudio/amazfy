@@ -5,6 +5,11 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    ignore:
+      # Kotlin 2.4 breaks ktlint ("Extensions storage is not registered"): stay on 2.3.x until ktlint supports 2.4,
+      # then remove this rule. Kotlin 2.3 patches and all other updates (e.g. Gradle) still come.
+      - dependency-name: "org.jetbrains.kotlin*"
+        versions: [">= 2.4.0"]
     groups:
       backend-dependencies:
         patterns: ["*"]

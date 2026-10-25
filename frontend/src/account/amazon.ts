@@ -22,6 +22,19 @@ export const REGIONS: Record<Region, { name: string; marketplaces: Marketplace[]
   },
 }
 
+// Data from the server may carry a region this frontend doesn't know yet (e.g. a newer backend adds one): the helpers
+// below fall back instead of crashing the page.
+
+/** E.g. "North America"; undefined for a region this frontend doesn't know. */
+export function regionName(region: Region): string | undefined {
+  return REGIONS[region]?.name
+}
+
+/** The marketplaces a seller account in this region can sell on (all of them for an unknown region). */
+export function regionMarketplaces(region: Region): Marketplace[] {
+  return REGIONS[region]?.marketplaces ?? Object.values(Marketplace)
+}
+
 /** E.g. "North America (amazon.com, amazon.ca)" */
 export function regionLabel(region: Region) {
   const { name, marketplaces } = REGIONS[region]

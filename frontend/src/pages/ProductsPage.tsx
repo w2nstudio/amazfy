@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { AMAZON_SITES, REGIONS } from '@/account/amazon'
+import { AMAZON_SITES, regionMarketplaces, regionName } from '@/account/amazon'
 import { useCurrentAccount } from '@/account/currentAccount'
 import { errorMessage } from '@/api/client'
 import { getListBrandsQueryKey, useListBrands } from '@/api/generated/brands/brands'
@@ -152,7 +152,7 @@ function AddProductForm({
   const [brandId, setBrandId] = useState(defaultBrandId)
   const [asin, setAsin] = useState('')
   // Only the marketplaces of the seller account's region (the backend refuses others)
-  const marketplaces = REGIONS[region].marketplaces
+  const marketplaces = regionMarketplaces(region)
   const [marketplace, setMarketplace] = useState<Marketplace>(marketplaces[0])
   const [name, setName] = useState('')
 
@@ -204,7 +204,7 @@ function AddProductForm({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            The Amazon site where this listing sells, in {REGIONS[region].name}.
+            The Amazon site where this listing sells{regionName(region) && `, in ${regionName(region)}`}.
           </p>
         </div>
         <div className="flex flex-col gap-2">
