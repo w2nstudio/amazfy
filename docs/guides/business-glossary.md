@@ -59,3 +59,10 @@ Plain-language explanations of business terms as they come up while building Ama
 **Region** — A group of Amazon marketplaces that one Amazon seller account covers. Amazfy supports two: **North America** (`NA`: amazon.com, amazon.ca) and **Europe** (`EU`: amazon.co.uk, .de, .fr, .it, .es). Amazon has more (e.g. Far East: Japan, Australia), not supported in Phase 1. In Amazfy each seller account has one region, chosen when it is added and fixed afterwards; its products can only be on that region's marketplaces.
 
 **Unified account** — Amazon's name for one seller account that sells in several marketplaces of a region. Example: "AquaLife Inc. – North America" registers once and sells on amazon.com and amazon.ca, so the same ASIN can be two Amazfy products there (US and CA, with sales in USD and CAD). A seller who also sells in Europe has a second Amazon seller account, so a second seller account in Amazfy.
+
+**Micros** — How Google Ads sends money amounts: millionths of the currency unit, as whole numbers. $12.50 is `12500000` micros. Amazfy stores spend the same way, so no amount is ever rounded; it is converted to dollars (or euros, …) only for display.
+
+**Status (enabled / paused / removed)** — The state of a Google campaign, ad group or ad. *Enabled* runs, *paused* is stopped for now and can be restarted, *removed* is deleted on Google's side but still has its past spend. Amazfy keeps removed ones so old reports stay complete.
+
+**Unmatched ad** — A Google ad Amazfy can't link to a product or brand yet, e.g. its final URL is a short link. Its spend is still counted for its campaign, but not for any product until the seller links it.
+
