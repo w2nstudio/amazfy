@@ -265,6 +265,19 @@ Authorization: Bearer {{accessToken}}
 
 
 ############################################################
+# Reports (fill the account with sample data first, see Development below)
+############################################################
+
+### Totals of the last 30 days up to yesterday, per currency (200): spend, sales, purchases, ROAS, CPA, conversion rate
+GET {{baseUrl}}/accounts/{{accountId}}/reports/summary
+Authorization: Bearer {{accessToken}}
+
+### A chosen range, both days included (200). From after to, or more than 366 days: 400
+GET {{baseUrl}}/accounts/{{accountId}}/reports/summary?from=2026-10-01&to=2026-10-07
+Authorization: Bearer {{accessToken}}
+
+
+############################################################
 # Development (local servers only; other servers answer 404)
 ############################################################
 
