@@ -31,6 +31,8 @@ tags:
     description: The seller's brands (registered in Amazon Brand Registry). Every product belongs to one.
   - name: Products
     description: Amazon listings, each identified by ASIN + marketplace, linked to a brand
+  - name: Reports
+    description: What the seller's ads cost and what they brought on Amazon (ROAS and more), for a date range
   - name: Development
     description: Helpers for local development only. Production servers don't have them (404).
 
@@ -563,6 +565,50 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ---------- Reports ----------
+
+  /api/v1/accounts/{accountId}/reports/summary:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Reports]
+      operationId: getReportSummary
+      summary: Totals for a date range, per currency
+      description: |
+        Google spend and Amazon Attribution numbers of the whole seller account (all its ads, including Brand Store
+        and unmatched ones) added up over the days from..to, both included. Without dates: the last 30 days up to
+        yesterday (Amazon has no numbers for today yet). Amounts are never added up across currencies, so there is
+        one entry per currency; a seller account in Europe can have GBP and EUR.
+        At most 366 days; from must not be after to (400 otherwise).
+      parameters:
+        - name: from
+          in: query
+          required: false
+          description: First day, e.g. 2026-09-25
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          description: Last day, e.g. 2026-10-24
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: The totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSummary"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # ---------- Development (local only) ----------
 
   /api/v1/accounts/{accountId}/dev/sample-data:
@@ -890,6 +936,78 @@ components:
         A product's marketplace must be in its account's region (400 otherwise). Fixed once the account exists.
       type: string
       enum: [NA, EU]
+
+    ReportSummary:
+      type: object
+      required: [from, to, currencies]
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        currencies:
+          type: array
+          description: One entry per currency with spend or sales in the range, sorted by currency code; empty without data
+          items:
+            $ref: "#/components/schemas/CurrencyTotals"
+
+    CurrencyTotals:
+      type: object
+      description: |
+        Totals in one currency. Money is in the currency's units with 2 decimals (12.50 = $12.50).
+        roas, cpa and conversionRate are left out when they can't be calculated (no spend, no purchases, no clicks).
+      required: [currency, spend, impressions, clicks, clickThroughs, detailPageViews, addToCarts, purchases, unitsSold, sales]
+      properties:
+        currency:
+          type: string
+          description: ISO code, e.g. USD
+          example: USD
+        spend:
+          type: number
+          description: What Google charged for the ads
+          example: 1250.40
+        impressions:
+          type: integer
+          format: int64
+        clicks:
+          type: integer
+          format: int64
+          description: Clicks counted by Google
+        clickThroughs:
+          type: integer
+          format: int64
+          description: Clicks that reached Amazon, counted by Amazon Attribution
+        detailPageViews:
+          type: integer
+          format: int64
+        addToCarts:
+          type: integer
+          format: int64
+        purchases:
+          type: integer
+          format: int64
+          description: Orders attributed to the ads (Amazon's 14-day window)
+        unitsSold:
+          type: integer
+          format: int64
+        sales:
+          type: number
+          description: Amazon sales attributed to the ads
+          example: 4890.15
+        roas:
+          type: number
+          description: Return on ad spend = sales ÷ spend, e.g. 3.91 (each 1 spent brought 3.91 in sales)
+          example: 3.91
+        cpa:
+          type: number
+          description: Cost per acquisition = spend ÷ purchases, in the currency
+          example: 9.47
+        conversionRate:
+          type: number
+          description: Purchases ÷ click-throughs × 100, in percent, e.g. 8.2
+          example: 8.2
 
     SampleDataResult:
       type: object
