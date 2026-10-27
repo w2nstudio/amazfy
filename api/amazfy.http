@@ -277,7 +277,8 @@ GET {{baseUrl}}/accounts/{{accountId}}/reports/summary?from=2026-10-01&to=2026-1
 Authorization: Bearer {{accessToken}}
 
 
-### Drill-down: one row per brand (200). by = BRAND, PRODUCT, CAMPAIGN, AD_GROUP or AD; same dates as the summary
+### Drill-down: one row per product, plus Brand Store, not-linked and unmatched rows (200).
+# by = BRAND, PRODUCT, CAMPAIGN, AD_GROUP or AD; dates (from, to) as in the summary
 # @name breakdown
 GET {{baseUrl}}/accounts/{{accountId}}/reports/breakdown?by=PRODUCT
 Authorization: Bearer {{accessToken}}
