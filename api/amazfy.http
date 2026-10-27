@@ -277,6 +277,17 @@ GET {{baseUrl}}/accounts/{{accountId}}/reports/summary?from=2026-10-01&to=2026-1
 Authorization: Bearer {{accessToken}}
 
 
+### Drill-down: one row per brand (200). by = BRAND, PRODUCT, CAMPAIGN, AD_GROUP or AD; same dates as the summary
+# @name breakdown
+GET {{baseUrl}}/accounts/{{accountId}}/reports/breakdown?by=PRODUCT
+Authorization: Bearer {{accessToken}}
+
+### Drill into the first row above: its campaigns, counting only its ads (200).
+# For a BRAND_LEVEL row use brandId=<id>&brandLevel=true; for NOT_LINKED use notLinked=true
+GET {{baseUrl}}/accounts/{{accountId}}/reports/breakdown?by=CAMPAIGN&productId={{breakdown.response.body.$.rows[0].id}}
+Authorization: Bearer {{accessToken}}
+
+
 ############################################################
 # Development (local servers only; other servers answer 404)
 ############################################################

@@ -1,5 +1,7 @@
 package com.amazfy.reporting.application
 
+import com.amazfy.common.amazon.Marketplace
+import com.amazfy.reporting.application.port.AttributionNumbers
 import com.amazfy.reporting.application.port.ReportNumbers
 import com.amazfy.reporting.domain.AttributionTotals
 import com.amazfy.reporting.domain.CurrencyTotals
@@ -25,11 +27,10 @@ class GetReportSummary(
         to: LocalDate?,
     ): ReportSummary {
         val range = DateRange.of(from, to, today = LocalDate.now(clock))
-        val attribution =
-            numbers.attributionByMarketplace(range).map { (marketplace, n) ->
-                AttributionTotals(marketplace.currency, n.clickThroughs, n.detailPageViews, n.addToCarts, n.purchases, n.unitsSold, n.sales)
-            }
-        return ReportSummary(range, CurrencyTotals.combine(numbers.spendByCurrency(range), attribution))
+        return ReportSummary(
+            range,
+            CurrencyTotals.combine(numbers.spendByCurrency(range), numbers.attributionByMarketplace(range).toTotals()),
+        )
     }
 }
 
@@ -37,3 +38,9 @@ data class ReportSummary(
     val range: DateRange,
     val currencies: List<CurrencyTotals>,
 )
+
+/** Attribution numbers per marketplace as totals in each marketplace's currency (shared by the reporting use cases). */
+internal fun Map<Marketplace, AttributionNumbers>.toTotals(): List<AttributionTotals> =
+    map { (marketplace, n) ->
+        AttributionTotals(marketplace.currency, n.clickThroughs, n.detailPageViews, n.addToCarts, n.purchases, n.unitsSold, n.sales)
+    }

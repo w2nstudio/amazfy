@@ -609,6 +609,96 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /api/v1/accounts/{accountId}/reports/breakdown:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Reports]
+      operationId: getReportBreakdown
+      summary: The same totals split into rows by brand, product, campaign, ad group or ad (drill-down)
+      description: |
+        One row per brand, product, campaign, ad group or ad (`by`) and currency, with the numbers of the ads in it.
+        The filters narrow which ads count, which is how the drill-down works: a row's kind and id become the filter
+        for the next level, e.g. the product row → `by=campaign&productId=…` shows that product's campaigns with only
+        that product's ads counted.
+        Special rows keep the totals complete, so all rows of a level add up to the summary:
+        BRAND_LEVEL (Brand Store ads of a brand, at product level; drill with brandId + brandLevel=true),
+        NOT_LINKED (ads not linked to a product or brand; drill with notLinked=true) and
+        UNMATCHED (Attribution numbers matching no known ad; only without filters, no drill-down).
+        Only rows with spend or Attribution numbers in the range appear. Dates as in the summary.
+      parameters:
+        - name: by
+          in: query
+          required: true
+          description: What each row stands for
+          schema:
+            $ref: "#/components/schemas/BreakdownLevel"
+        - name: brandId
+          in: query
+          required: false
+          description: "Only ads of this brand: Brand Store ads and the ads of its products"
+          schema:
+            type: string
+            format: uuid
+        - name: productId
+          in: query
+          required: false
+          description: Only ads of this product
+          schema:
+            type: string
+            format: uuid
+        - name: brandLevel
+          in: query
+          required: false
+          description: With brandId, only the brand's Brand Store ads (no single product)
+          schema:
+            type: boolean
+        - name: notLinked
+          in: query
+          required: false
+          description: Only ads linked to no product and no brand
+          schema:
+            type: boolean
+        - name: campaignId
+          in: query
+          required: false
+          description: Only ads of this campaign
+          schema:
+            type: string
+            format: uuid
+        - name: adGroupId
+          in: query
+          required: false
+          description: Only ads of this ad group
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: The rows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportBreakdown"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # ---------- Development (local only) ----------
 
   /api/v1/accounts/{accountId}/dev/sample-data:
@@ -1008,6 +1098,55 @@ components:
           type: number
           description: Purchases ÷ click-throughs × 100, in percent, e.g. 8.2
           example: 8.2
+
+    BreakdownLevel:
+      type: string
+      enum: [BRAND, PRODUCT, CAMPAIGN, AD_GROUP, AD]
+
+    BreakdownRowKind:
+      description: |
+        What a row stands for. BRAND, PRODUCT, CAMPAIGN, AD_GROUP, AD: that item (id set).
+        BRAND_LEVEL: a brand's Brand Store ads (id = the brand). NOT_LINKED: ads without product or brand.
+        UNMATCHED: Attribution numbers that match no known ad.
+      type: string
+      enum: [BRAND, PRODUCT, BRAND_LEVEL, NOT_LINKED, CAMPAIGN, AD_GROUP, AD, UNMATCHED]
+
+    ReportBreakdown:
+      type: object
+      required: [from, to, by, rows]
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        by:
+          $ref: "#/components/schemas/BreakdownLevel"
+        rows:
+          type: array
+          description: Sorted by name; BRAND_LEVEL and NOT_LINKED rows after the others, UNMATCHED last
+          items:
+            $ref: "#/components/schemas/BreakdownRow"
+
+    BreakdownRow:
+      type: object
+      required: [kind, name, totals]
+      properties:
+        kind:
+          $ref: "#/components/schemas/BreakdownRowKind"
+        id:
+          type: string
+          format: uuid
+          description: The brand, product, campaign, ad group or ad; left out for NOT_LINKED and UNMATCHED
+        name:
+          type: string
+          example: Aquarium filter 40L
+        detail:
+          type: string
+          description: Extra line, e.g. "B0AAA11111 · US" for a product, the final URL for an ad, the campaign for an ad group
+        totals:
+          $ref: "#/components/schemas/CurrencyTotals"
 
     SampleDataResult:
       type: object
