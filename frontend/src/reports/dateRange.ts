@@ -39,9 +39,14 @@ export function rangeToSearch(range: DateRange): Record<string, string> {
 }
 
 /**
- * Whether the range reaches into the last 14 days, whose sales still grow: Amazon credits a purchase to an ad up to
- * 14 days after the click (the attribution window).
+ * The first of the last 14 days, whose sales still grow: Amazon credits a purchase to an ad up to 14 days after the
+ * click (the attribution window).
  */
+export function stillCountingFrom(): string {
+  return daysAgo(14)
+}
+
+/** Whether the range reaches into the days whose sales still grow. */
 export function includesRecentDays(range: { to: string }): boolean {
-  return range.to >= daysAgo(14) // YYYY-MM-DD strings sort like the days they stand for
+  return range.to >= stillCountingFrom() // YYYY-MM-DD strings sort like the days they stand for
 }

@@ -1,5 +1,5 @@
 import { keepPreviousData } from '@tanstack/react-query'
-import { Fragment, useState } from 'react'
+import { Fragment } from 'react'
 import { errorMessage } from '@/api/client'
 import type { BreakdownRow } from '@/api/generated/model'
 import { useGetReportBreakdown } from '@/api/generated/reports/reports'
@@ -12,9 +12,18 @@ import { count, money, percent, ratio } from '@/reports/format'
 
 // The summary split into rows, with drill-down: click a brand to see its products, a product to see its campaigns,
 // and so on down to the ads. Without a filter the rows add up to the summary tiles above.
-export function BreakdownTable({ accountId, range }: { accountId: string; range: DateRange }) {
-  // The steps from the start to the table shown; the last one is the current table
-  const [path, setPath] = useState<DrillStep[]>([STARTS[0]])
+// `path`: the steps from the start to the table shown; the last one is the current table.
+export function BreakdownTable({
+  accountId,
+  range,
+  path,
+  onPathChange: setPath,
+}: {
+  accountId: string
+  range: DateRange
+  path: DrillStep[]
+  onPathChange: (path: DrillStep[]) => void
+}) {
   const step = path[path.length - 1]
   const breakdown = useGetReportBreakdown(
     accountId,
