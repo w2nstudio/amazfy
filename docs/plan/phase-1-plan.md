@@ -78,8 +78,8 @@ The CSV importer reads columns through a name mapping and is checked against a r
 | Reporting API: `GET /accounts/{id}/reports/summary` for a date range (spend, sales, orders, ROAS, CPA, conversion rate; per currency; default last 30 days up to yesterday; at most 366 days), strict `reporting` module with SQL totals | Done |
 | Reporting API: drill-down `GET /accounts/{id}/reports/breakdown?by=…` (brand → product → campaign → ad group → ad; filters for drilling; BRAND_LEVEL, NOT_LINKED and UNMATCHED rows so every level adds up to the summary) | Done |
 | Reporting API: daily trend `GET /accounts/{id}/reports/trend` (all totals per day, one series per currency, every day of the range with zeros on empty days; same filters as the drill-down, plus `adId` in both) | Done |
-| Frontend: dashboard summary with date range | Next |
-| Frontend: drill-down tables and trend chart | To do |
+| Frontend: dashboard summary on the home page (spend, sales, ROAS, purchases, CPA, conversion rate per currency; last 7/30/90 days or custom days, kept in the URL; note while the 14-day attribution window is open) | Done |
+| Frontend: drill-down tables and trend chart | Next |
 | Attribution CSV import (A10): upload, column mapping, re-upload updates rows; verified against a real export | To do |
 
 ## Repository layout
