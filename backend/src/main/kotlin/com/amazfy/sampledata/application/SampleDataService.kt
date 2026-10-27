@@ -4,7 +4,6 @@ import com.amazfy.account.application.AccountService
 import com.amazfy.catalog.application.CatalogService
 import com.amazfy.catalog.application.ProductSummary
 import com.amazfy.common.amazon.Marketplace
-import com.amazfy.common.amazon.Region
 import com.amazfy.common.tenant.CurrentAccount
 import org.springframework.context.annotation.Profile
 import org.springframework.jdbc.core.JdbcTemplate
@@ -12,20 +11,20 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.sql.Date
 import java.time.Clock
 import java.time.LocalDate
 import java.util.UUID
-import kotlin.random.Random
 
 /**
- * Made-up but realistic Google ads, spend and Attribution numbers for one seller account, so reports can be built
- * and tried before the Google (M4) and Amazon connections exist. Local development only (profile "local"): production
- * has no such bean. Writes the channel and attribution tables with plain SQL, as a sync or CSV import later will
- * through their modules; account_id is set explicitly here (SQL doesn't go through @TenantId).
+ * Made-up Google ads, spend and Attribution numbers for one seller account, so reports can be built and checked before
+ * the Google (M4) and Amazon connections exist. Local development only (profile "local"): production has no such bean.
+ * Writes the channel and attribution tables with plain SQL, as a sync or CSV import later will through their modules;
+ * account_id is set explicitly here (SQL doesn't go through @TenantId).
  *
- * Deterministic: the same account and day give the same numbers, so results can be compared between runs.
+ * The numbers are round and the same every day, so every report can be checked with a calculator:
+ * docs/guides/sample-data.md lists the expected results. Ads are made only for the three sample products (added if
+ * missing), never for the seller's own products, so sample numbers don't end up on real listings.
  */
 @Service
 @Profile("local")
@@ -40,78 +39,54 @@ class SampleDataService(
     @Transactional
     fun replaceWithSampleData(): SampleDataSummary {
         val accountId = CurrentAccount.get()
-        val region = accounts.findAccount(accountId)!!.region
-        val products = catalog.listProducts().ifEmpty { addSampleCatalog(region) }
-        val brandNames = catalog.listBrands().associate { it.id to it.name }
-        val random = Random(accountId.hashCode())
+        val marketplace =
+            accounts
+                .findAccount(accountId)!!
+                .region.marketplaces
+                .first()
+        val products = sampleProducts(marketplace)
         val toDate = LocalDate.now(clock).minusDays(1) // Attribution has no numbers for today yet
-        val fromDate = toDate.minusDays(DAYS - 1)
+        val days = (0 until DAYS).map { toDate.minusDays(DAYS - 1 - it) }
+        val ids = ExternalIds()
 
         jdbc.sql("DELETE FROM attribution_daily WHERE account_id = :a").param("a", accountId).update()
         jdbc.sql("DELETE FROM campaigns WHERE account_id = :a").param("a", accountId).update() // cascades to ads, spend
 
         val ads = mutableListOf<SampleAd>()
-        products.forEach { product ->
-            val brandName = brandNames.getValue(product.brandId)
-            val campaign = insertCampaign(accountId, random, "$brandName – ${product.name} (${product.marketplace})")
+        products.forEach { (plan, product) ->
+            val campaign = insertCampaign(accountId, ids, "${plan.brand} – ${product.name} (${marketplace.name})")
             listOf("exact", "broad").forEach { match ->
-                val adGroup = insertAdGroup(accountId, campaign, random, "${product.name.lowercase()} – $match")
-                repeat(2) {
-                    ads += insertAd(accountId, adGroup, random, product.amazonUrl, product.marketplace, productId = product.id)
-                }
+                val adGroup = insertAdGroup(accountId, campaign, ids, "${product.name.lowercase()} – $match")
+                // In each ad group ad A sells twice a day and ad B once, at the same spend: the ad level shows a difference
+                ads += insertAd(accountId, adGroup, ids, product.amazonUrl, marketplace, plan.day(purchases = 2), productId = product.id)
+                ads += insertAd(accountId, adGroup, ids, product.amazonUrl, marketplace, plan.day(purchases = 1), productId = product.id)
             }
         }
-        // Brand Store ads: link to the brand's store, no single product (brand-level spend). The second one uses a short
-        // link Amazfy can't read, so it stays unmatched (no product, no brand).
-        products.groupBy { it.brandId }.forEach { (brandId, brandProducts) ->
-            val marketplace = brandProducts.first().marketplace
-            val brandName = brandNames.getValue(brandId)
-            val campaign = insertCampaign(accountId, random, "$brandName – Brand Store (${marketplace.name})")
-            val adGroup = insertAdGroup(accountId, campaign, random, "${brandName.lowercase()} brand")
-            val store = "https://www.${marketplace.amazonDomain}/stores/${brandName.replace(
-                " ",
-                "",
-            )}/page/${UUID(random.nextLong(), random.nextLong())}"
-            ads += insertAd(accountId, adGroup, random, store, marketplace, brandId = brandId)
-            ads += insertAd(accountId, adGroup, random, "https://amzn.to/${random.nextInt(100_000, 999_999)}", marketplace)
+        // Per brand, a Brand Store campaign with two ads: one links to the brand's store (brand-level spend, no single
+        // product), the other uses a short link Amazfy can't read, so it stays linked to nothing
+        products.groupBy({ it.second.brandId }, { it.first }).forEach { (brandId, plans) ->
+            val brand = plans.first()
+            val campaign = insertCampaign(accountId, ids, "${brand.brand} – Brand Store (${marketplace.name})")
+            val adGroup = insertAdGroup(accountId, campaign, ids, "${brand.brand.lowercase()} brand")
+            val store = "https://www.${marketplace.amazonDomain}/stores/${brand.brand}/page/${UUID.nameUUIDFromBytes(
+                brand.brand.toByteArray(),
+            )}"
+            ads +=
+                insertAd(accountId, adGroup, ids, store, marketplace, SIDE_AD.copy(purchases = 1, price = brand.price), brandId = brandId)
+            ads += insertAd(accountId, adGroup, ids, "https://amzn.to/${ids.next(6)}", marketplace, SIDE_AD.copy(purchases = 0))
         }
 
-        val days = (0 until DAYS).map { fromDate.plusDays(it) }
         val spendRows = mutableListOf<Array<Any>>()
         val attributionRows = mutableListOf<Array<Any?>>()
-        ads.forEach { ad ->
-            val price = random.nextDouble(19.99, 59.99)
-            val base = random.nextInt(300, 1_500)
-            days.forEach { day ->
-                val numbers = SampleDay.of(random, base, day, toDate)
+        days.forEach { day ->
+            ads.forEach { ad ->
                 spendRows +=
-                    arrayOf(
-                        accountId,
-                        ad.id,
-                        Date.valueOf(day),
-                        numbers.impressions,
-                        numbers.clicks,
-                        numbers.costMicros,
-                        ad.marketplace.currency,
-                    )
-                attributionRows += attributionRow(accountId, ad, day, numbers, price, adId = ad.id)
+                    arrayOf(accountId, ad.id, Date.valueOf(day), ad.day.impressions, ad.day.clicks, ad.day.costMicros, marketplace.currency)
+                attributionRows += attributionRow(accountId, ad, ad.creativeId, day, adId = ad.id)
             }
+            // Attribution numbers for an ad Amazfy doesn't know (e.g. removed on Google before the first sync): kept, unmatched
+            attributionRows += attributionRow(accountId, ads.first().copy(day = UNMATCHED), UNMATCHED_CREATIVE, day, adId = null)
         }
-        // An Attribution line for an ad Amazfy doesn't know (e.g. removed on Google before the first sync): kept, unmatched
-        val firstAd = ads.first()
-        days.takeLast(14).forEach { day ->
-            val numbers = SampleDay.of(random, 200, day, toDate)
-            attributionRows +=
-                attributionRow(
-                    accountId,
-                    firstAd.copy(externalId = "${random.nextLong(100_000_000_000, 999_999_999_999)}"),
-                    day,
-                    numbers,
-                    24.99,
-                    adId = null,
-                )
-        }
-
         jdbcTemplate.batchUpdate(
             "INSERT INTO ad_spend_daily (account_id, ad_id, date, impressions, clicks, cost_micros, currency) VALUES (?, ?, ?, ?, ?, ?, ?)",
             spendRows,
@@ -124,7 +99,7 @@ class SampleDataService(
         )
 
         return SampleDataSummary(
-            fromDate = fromDate,
+            fromDate = days.first(),
             toDate = toDate,
             products = products.size,
             campaigns = ads.map { it.campaignId }.distinct().size,
@@ -134,71 +109,72 @@ class SampleDataService(
         )
     }
 
-    /** For an account without products: two brands with products on the region's first marketplace. */
-    private fun addSampleCatalog(region: Region): List<ProductSummary> {
-        val marketplace = region.marketplaces.first()
-        val taken = catalog.listBrands().associateBy { it.name.lowercase() }
-
-        fun brand(name: String) = taken[name.lowercase()]?.id ?: catalog.createBrand(name).id
-        val aquaLife = brand("AquaLife")
-        val clearTank = brand("ClearTank")
-        catalog.createProduct(aquaLife, "B0AQL00001", marketplace, "Aquarium filter 40L")
-        catalog.createProduct(aquaLife, "B0AQL00002", marketplace, "Aquarium heater 100W")
-        catalog.createProduct(clearTank, "B0CLT00001", marketplace, "Glass cleaner 500ml")
-        return catalog.listProducts()
+    /** The sample products on the region's first marketplace, created (with their brands) where missing. */
+    private fun sampleProducts(marketplace: Marketplace): List<Pair<SampleProduct, ProductSummary>> {
+        val existing = catalog.listProducts()
+        val brandIds = catalog.listBrands().associate { it.name.lowercase() to it.id }.toMutableMap()
+        return SAMPLE_PRODUCTS.map { plan ->
+            val product =
+                existing.find { it.asin == plan.asin && it.marketplace == marketplace }
+                    ?: catalog.createProduct(
+                        brandIds.getOrPut(plan.brand.lowercase()) { catalog.createBrand(plan.brand).id },
+                        plan.asin,
+                        marketplace,
+                        plan.name,
+                    )
+            plan to product
+        }
     }
 
     private fun insertCampaign(
         accountId: UUID,
-        random: Random,
+        ids: ExternalIds,
         name: String,
-    ): UUID =
-        jdbc
-            .sql(
-                "INSERT INTO campaigns (account_id, channel, external_id, name, status) VALUES (:a, 'GOOGLE', :e, :n, 'ENABLED') RETURNING id",
-            ).param("a", accountId)
-            .param("e", "${random.nextLong(10_000_000_000, 99_999_999_999)}") // Google campaign ids: 11 digits
-            .param("n", name)
-            .query(UUID::class.java)
-            .single()
+    ): SampleCampaign {
+        val externalId = ids.next(11) // Google campaign ids: 11 digits
+        val id =
+            jdbc
+                .sql(
+                    "INSERT INTO campaigns (account_id, channel, external_id, name, status) VALUES (:a, 'GOOGLE', :e, :n, 'ENABLED') RETURNING id",
+                ).param("a", accountId)
+                .param("e", externalId)
+                .param("n", name)
+                .query(UUID::class.java)
+                .single()
+        return SampleCampaign(id, externalId)
+    }
 
     private fun insertAdGroup(
         accountId: UUID,
-        campaignId: UUID,
-        random: Random,
+        campaign: SampleCampaign,
+        ids: ExternalIds,
         name: String,
     ): SampleAdGroup {
-        val externalId = "${random.nextLong(100_000_000_000, 999_999_999_999)}"
+        val externalId = ids.next(12)
         val id =
             jdbc
                 .sql(
                     "INSERT INTO ad_groups (account_id, campaign_id, external_id, name, status) VALUES (:a, :c, :e, :n, 'ENABLED') RETURNING id",
                 ).param("a", accountId)
-                .param("c", campaignId)
+                .param("c", campaign.id)
                 .param("e", externalId)
                 .param("n", name)
                 .query(UUID::class.java)
                 .single()
-        return SampleAdGroup(id, campaignId, externalId, campaignExternalId(campaignId))
+        return SampleAdGroup(id, externalId, campaign)
     }
-
-    private fun campaignExternalId(campaignId: UUID): String =
-        jdbc
-            .sql("SELECT external_id FROM campaigns WHERE id = :c")
-            .param("c", campaignId)
-            .query(String::class.java)
-            .single()
 
     private fun insertAd(
         accountId: UUID,
         adGroup: SampleAdGroup,
-        random: Random,
+        ids: ExternalIds,
         finalUrl: String,
         marketplace: Marketplace,
+        day: AdDay,
         productId: UUID? = null,
         brandId: UUID? = null,
     ): SampleAd {
-        val externalId = "${random.nextLong(100_000_000_000, 999_999_999_999)}"
+        val externalId = ids.next(12)
         val id =
             jdbc
                 .sql(
@@ -212,44 +188,49 @@ class SampleDataService(
                 .param("b", brandId)
                 .query(UUID::class.java)
                 .single()
-        return SampleAd(id, adGroup.campaignId, adGroup.campaignExternalId, adGroup.externalId, externalId, marketplace)
+        return SampleAd(id, adGroup.campaign.id, adGroup.campaign.externalId, adGroup.externalId, externalId, marketplace, day)
     }
 
-    /** Amazon's side of the same clicks: some get lost on the way, a share view, add to cart and buy. */
+    /** Amazon's side of the ad's clicks on one day, as an Attribution report line. */
     private fun attributionRow(
         accountId: UUID,
         ad: SampleAd,
+        creativeId: String,
         day: LocalDate,
-        numbers: SampleDay,
-        price: Double,
         adId: UUID?,
-    ): Array<Any?> {
-        val random = Random(ad.externalId.hashCode() * 31 + day.hashCode())
-        val clickThroughs = (numbers.clicks * random.nextDouble(0.85, 0.95)).toLong()
-        val detailPageViews = (clickThroughs * random.nextDouble(0.80, 0.95)).toLong()
-        val addToCarts = (detailPageViews * random.nextDouble(0.12, 0.25)).toLong()
-        val purchases = minOf(addToCarts, (clickThroughs * random.nextDouble(0.05, 0.14)).toLong())
-        val units = purchases + (purchases * random.nextDouble(0.0, 0.3)).toLong()
-        val sales = BigDecimal(units * price).setScale(2, RoundingMode.HALF_UP)
-        return arrayOf(
+    ): Array<Any?> =
+        arrayOf(
             accountId,
             ad.marketplace.name,
             Date.valueOf(day),
             ad.campaignExternalId,
             ad.adGroupExternalId,
-            ad.externalId,
+            creativeId,
             adId,
-            clickThroughs,
-            detailPageViews,
-            addToCarts,
-            purchases,
-            units,
-            sales,
+            ad.day.clickThroughs,
+            ad.day.clickThroughs, // detail page views: every visit reaches the product page
+            ad.day.purchases * 2, // add to carts: half of them buy
+            ad.day.purchases,
+            ad.day.purchases, // units: one per purchase
+            ad.day.sales,
         )
-    }
 
     private companion object {
         const val DAYS = 90L
+        const val UNMATCHED_CREATIVE = "999999999999"
+
+        /** Brand Store and short-link ads: $5 a day. */
+        val SIDE_AD = AdDay(spend = 5, purchases = 0, price = 0)
+
+        /** The unmatched Attribution line: one $40 purchase a day from 9 visits, no Google spend known. */
+        val UNMATCHED = AdDay(spend = 0, purchases = 1, price = 40, clickThroughsWithoutSpend = 9)
+
+        val SAMPLE_PRODUCTS =
+            listOf(
+                SampleProduct("AquaLife", "B0AQL00001", "Aquarium filter 40L", price = 40, spendPerAd = 20),
+                SampleProduct("AquaLife", "B0AQL00002", "Aquarium heater 100W", price = 30, spendPerAd = 10),
+                SampleProduct("ClearTank", "B0CLT00001", "Glass cleaner 500ml", price = 12, spendPerAd = 5),
+            )
     }
 }
 
@@ -264,11 +245,52 @@ data class SampleDataSummary(
     val attributionRows: Int,
 )
 
+/** A sample product and the daily spend of each of its four ads (in the marketplace's currency, whole units). */
+private data class SampleProduct(
+    val brand: String,
+    val asin: String,
+    val name: String,
+    val price: Int,
+    val spendPerAd: Int,
+) {
+    fun day(purchases: Int) = AdDay(spendPerAd, purchases, price)
+}
+
+/**
+ * One ad's numbers, the same every day. Google charges 50 cents a click, shows the ad 20 times per click, and 9 of
+ * every 10 clicks reach Amazon (click-throughs).
+ */
+private data class AdDay(
+    val spend: Int,
+    val purchases: Int,
+    val price: Int,
+    val clickThroughsWithoutSpend: Int = 0,
+) {
+    val clicks: Long get() = spend * 2L
+    val impressions: Long get() = clicks * 20
+    val costMicros: Long get() = spend * 1_000_000L
+    val clickThroughs: Long get() = if (spend > 0) clicks * 9 / 10 else clickThroughsWithoutSpend.toLong()
+    val sales: BigDecimal get() = BigDecimal(purchases * price).setScale(2)
+}
+
+/** Google-style numeric ids, counting up so a run always produces the same ones. */
+private class ExternalIds {
+    private var counter = 0L
+
+    fun next(digits: Int): String = "${10L.pow(digits - 1) + ++counter}"
+
+    private fun Long.pow(n: Int): Long = (1..n).fold(1L) { acc, _ -> acc * this }
+}
+
+private data class SampleCampaign(
+    val id: UUID,
+    val externalId: String,
+)
+
 private data class SampleAdGroup(
     val id: UUID,
-    val campaignId: UUID,
     val externalId: String,
-    val campaignExternalId: String,
+    val campaign: SampleCampaign,
 )
 
 private data class SampleAd(
@@ -276,29 +298,7 @@ private data class SampleAd(
     val campaignId: UUID,
     val campaignExternalId: String,
     val adGroupExternalId: String,
-    val externalId: String,
+    val creativeId: String,
     val marketplace: Marketplace,
+    val day: AdDay,
 )
-
-/** One ad's Google numbers for one day: fewer on weekends, slowly growing over the period, with daily noise. */
-private data class SampleDay(
-    val impressions: Long,
-    val clicks: Long,
-    val costMicros: Long,
-) {
-    companion object {
-        fun of(
-            random: Random,
-            base: Int,
-            day: LocalDate,
-            lastDay: LocalDate,
-        ): SampleDay {
-            val weekend = if (day.dayOfWeek.value >= 6) 0.75 else 1.0
-            val growth = 1.0 - (lastDay.toEpochDay() - day.toEpochDay()) / 300.0 // ~30% lower 90 days ago
-            val impressions = (base * weekend * growth * random.nextDouble(0.8, 1.2)).toLong()
-            val clicks = (impressions * random.nextDouble(0.02, 0.06)).toLong()
-            val costPerClick = random.nextDouble(0.35, 1.40) // in the currency, e.g. dollars
-            return SampleDay(impressions, clicks, (clicks * costPerClick * 1_000_000).toLong())
-        }
-    }
-}

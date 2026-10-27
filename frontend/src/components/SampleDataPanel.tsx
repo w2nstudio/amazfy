@@ -6,7 +6,7 @@ import { FormMessage } from '@/components/AuthCard'
 import { Button } from '@/components/ui/button'
 
 // Local development only: fills the seller account with sample ads, spend and Attribution numbers (see the backend's
-// SampleDataService). Shown only in the dev build (`npm run dev`), never in a production build; the backend endpoint
+// SampleDataService and docs/guides/sample-data.md). Shown only in the dev build (`npm run dev`), never in a production build; the backend endpoint
 // exists only on local servers too.
 export function SampleDataPanel({ accountId }: { accountId: string }) {
   const create = useCreateSampleData()
@@ -30,8 +30,9 @@ export function SampleDataPanel({ accountId }: { accountId: string }) {
     <section className="flex flex-col gap-2 rounded-lg border border-dashed p-4 text-sm">
       <h3 className="font-medium">Development: sample data</h3>
       <p className="text-muted-foreground">
-        Fills this seller account with 90 days of made-up Google ads, spend and Attribution numbers for its products
-        (sample brands and products are added if it has none). Replaces earlier sample data.
+        Fills this seller account with 90 days (up to yesterday) of made-up Google ads, spend and Attribution numbers
+        for three sample products, added if missing; your own products get no ads. Round numbers, the same every day:
+        docs/guides/sample-data.md lists what each report should show. Replaces earlier sample data.
       </p>
       <div className="flex items-center gap-2">
         {confirming ? (

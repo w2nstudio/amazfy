@@ -690,9 +690,10 @@ paths:
       operationId: createSampleData
       summary: Fill the seller account with sample campaigns, spend and Attribution numbers (local only)
       description: |
-        Replaces the account's campaigns, ad groups, ads, daily spend and Attribution numbers with about 90 days of
-        made-up but realistic data for its products, so reports can be built and tried before the Google and Amazon
-        connections exist. An account without products first gets sample brands and products.
+        Replaces the account's campaigns, ad groups, ads, daily spend and Attribution numbers with 90 days (up to
+        yesterday) of made-up data with round numbers, the same every day, so reports can be checked by hand before the
+        Google and Amazon connections exist (expected results: docs/guides/sample-data.md). The ads are for three sample
+        products, added with their brands if missing; the account's own products get no ads.
         Includes the cases reports must handle: ads linked to products, a Brand Store ad (brand-level spend), an
         unmatched ad and an Attribution line that matches no ad. Owner only. Only on local development servers.
       responses:
