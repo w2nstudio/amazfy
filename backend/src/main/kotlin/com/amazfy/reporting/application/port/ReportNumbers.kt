@@ -2,9 +2,11 @@ package com.amazfy.reporting.application.port
 
 import com.amazfy.common.amazon.Marketplace
 import com.amazfy.reporting.domain.AdFacts
+import com.amazfy.reporting.domain.DailySpend
 import com.amazfy.reporting.domain.DateRange
 import com.amazfy.reporting.domain.SpendTotals
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -29,6 +31,21 @@ interface ReportNumbers {
 
     /** Attribution numbers in the range that match no known ad, per marketplace. */
     fun unmatchedAttribution(range: DateRange): Map<Marketplace, AttributionNumbers>
+
+    /** Google spend in the range per day and currency: of [adIds] only, or of all ads when null. */
+    fun dailySpend(
+        range: DateRange,
+        adIds: Set<UUID>?,
+    ): List<DailySpend>
+
+    /**
+     * Attribution numbers in the range per day and marketplace: of the lines matched to [adIds] only, or of all lines
+     * (unmatched ones included) when null.
+     */
+    fun dailyAttribution(
+        range: DateRange,
+        adIds: Set<UUID>?,
+    ): List<DailyAttributionNumbers>
 }
 
 /** Attribution's numbers for one marketplace; the currency follows from the marketplace. */
@@ -39,4 +56,10 @@ data class AttributionNumbers(
     val purchases: Long,
     val unitsSold: Long,
     val sales: BigDecimal,
+)
+
+data class DailyAttributionNumbers(
+    val date: LocalDate,
+    val marketplace: Marketplace,
+    val numbers: AttributionNumbers,
 )

@@ -288,6 +288,15 @@ Authorization: Bearer {{accessToken}}
 GET {{baseUrl}}/accounts/{{accountId}}/reports/breakdown?by=CAMPAIGN&productId={{breakdown.response.body.$.rows[0].id}}
 Authorization: Bearer {{accessToken}}
 
+### Trend: totals per day for the whole seller account, one series per currency (200).
+# Every day of the range is there, with zeros on days without numbers; dates as in the summary
+GET {{baseUrl}}/accounts/{{accountId}}/reports/trend
+Authorization: Bearer {{accessToken}}
+
+### Trend of the first drill-down row above (any drill-down filter works, plus adId=<id> for one ad) (200).
+GET {{baseUrl}}/accounts/{{accountId}}/reports/trend?productId={{breakdown.response.body.$.rows[0].id}}
+Authorization: Bearer {{accessToken}}
+
 
 ############################################################
 # Development (local servers only; other servers answer 404)
