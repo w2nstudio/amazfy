@@ -9,13 +9,13 @@ import { useGetSystemInfo } from '@/api/generated/system/system'
 import { FormMessage } from '@/components/AuthCard'
 import { SampleDataPanel } from '@/components/SampleDataPanel'
 import { Button } from '@/components/ui/button'
-import { BreakdownTable } from '@/reports/BreakdownTable'
 import { DateRangePicker } from '@/reports/DateRangePicker'
 import { rangeFromSearch, rangeToSearch } from '@/reports/dateRange'
+import { DrillDownReports } from '@/reports/DrillDownReports'
 import { ReportSummary } from '@/reports/ReportSummary'
 
 // The dashboard (inside AppLayout): the current seller account's totals for the chosen days, and the same numbers
-// per brand, product, campaign, ad group or ad (drill-down). The trend chart comes next.
+// per day and per brand, product, campaign, ad group or ad (drill-down).
 export function HomePage() {
   const me = useGetMe()
   const systemInfo = useGetSystemInfo()
@@ -42,7 +42,7 @@ export function HomePage() {
 
       {current && <ReportSummary accountId={current.account.id} range={range} />}
       {/* key: switching accounts starts the drill-down from the top (the old path's ids belong to the other account) */}
-      {current && <BreakdownTable key={current.account.id} accountId={current.account.id} range={range} />}
+      {current && <DrillDownReports key={current.account.id} accountId={current.account.id} range={range} />}
 
       {/* import.meta.env.DEV: true only under `npm run dev`; a production build leaves this out entirely */}
       {import.meta.env.DEV && current?.role === Role.OWNER && <SampleDataPanel accountId={current.account.id} />}
