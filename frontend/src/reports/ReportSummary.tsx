@@ -6,6 +6,7 @@ import { useGetReportSummary } from '@/api/generated/reports/reports'
 import { FormMessage } from '@/components/AuthCard'
 import { cn } from '@/lib/utils'
 import { includesRecentDays, type DateRange } from '@/reports/dateRange'
+import { count, money, percent, ratio } from '@/reports/format'
 
 // The seller account's totals for the chosen days (requirement A11): Google spend against the Amazon sales it brought.
 // Amounts are never added up across currencies, so a seller account with GBP and EUR gets one block per currency.
@@ -37,32 +38,23 @@ export function ReportSummary({ accountId, range }: { accountId: string; range: 
 }
 
 function CurrencyTiles({ totals, showCurrency }: { totals: CurrencyTotals; showCurrency: boolean }) {
-  const money = (amount: number | undefined) =>
-    amount === undefined
-      ? '—'
-      : new Intl.NumberFormat(undefined, { style: 'currency', currency: totals.currency }).format(amount)
-  const count = (n: number) => new Intl.NumberFormat().format(n)
+  const amount = (value: number | undefined) => money(value, totals.currency)
 
   return (
     <div className="flex flex-col gap-2">
       {showCurrency && <h3 className="text-sm font-medium">{totals.currency}</h3>}
       {/* As many tiles per row as fit at 11rem each: six on a wide screen, fewer on smaller ones */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-3">
-        <Tile label="Spend" value={money(totals.spend)} hint={`Google Ads · ${count(totals.clicks)} clicks`} />
-        <Tile label="Sales" value={money(totals.sales)} hint={`Amazon · ${count(totals.unitsSold)} units`} />
-        {/* A metric is missing when it can't be calculated, e.g. no ROAS without spend */}
-        <Tile label="ROAS" value={totals.roas?.toFixed(2) ?? '—'} hint="Sales ÷ spend" />
+        <Tile label="Spend" value={amount(totals.spend)} hint={`Google Ads · ${count(totals.clicks)} clicks`} />
+        <Tile label="Sales" value={amount(totals.sales)} hint={`Amazon · ${count(totals.unitsSold)} units`} />
+        <Tile label="ROAS" value={ratio(totals.roas)} hint="Sales ÷ spend" />
         <Tile
           label="Purchases"
           value={count(totals.purchases)}
           hint={`${count(totals.clickThroughs)} visits to Amazon`}
         />
-        <Tile label="CPA" value={money(totals.cpa)} hint="Spend ÷ purchases" />
-        <Tile
-          label="Conversion rate"
-          value={totals.conversionRate === undefined ? '—' : `${totals.conversionRate.toFixed(2)}%`}
-          hint="Purchases ÷ visits"
-        />
+        <Tile label="CPA" value={amount(totals.cpa)} hint="Spend ÷ purchases" />
+        <Tile label="Conversion rate" value={percent(totals.conversionRate)} hint="Purchases ÷ visits" />
       </div>
     </div>
   )
