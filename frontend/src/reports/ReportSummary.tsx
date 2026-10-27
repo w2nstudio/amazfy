@@ -46,7 +46,8 @@ function CurrencyTiles({ totals, showCurrency }: { totals: CurrencyTotals; showC
   return (
     <div className="flex flex-col gap-2">
       {showCurrency && <h3 className="text-sm font-medium">{totals.currency}</h3>}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* As many tiles per row as fit at 11rem each: six on a wide screen, fewer on smaller ones */}
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-3">
         <Tile label="Spend" value={money(totals.spend)} hint={`Google Ads · ${count(totals.clicks)} clicks`} />
         <Tile label="Sales" value={money(totals.sales)} hint={`Amazon · ${count(totals.unitsSold)} units`} />
         {/* A metric is missing when it can't be calculated, e.g. no ROAS without spend */}
@@ -71,7 +72,8 @@ function Tile({ label, value, hint }: { label: string; value: string; hint: stri
   return (
     <div className="flex flex-col gap-1 rounded-lg border p-4">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-2xl font-medium tabular-nums">{value}</span>
+      {/* Wraps inside the tile if an amount is ever too long, instead of crossing its border */}
+      <span className="text-2xl font-medium [overflow-wrap:anywhere] tabular-nums">{value}</span>
       <span className="text-xs text-muted-foreground">{hint}</span>
     </div>
   )
