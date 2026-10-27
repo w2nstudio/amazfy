@@ -76,3 +76,9 @@ Plain-language explanations of business terms as they come up while building Ama
 
 **New-to-brand** — A purchase by a shopper who hadn't bought from the brand on Amazon in the last 12 months. Attribution reports it separately; shows whether ads bring new customers. Not stored in Phase 1 yet.
 
+**ACoS** — Advertising cost of sales = spend ÷ sales × 100, the number Amazon sellers know from Amazon's own ads. It is ROAS turned around: ROAS 4.0 = ACoS 25%. Lower ACoS is better; higher ROAS is better.
+
+**Break-even ROAS** — The ROAS at which ads pay for themselves: 1 ÷ profit margin. With a 30% margin (a $40 filter leaves $12 after product cost, Amazon fees and shipping), break-even is 1 ÷ 0.30 ≈ 3.33: ROAS 4.0 earns money, ROAS 2.5 loses money even though each $1 brings $2.50 in sales. Amazfy doesn't know margins in Phase 1, so it shows ROAS; the seller judges it against their margin.
+
+**Drill-down** — Going from a total to its parts: all brands → one brand's products → one product's campaigns → ad groups → ads. Amazfy's reports work this way (requirement A12), so the seller sees where money works and where it doesn't. Budgets are set per campaign on Google, so the campaign level is where "spend more / spend less" is decided; the ad level shows which ad text works.
+
