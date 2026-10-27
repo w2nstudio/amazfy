@@ -42,6 +42,7 @@ data class BreakdownFilter(
     val notLinked: Boolean = false,
     val campaignId: UUID? = null,
     val adGroupId: UUID? = null,
+    val adId: UUID? = null,
 ) {
     val isEmpty: Boolean get() = this == BreakdownFilter()
 
@@ -51,7 +52,8 @@ data class BreakdownFilter(
             (!brandLevel || (ad.productId == null && ad.brandId != null)) &&
             (!notLinked || ad.brandId == null) &&
             (campaignId == null || ad.campaignId == campaignId) &&
-            (adGroupId == null || ad.adGroupId == adGroupId)
+            (adGroupId == null || ad.adGroupId == adGroupId) &&
+            (adId == null || ad.adId == adId)
 }
 
 /** One row: an item (or special row) and its totals in one currency. */

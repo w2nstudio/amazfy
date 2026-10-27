@@ -16,6 +16,9 @@ data class DateRange(
         if (to.toEpochDay() - from.toEpochDay() + 1 > MAX_DAYS) throw InvalidDateRangeException("A report covers at most $MAX_DAYS days.")
     }
 
+    /** Every day from [from] to [to], in order. */
+    val days: List<LocalDate> get() = from.datesUntil(to.plusDays(1)).toList()
+
     companion object {
         const val MAX_DAYS = 366
         const val DEFAULT_DAYS = 30L

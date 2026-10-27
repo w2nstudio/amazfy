@@ -5,8 +5,12 @@ import com.amazfy.api.generated.model.BreakdownLevel
 import com.amazfy.api.generated.model.BreakdownRowKind
 import com.amazfy.api.generated.model.ReportBreakdown
 import com.amazfy.api.generated.model.ReportSummary
+import com.amazfy.api.generated.model.ReportTrend
+import com.amazfy.api.generated.model.TrendDay
+import com.amazfy.api.generated.model.TrendSeries
 import com.amazfy.reporting.application.GetReportBreakdown
 import com.amazfy.reporting.application.GetReportSummary
+import com.amazfy.reporting.application.GetReportTrend
 import com.amazfy.reporting.domain.BreakdownFilter
 import com.amazfy.reporting.domain.BreakdownRow
 import com.amazfy.reporting.domain.CurrencyTotals
@@ -25,6 +29,7 @@ import com.amazfy.reporting.domain.BreakdownLevel as Level
 class ReportsController(
     private val summary: GetReportSummary,
     private val breakdown: GetReportBreakdown,
+    private val trend: GetReportTrend,
 ) : ReportsApi {
     @PreAuthorize("@accountAccess.canView(#accountId)")
     override fun getReportSummary(
@@ -46,12 +51,32 @@ class ReportsController(
         notLinked: Boolean?,
         campaignId: UUID?,
         adGroupId: UUID?,
+        adId: UUID?,
         from: LocalDate?,
         to: LocalDate?,
     ): ResponseEntity<ReportBreakdown> {
-        val filter = BreakdownFilter(brandId, productId, brandLevel == true, notLinked == true, campaignId, adGroupId)
+        val filter = BreakdownFilter(brandId, productId, brandLevel == true, notLinked == true, campaignId, adGroupId, adId)
         val report = breakdown.forRange(Level.valueOf(by.value), filter, from, to)
         return ResponseEntity.ok(ReportBreakdown(report.range.from, report.range.to, by, report.rows.map { it.toApi() }))
+    }
+
+    @PreAuthorize("@accountAccess.canView(#accountId)")
+    override fun getReportTrend(
+        accountId: UUID,
+        brandId: UUID?,
+        productId: UUID?,
+        brandLevel: Boolean?,
+        notLinked: Boolean?,
+        campaignId: UUID?,
+        adGroupId: UUID?,
+        adId: UUID?,
+        from: LocalDate?,
+        to: LocalDate?,
+    ): ResponseEntity<ReportTrend> {
+        val filter = BreakdownFilter(brandId, productId, brandLevel == true, notLinked == true, campaignId, adGroupId, adId)
+        val report = trend.forRange(filter, from, to)
+        val series = report.series.map { s -> TrendSeries(s.currency, s.days.map { TrendDay(it.date, it.totals.toApi()) }) }
+        return ResponseEntity.ok(ReportTrend(report.range.from, report.range.to, series))
     }
 }
 

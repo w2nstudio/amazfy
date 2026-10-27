@@ -581,20 +581,8 @@ paths:
         one entry per currency; a seller account in Europe can have GBP and EUR.
         At most 366 days; from must not be after to (400 otherwise).
       parameters:
-        - name: from
-          in: query
-          required: false
-          description: First day, e.g. 2026-09-25
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          required: false
-          description: Last day, e.g. 2026-10-24
-          schema:
-            type: string
-            format: date
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
       responses:
         "200":
           description: The totals
@@ -633,58 +621,15 @@ paths:
           description: What each row stands for
           schema:
             $ref: "#/components/schemas/BreakdownLevel"
-        - name: brandId
-          in: query
-          required: false
-          description: "Only ads of this brand: Brand Store ads and the ads of its products"
-          schema:
-            type: string
-            format: uuid
-        - name: productId
-          in: query
-          required: false
-          description: Only ads of this product
-          schema:
-            type: string
-            format: uuid
-        - name: brandLevel
-          in: query
-          required: false
-          description: With brandId, only the brand's Brand Store ads (no single product)
-          schema:
-            type: boolean
-        - name: notLinked
-          in: query
-          required: false
-          description: Only ads linked to no product and no brand
-          schema:
-            type: boolean
-        - name: campaignId
-          in: query
-          required: false
-          description: Only ads of this campaign
-          schema:
-            type: string
-            format: uuid
-        - name: adGroupId
-          in: query
-          required: false
-          description: Only ads of this ad group
-          schema:
-            type: string
-            format: uuid
-        - name: from
-          in: query
-          required: false
-          schema:
-            type: string
-            format: date
-        - name: to
-          in: query
-          required: false
-          schema:
-            type: string
-            format: date
+        - $ref: "#/components/parameters/FilterBrandId"
+        - $ref: "#/components/parameters/FilterProductId"
+        - $ref: "#/components/parameters/FilterBrandLevel"
+        - $ref: "#/components/parameters/FilterNotLinked"
+        - $ref: "#/components/parameters/FilterCampaignId"
+        - $ref: "#/components/parameters/FilterAdGroupId"
+        - $ref: "#/components/parameters/FilterAdId"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
       responses:
         "200":
           description: The rows
@@ -692,6 +637,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportBreakdown"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/accounts/{accountId}/reports/trend:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Reports]
+      operationId: getReportTrend
+      summary: The totals per day, for a chart (whole account or one drill-down row)
+      description: |
+        Spend, sales and the other totals for each day of the range, one series per currency. Every day is in the
+        series, with zeros on days without numbers. The filters are the drill-down's, so the chart follows the row the
+        seller picked; without filters it covers the whole seller account (including UNMATCHED numbers) and the days
+        add up to the summary. Dates as in the summary.
+      parameters:
+        - $ref: "#/components/parameters/FilterBrandId"
+        - $ref: "#/components/parameters/FilterProductId"
+        - $ref: "#/components/parameters/FilterBrandLevel"
+        - $ref: "#/components/parameters/FilterNotLinked"
+        - $ref: "#/components/parameters/FilterCampaignId"
+        - $ref: "#/components/parameters/FilterAdGroupId"
+        - $ref: "#/components/parameters/FilterAdId"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+      responses:
+        "200":
+          description: The series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportTrend"
         "400":
           $ref: "#/components/responses/ValidationError"
         "401":
@@ -754,6 +735,76 @@ components:
       name: productId
       in: path
       required: true
+      schema:
+        type: string
+        format: uuid
+    From:
+      name: from
+      in: query
+      required: false
+      description: First day, e.g. 2026-09-25
+      schema:
+        type: string
+        format: date
+    To:
+      name: to
+      in: query
+      required: false
+      description: Last day, e.g. 2026-10-24
+      schema:
+        type: string
+        format: date
+    FilterBrandId:
+      name: brandId
+      in: query
+      required: false
+      description: "Only ads of this brand: Brand Store ads and the ads of its products"
+      schema:
+        type: string
+        format: uuid
+    FilterProductId:
+      name: productId
+      in: query
+      required: false
+      description: Only ads of this product
+      schema:
+        type: string
+        format: uuid
+    FilterBrandLevel:
+      name: brandLevel
+      in: query
+      required: false
+      description: With brandId, only the brand's Brand Store ads (no single product)
+      schema:
+        type: boolean
+    FilterNotLinked:
+      name: notLinked
+      in: query
+      required: false
+      description: Only ads linked to no product and no brand
+      schema:
+        type: boolean
+    FilterCampaignId:
+      name: campaignId
+      in: query
+      required: false
+      description: Only ads of this campaign
+      schema:
+        type: string
+        format: uuid
+    FilterAdGroupId:
+      name: adGroupId
+      in: query
+      required: false
+      description: Only ads of this ad group
+      schema:
+        type: string
+        format: uuid
+    FilterAdId:
+      name: adId
+      in: query
+      required: false
+      description: Only this ad
       schema:
         type: string
         format: uuid
@@ -1145,6 +1196,45 @@ components:
         detail:
           type: string
           description: Extra line, e.g. "B0AAA11111 · US" for a product, the final URL for an ad, the campaign for an ad group
+        totals:
+          $ref: "#/components/schemas/CurrencyTotals"
+
+    ReportTrend:
+      type: object
+      required: [from, to, series]
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        series:
+          type: array
+          description: One per currency with spend or sales in the range, sorted by currency code; empty without data
+          items:
+            $ref: "#/components/schemas/TrendSeries"
+
+    TrendSeries:
+      type: object
+      required: [currency, days]
+      properties:
+        currency:
+          type: string
+          example: USD
+        days:
+          type: array
+          description: Every day from..to in order
+          items:
+            $ref: "#/components/schemas/TrendDay"
+
+    TrendDay:
+      type: object
+      required: [date, totals]
+      properties:
+        date:
+          type: string
+          format: date
         totals:
           $ref: "#/components/schemas/CurrencyTotals"
 

@@ -40,7 +40,7 @@ data class ReportSummary(
 )
 
 /** Attribution numbers per marketplace as totals in each marketplace's currency (shared by the reporting use cases). */
-internal fun Map<Marketplace, AttributionNumbers>.toTotals(): List<AttributionTotals> =
-    map { (marketplace, n) ->
-        AttributionTotals(marketplace.currency, n.clickThroughs, n.detailPageViews, n.addToCarts, n.purchases, n.unitsSold, n.sales)
-    }
+internal fun Map<Marketplace, AttributionNumbers>.toTotals(): List<AttributionTotals> = map { (marketplace, n) -> n.toTotals(marketplace) }
+
+internal fun AttributionNumbers.toTotals(marketplace: Marketplace) =
+    AttributionTotals(marketplace.currency, clickThroughs, detailPageViews, addToCarts, purchases, unitsSold, sales)

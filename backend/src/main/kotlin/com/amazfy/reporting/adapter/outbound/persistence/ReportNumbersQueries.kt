@@ -3,13 +3,16 @@ package com.amazfy.reporting.adapter.outbound.persistence
 import com.amazfy.common.amazon.Marketplace
 import com.amazfy.common.tenant.CurrentAccount
 import com.amazfy.reporting.application.port.AttributionNumbers
+import com.amazfy.reporting.application.port.DailyAttributionNumbers
 import com.amazfy.reporting.application.port.ReportNumbers
 import com.amazfy.reporting.domain.AdFacts
+import com.amazfy.reporting.domain.DailySpend
 import com.amazfy.reporting.domain.DateRange
 import com.amazfy.reporting.domain.SpendTotals
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
 import java.sql.ResultSet
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -113,14 +116,53 @@ class ReportNumbersQueries(
             range,
         ).query { rs, _ -> rs.marketplace() to rs.toAttributionNumbers() }.list().toMap()
 
+    override fun dailySpend(
+        range: DateRange,
+        adIds: Set<UUID>?,
+    ): List<DailySpend> {
+        if (adIds?.isEmpty() == true) return emptyList() // "IN ()" isn't valid SQL, and no ads means no numbers
+        return inRange(
+            """
+            SELECT date, currency, $SPEND_SUMS
+            FROM ad_spend_daily
+            WHERE account_id = :account AND date BETWEEN :from AND :to ${onlyAds(adIds)}
+            GROUP BY date, currency
+            """,
+            range,
+            adIds,
+        ).query { rs, _ -> DailySpend(rs.date(), rs.toSpendTotals()) }.list()
+    }
+
+    override fun dailyAttribution(
+        range: DateRange,
+        adIds: Set<UUID>?,
+    ): List<DailyAttributionNumbers> {
+        if (adIds?.isEmpty() == true) return emptyList()
+        return inRange(
+            """
+            SELECT date, marketplace, $ATTRIBUTION_SUMS
+            FROM attribution_daily
+            WHERE account_id = :account AND date BETWEEN :from AND :to ${onlyAds(adIds)}
+            GROUP BY date, marketplace
+            """,
+            range,
+            adIds,
+        ).query { rs, _ -> DailyAttributionNumbers(rs.date(), rs.marketplace(), rs.toAttributionNumbers()) }.list()
+    }
+
+    /** [adIds] null: no condition. Otherwise the ads' ids are bound as :ads, which JdbcClient expands into a list. */
+    private fun onlyAds(adIds: Set<UUID>?) = if (adIds == null) "" else "AND ad_id IN (:ads)"
+
     private fun inRange(
         sql: String,
         range: DateRange,
+        adIds: Set<UUID>? = null,
     ) = jdbc
         .sql(sql)
         .param("account", CurrentAccount.get())
         .param("from", range.from)
         .param("to", range.to)
+        .let { if (adIds == null) it else it.param("ads", adIds) }
 
     private companion object {
         const val SPEND_SUMS = "sum(cost_micros) AS cost_micros, sum(impressions) AS impressions, sum(clicks) AS clicks"
@@ -131,6 +173,8 @@ class ReportNumbersQueries(
 }
 
 private fun ResultSet.uuid(column: String): UUID? = getObject(column, UUID::class.java)
+
+private fun ResultSet.date(): LocalDate = getObject("date", LocalDate::class.java)
 
 private fun ResultSet.marketplace() = Marketplace.valueOf(getString("marketplace"))
 
