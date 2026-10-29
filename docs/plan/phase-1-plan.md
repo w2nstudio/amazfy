@@ -84,7 +84,9 @@ The CSV importer reads columns through a name mapping and is checked against a r
 | Frontend: sort the drill-down table by any column (numbers biggest first; missing values and the unmatched row last; currencies never ranked together; kept while drilling) | Done |
 | Report performance, part 1: `./gradlew performanceTest` times every report for a large seller (500 products, 5,000 ads, 366 days = 1.83M rows each of spend and Attribution; target under 500 ms). Drill-down ads passed as one array parameter (an IN list broke past 65,535 ads). Baseline: whole-account reports 0.5–1.8 s; the database alone needs ~0.8 s to add up a year per ad, and covering indexes don't help (one account's year is read in full) | Done |
 | Report performance, part 2: rollup tables (V11): totals per account and day (summary, whole-account trend) and per ad and month (drill-down, loose days at the ends from the daily rows); refreshed by `RefreshReportTotals` in the writer's transaction. Large seller, 366 days: summary 668 → 18 ms, trend 661 → 28 ms, breakdowns 1.0–1.8 s → 0.3–0.43 s; performanceTest passes | Done |
-| Attribution CSV import (A10): upload, column mapping, re-upload updates rows; verified against a real export | Next |
+| Attribution CSV import, backend (A10): `POST /accounts/{id}/attribution/imports` (owner/editor, one marketplace); strict `attribution` module; columns found by header names (aliases, header below report info lines); Google lines only; all or nothing with the bad lines named; lines matched to ads by Google's campaign / ad group / ad ids, else unmatched; re-upload updates (upsert), report totals refreshed | Done |
+| Attribution CSV import, frontend: upload page with marketplace choice, result and errors; column mapping when headers aren't recognised | Next |
+| Verify the CSV import against a real Attribution export; add its header names | To do |
 
 ## Repository layout
 
