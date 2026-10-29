@@ -86,6 +86,20 @@ The CSV importer reads columns through a name mapping and is checked against a r
 | Report performance, part 2: rollup tables (V11): totals per account and day (summary, whole-account trend) and per ad and month (drill-down, loose days at the ends from the daily rows); refreshed by `RefreshReportTotals` in the writer's transaction. Large seller, 366 days: summary 668 → 18 ms, trend 661 → 28 ms, breakdowns 1.0–1.8 s → 0.3–0.43 s; performanceTest passes | Done |
 | Attribution CSV import (A10): upload, column mapping, re-upload updates rows; verified against a real export | Next |
 
+## Backlog
+
+Agreed ideas without a milestone yet, or waiting for something. Moved into Progress when picked up.
+
+| Idea | Why | Waiting for |
+|---|---|---|
+| Clearer names for the special drill-down rows, e.g. "Ads with an unreadable link" and "Amazon sales without a known ad" | The current names don't say which side (Google ad or Amazon sale) is missing | Feedback from first sellers |
+| CSV import: preview before saving (dry run showing lines, days, matched share, sales; the seller confirms) | A valid but wrong file (other account, other marketplace) passes every format check | Planned with the upload page |
+| CSV import: warning when most lines match none of the account's ads | Strong sign of a report from another seller account | Planned with the upload page |
+| CSV import: check a marketplace or currency column against the chosen marketplace | A Canada report uploaded as US would count CAD as USD | A real export (does it have such a column?) |
+| CSV import: remove header aliases the real export doesn't use (e.g. "clicks", "campaign") | Generic names could match the wrong column | A real export |
+| Import history: who uploaded which file, when, for which days | A wrong upload can be traced | M6 audit log |
+| Undo an import | Upserts overwrite earlier numbers; re-uploading the right file repairs updated lines but not added ones | Only if real use shows the need |
+
 ## Repository layout
 
 ```

@@ -99,7 +99,8 @@ data class AttributionTotals(
 
 /**
  * Spend and sales in one currency, with the metrics sellers judge ads by (requirements, "Metric definitions").
- * A metric is null when it can't be calculated: no spend (ROAS), no purchases (CPA), no click-throughs (conversion rate).
+ * A metric is null when it can't be calculated: no spend (ROAS, CPA), no purchases (CPA), no click-throughs (conversion
+ * rate). No spend usually means unknown spend (e.g. Amazon sales matching no known ad), so CPA isn't shown as 0.
  * [spend] is exact (micros, 6 decimals), so metrics use exact amounts and are rounded to 2 decimals only at the end;
  * round spend to cents only for display.
  */
@@ -119,7 +120,8 @@ data class CurrencyTotals(
     val roas: BigDecimal? get() = if (spend.signum() == 0) null else sales.divide(spend, 2, RoundingMode.HALF_UP)
 
     /** Cost per acquisition: spend ÷ purchases, in the currency. */
-    val cpa: BigDecimal? get() = if (purchases == 0L) null else spend.divide(BigDecimal(purchases), 2, RoundingMode.HALF_UP)
+    val cpa: BigDecimal? get() =
+        if (purchases == 0L || spend.signum() == 0) null else spend.divide(BigDecimal(purchases), 2, RoundingMode.HALF_UP)
 
     /** Purchases ÷ click-throughs × 100, in percent. Amazon's click count, since purchases are Amazon's too. */
     val conversionRate: BigDecimal? get() =

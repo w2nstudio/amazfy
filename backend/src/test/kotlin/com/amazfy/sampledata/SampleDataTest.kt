@@ -141,6 +141,7 @@ class SampleDataTest {
             jsonPath("$.rows[0].totals.roas") { value(3.68) }
             jsonPath("$.rows[1].totals.roas") { value(3.36) }
             jsonPath("$.rows[3].totals.roas") { doesNotExist() } // no spend, so no ROAS
+            jsonPath("$.rows[3].totals.cpa") { doesNotExist() } // and no CPA
         }
     }
 

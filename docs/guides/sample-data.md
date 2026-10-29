@@ -32,7 +32,7 @@ In euros or pounds the same numbers apply in that currency.
 | AquaLife Brand Store ad | $5 | 10 | 9 | 1 | $40 | 8.00 | $5.00 | 11.11% |
 | ClearTank Brand Store ad | $5 | 10 | 9 | 1 | $12 | 2.40 | $5.00 | 11.11% |
 | Short-link ad (one per brand) | $5 | 10 | 9 | 0 | $0 | 0.00 | — | 0.00% |
-| Unmatched Attribution line | — | — | 9 | 1 | $40 | — | $0.00 | 11.11% |
+| Unmatched Attribution line | — | — | 9 | 1 | $40 | — | — | 11.11% |
 
 ## Expected results
 
@@ -53,7 +53,7 @@ Every number is **per day**: for a range, multiply amounts and counts by its day
 | AquaLife | $125 | $460 | 3.68 | 13 | $9.62 | 5.78% |
 | ClearTank | $25 | $84 | 3.36 | 7 | $3.57 | 15.56% |
 | Not linked to a product or brand | $10 | $0 | 0.00 | 0 | — | 0.00% |
-| Not matched to an ad | $0 | $40 | — | 1 | $0.00 | 11.11% |
+| Not matched to an ad | $0 | $40 | — | 1 | — | 11.11% |
 
 **View by Product** (or click AquaLife: its two products and its brand-level row):
 
@@ -75,7 +75,7 @@ Every number is **per day**: for a range, multiply amounts and counts by its day
 | AquaLife – Brand Store (US) | $10 | $40 | 4.00 | 1 | $10.00 | 5.56% |
 | ClearTank – Brand Store (US) | $10 | $12 | 1.20 | 1 | $10.00 | 5.56% |
 | ClearTank – Glass cleaner 500ml (US) | $20 | $72 | 3.60 | 6 | $3.33 | 16.67% |
-| Not matched to an ad | $0 | $40 | — | 1 | $0.00 | 11.11% |
+| Not matched to an ad | $0 | $40 | — | 1 | — | 11.11% |
 
 A Brand Store campaign holds both the store ad and the short-link ad, so it costs $10 a day but only the store ad sells.
 

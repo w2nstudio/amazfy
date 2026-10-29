@@ -44,6 +44,7 @@ class ReportTotalsTest {
     fun `a metric that can't be calculated is left out`() {
         assertNull(totals(spend = "0").roas)
         assertNull(totals(purchases = 0).cpa)
+        assertNull(totals(spend = "0").cpa) // unknown spend, e.g. unmatched Amazon sales: not "$0.00 per purchase"
         assertNull(totals(clickThroughs = 0).conversionRate)
     }
 
