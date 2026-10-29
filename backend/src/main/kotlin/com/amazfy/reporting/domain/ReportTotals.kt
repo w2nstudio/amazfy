@@ -16,6 +16,22 @@ data class DateRange(
         if (to.toEpochDay() - from.toEpochDay() + 1 > MAX_DAYS) throw InvalidDateRangeException("A report covers at most $MAX_DAYS days.")
     }
 
+    /**
+     * The range as whole calendar months plus the days before and after them, so reports can read monthly totals
+     * for most of a long range and daily rows only at its ends. E.g. 28 Oct 2025 to 28 Oct 2026: days 28–31 Oct 2025,
+     * months Nov 2025–Sep 2026, days 1–28 Oct 2026. A range without a whole month is all [MonthSplit.daysBefore].
+     */
+    fun byMonth(): MonthSplit {
+        val firstWholeMonth = if (from.dayOfMonth == 1) from else from.withDayOfMonth(1).plusMonths(1)
+        val endOfWholeMonths = if (to.dayOfMonth == to.lengthOfMonth()) to else to.withDayOfMonth(1).minusDays(1)
+        if (firstWholeMonth.isAfter(endOfWholeMonths)) return MonthSplit(daysBefore = this, months = null, daysAfter = null)
+        return MonthSplit(
+            daysBefore = if (from.isBefore(firstWholeMonth)) DateRange(from, firstWholeMonth.minusDays(1)) else null,
+            months = DateRange(firstWholeMonth, endOfWholeMonths),
+            daysAfter = if (endOfWholeMonths.isBefore(to)) DateRange(endOfWholeMonths.plusDays(1), to) else null,
+        )
+    }
+
     /** Every day from [from] to [to], in order. */
     val days: List<LocalDate> get() = from.datesUntil(to.plusDays(1)).toList()
 
@@ -37,6 +53,13 @@ data class DateRange(
         }
     }
 }
+
+/** See [DateRange.byMonth]. [months] runs from the first day of its first month to the last day of its last. */
+data class MonthSplit(
+    val daysBefore: DateRange?,
+    val months: DateRange?,
+    val daysAfter: DateRange?,
+)
 
 class InvalidDateRangeException(
     message: String,

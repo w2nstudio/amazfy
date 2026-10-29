@@ -69,4 +69,27 @@ class ReportTotalsTest {
         assertEquals(BigDecimal("0.00"), combined[1].sales)
         assertEquals(BigDecimal("0.00"), combined[1].roas)
     }
+
+    private fun day(text: String) = LocalDate.parse(text)
+
+    private fun range(
+        from: String,
+        to: String,
+    ) = DateRange(day(from), day(to))
+
+    @Test
+    fun `a year splits into loose days, whole months and loose days`() {
+        val split = range("2025-10-28", "2026-10-28").byMonth()
+        assertEquals(range("2025-10-28", "2025-10-31"), split.daysBefore)
+        assertEquals(range("2025-11-01", "2026-09-30"), split.months)
+        assertEquals(range("2026-10-01", "2026-10-28"), split.daysAfter)
+    }
+
+    @Test
+    fun `whole months need no loose days, and a range inside one month has no whole month`() {
+        assertEquals(MonthSplit(null, range("2026-01-01", "2026-02-28"), null), range("2026-01-01", "2026-02-28").byMonth())
+        assertEquals(MonthSplit(range("2026-10-02", "2026-10-30"), null, null), range("2026-10-02", "2026-10-30").byMonth())
+        // Across a month boundary without a whole month: all loose days
+        assertEquals(MonthSplit(range("2026-09-28", "2026-10-27"), null, null), range("2026-09-28", "2026-10-27").byMonth())
+    }
 }

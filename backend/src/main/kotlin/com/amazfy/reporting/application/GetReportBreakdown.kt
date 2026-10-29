@@ -29,14 +29,18 @@ class GetReportBreakdown(
         to: LocalDate?,
     ): ReportBreakdown {
         val range = DateRange.of(from, to, today = LocalDate.now(clock))
+        val attribution = numbers.attributionByAd(range)
         val rows =
             Breakdown.of(
                 level = level,
                 filter = filter,
                 ads = numbers.adFacts(),
                 spendByAd = numbers.spendByAd(range),
-                attributionByAd = numbers.attributionByAd(range).mapValues { (_, byMarketplace) -> byMarketplace.toTotals() },
-                unmatched = numbers.unmatchedAttribution(range).toTotals(),
+                attributionByAd =
+                    attribution.entries
+                        .mapNotNull { (adId, byMarketplace) -> adId?.let { it to byMarketplace.toTotals() } }
+                        .toMap(),
+                unmatched = attribution[null].orEmpty().toTotals(),
             )
         return ReportBreakdown(range, level, rows)
     }

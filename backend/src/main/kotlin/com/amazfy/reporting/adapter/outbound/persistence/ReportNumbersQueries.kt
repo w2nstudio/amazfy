@@ -16,7 +16,10 @@ import java.time.LocalDate
 import java.util.UUID
 
 /**
- * Adds up the daily tables with SQL: reports read many rows and return few, which the database does best.
+ * Adds up the report numbers with SQL: reports read many rows and return few, which the database does best.
+ * Reads the totals added up in advance (V11, kept up to date by RefreshReportTotals) wherever they fit: per account
+ * and day for the summary and the whole account's trend, per ad and month for the drill-down. Only the loose days at
+ * the ends of a range, and drill-down trends, read the daily tables.
  * Plain SQL doesn't go through @TenantId, so every query filters on account_id = CurrentAccount (see CLAUDE.md).
  */
 @Component
@@ -27,7 +30,7 @@ class ReportNumbersQueries(
         inRange(
             """
             SELECT currency, $SPEND_SUMS
-            FROM ad_spend_daily
+            FROM account_spend_daily
             WHERE account_id = :account AND date BETWEEN :from AND :to
             GROUP BY currency
             """,
@@ -38,7 +41,7 @@ class ReportNumbersQueries(
         inRange(
             """
             SELECT marketplace, $ATTRIBUTION_SUMS
-            FROM attribution_daily
+            FROM account_attribution_daily
             WHERE account_id = :account AND date BETWEEN :from AND :to
             GROUP BY marketplace
             """,
@@ -79,42 +82,27 @@ class ReportNumbersQueries(
             }.list()
 
     override fun spendByAd(range: DateRange): Map<UUID, List<SpendTotals>> =
-        inRange(
-            """
-            SELECT ad_id, currency, $SPEND_SUMS
-            FROM ad_spend_daily
-            WHERE account_id = :account AND date BETWEEN :from AND :to
-            GROUP BY ad_id, currency
-            """,
+        spanning(
             range,
+            "ad_spend_daily",
+            "ad_spend_monthly",
+            "SELECT ad_id, currency, $SPEND_SUMS FROM (%s) AS rows GROUP BY ad_id, currency",
+            columns = "ad_id, currency, $SPEND_COLUMNS",
         ).query { rs, _ -> rs.uuid("ad_id")!! to rs.toSpendTotals() }
             .list()
             .groupBy({ it.first }, { it.second })
 
-    override fun attributionByAd(range: DateRange): Map<UUID, Map<Marketplace, AttributionNumbers>> =
-        inRange(
-            """
-            SELECT ad_id, marketplace, $ATTRIBUTION_SUMS
-            FROM attribution_daily
-            WHERE account_id = :account AND date BETWEEN :from AND :to AND ad_id IS NOT NULL
-            GROUP BY ad_id, marketplace
-            """,
+    override fun attributionByAd(range: DateRange): Map<UUID?, Map<Marketplace, AttributionNumbers>> =
+        spanning(
             range,
-        ).query { rs, _ -> Triple(rs.uuid("ad_id")!!, rs.marketplace(), rs.toAttributionNumbers()) }
+            "attribution_daily",
+            "attribution_monthly",
+            "SELECT ad_id, marketplace, $ATTRIBUTION_SUMS FROM (%s) AS rows GROUP BY ad_id, marketplace",
+            columns = "ad_id, marketplace, $ATTRIBUTION_COLUMNS",
+        ).query { rs, _ -> Triple(rs.uuid("ad_id"), rs.marketplace(), rs.toAttributionNumbers()) }
             .list()
             .groupBy { it.first }
             .mapValues { (_, rows) -> rows.associate { it.second to it.third } }
-
-    override fun unmatchedAttribution(range: DateRange): Map<Marketplace, AttributionNumbers> =
-        inRange(
-            """
-            SELECT marketplace, $ATTRIBUTION_SUMS
-            FROM attribution_daily
-            WHERE account_id = :account AND date BETWEEN :from AND :to AND ad_id IS NULL
-            GROUP BY marketplace
-            """,
-            range,
-        ).query { rs, _ -> rs.marketplace() to rs.toAttributionNumbers() }.list().toMap()
 
     override fun dailySpend(
         range: DateRange,
@@ -123,7 +111,7 @@ class ReportNumbersQueries(
         inRange(
             """
             SELECT date, currency, $SPEND_SUMS
-            FROM ad_spend_daily
+            FROM ${if (adIds == null) "account_spend_daily" else "ad_spend_daily"}
             WHERE account_id = :account AND date BETWEEN :from AND :to ${onlyAds(adIds)}
             GROUP BY date, currency
             """,
@@ -138,7 +126,7 @@ class ReportNumbersQueries(
         inRange(
             """
             SELECT date, marketplace, $ATTRIBUTION_SUMS
-            FROM attribution_daily
+            FROM ${if (adIds == null) "account_attribution_daily" else "attribution_daily"}
             WHERE account_id = :account AND date BETWEEN :from AND :to ${onlyAds(adIds)}
             GROUP BY date, marketplace
             """,
@@ -163,7 +151,39 @@ class ReportNumbersQueries(
         .param("to", range.to)
         .let { if (adIds == null) it else it.param("ads", adIds.toTypedArray()) }
 
+    /**
+     * [select] (with %s for the rows) over the rows covering [range] with the fewest reads: [monthly] totals for its
+     * whole months, [daily] rows for the loose days at either end (see DateRange.byMonth). The rows carry [columns]
+     * and meet [condition].
+     */
+    private fun spanning(
+        range: DateRange,
+        daily: String,
+        monthly: String,
+        select: String,
+        columns: String,
+        condition: String = "",
+    ): JdbcClient.StatementSpec {
+        val split = range.byMonth()
+        val parts =
+            listOfNotNull(
+                split.daysBefore?.let { Triple(daily, "date", it) },
+                split.months?.let { Triple(monthly, "month", it) },
+                split.daysAfter?.let { Triple(daily, "date", it) },
+            )
+        val rows =
+            parts
+                .mapIndexed { i, (table, column, _) ->
+                    "SELECT $columns FROM $table WHERE account_id = :account AND $column BETWEEN :from$i AND :to$i $condition"
+                }.joinToString(" UNION ALL ")
+        return parts.foldIndexed(jdbc.sql(select.format(rows)).param("account", CurrentAccount.get())) { i, spec, (_, _, days) ->
+            spec.param("from$i", days.from).param("to$i", days.to)
+        }
+    }
+
     private companion object {
+        const val SPEND_COLUMNS = "cost_micros, impressions, clicks"
+        const val ATTRIBUTION_COLUMNS = "click_throughs, detail_page_views, add_to_carts, purchases, units_sold, sales"
         const val SPEND_SUMS = "sum(cost_micros) AS cost_micros, sum(impressions) AS impressions, sum(clicks) AS clicks"
         const val ATTRIBUTION_SUMS =
             "sum(click_throughs) AS click_throughs, sum(detail_page_views) AS detail_page_views, " +

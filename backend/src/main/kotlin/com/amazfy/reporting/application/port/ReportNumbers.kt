@@ -26,11 +26,11 @@ interface ReportNumbers {
     /** Google spend in the range per ad and currency. */
     fun spendByAd(range: DateRange): Map<UUID, List<SpendTotals>>
 
-    /** Attribution numbers in the range per matched ad and marketplace. */
-    fun attributionByAd(range: DateRange): Map<UUID, Map<Marketplace, AttributionNumbers>>
-
-    /** Attribution numbers in the range that match no known ad, per marketplace. */
-    fun unmatchedAttribution(range: DateRange): Map<Marketplace, AttributionNumbers>
+    /**
+     * Attribution numbers in the range per ad and marketplace. Key null: the lines that match no known ad, read in
+     * the same pass (the drill-down needs both, and Attribution rows are the most to read).
+     */
+    fun attributionByAd(range: DateRange): Map<UUID?, Map<Marketplace, AttributionNumbers>>
 
     /** Google spend in the range per day and currency: of [adIds] only, or of all ads when null. */
     fun dailySpend(
