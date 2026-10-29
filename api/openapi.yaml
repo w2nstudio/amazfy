@@ -33,6 +33,8 @@ tags:
     description: Amazon listings, each identified by ASIN + marketplace, linked to a brand
   - name: Reports
     description: What the seller's ads cost and what they brought on Amazon (ROAS and more), for a date range
+  - name: Attribution
+    description: Amazon Attribution numbers brought into Amazfy (CSV upload now, the Amazon API later)
   - name: Development
     description: Helpers for local development only. Production servers don't have them (404).
 
@@ -680,6 +682,51 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  # ---------- Attribution ----------
+
+  /api/v1/accounts/{accountId}/attribution/imports:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    post:
+      tags: [Attribution]
+      operationId: importAttributionCsv
+      summary: Upload an Amazon Attribution report (CSV) for one marketplace
+      description: |
+        Reads a report downloaded from the Amazon Attribution console: one line per day and campaign / ad group /
+        creative with click-throughs, detail page views, add to carts, purchases, units sold and sales. Columns are
+        found by their header names, also below a few lines of report information. Only Google Ads lines are kept
+        (other publishers are counted as skipped). Each line is linked to the Google ad with the same campaign, ad group
+        and ad ids, or kept as unmatched. Uploading a report again updates its lines, never duplicates them.
+        All or nothing: an invalid line rejects the file (400, the detail names the lines). Owners and editors only.
+        At most 20 MB.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, marketplace]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The report as downloaded (CSV, UTF-8)
+                marketplace:
+                  $ref: "#/components/schemas/Marketplace"
+      responses:
+        "200":
+          description: Imported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttributionImportResult"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # ---------- Development (local only) ----------
 
   /api/v1/accounts/{accountId}/dev/sample-data:
@@ -1238,6 +1285,32 @@ components:
           format: date
         totals:
           $ref: "#/components/schemas/CurrencyTotals"
+
+    AttributionImportResult:
+      type: object
+      description: What an upload brought in
+      required: [fromDate, toDate, lines, matchedLines, unmatchedLines, otherPublisherLines]
+      properties:
+        fromDate:
+          type: string
+          format: date
+          description: First day in the report
+        toDate:
+          type: string
+          format: date
+          description: Last day in the report
+        lines:
+          type: integer
+          description: Google Ads lines imported (new or updated), after adding up repeated lines
+        matchedLines:
+          type: integer
+          description: Lines linked to one of the seller account's Google ads
+        unmatchedLines:
+          type: integer
+          description: Lines kept without an ad (unknown ids, or no creative in the report); shown as "Not matched to an ad"
+        otherPublisherLines:
+          type: integer
+          description: Lines of other publishers (e.g. Meta), left out; Phase 1 measures Google Ads only
 
     SampleDataResult:
       type: object

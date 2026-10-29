@@ -299,6 +299,31 @@ Authorization: Bearer {{accessToken}}
 
 
 ############################################################
+# Attribution: upload an Amazon Attribution report (CSV)
+############################################################
+
+### Upload a report for amazon.com (200, owner or editor). Re-uploading updates its lines, never duplicates them.
+# The ids are sample data's (the same in every filled account): campaign "Aquarium filter 40L", ad group "exact", ad A.
+# Sample data has 2 purchases and $80 for that ad every day; this line corrects two days ago to 5 and $200, so the
+# summary's sales grow by $120. Lines with unknown ids are kept as "Not matched to an ad"; other publishers are skipped.
+POST {{baseUrl}}/accounts/{{accountId}}/attribution/imports
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=amazfy
+
+--amazfy
+Content-Disposition: form-data; name="marketplace"
+
+US
+--amazfy
+Content-Disposition: form-data; name="file"; filename="attribution.csv"
+Content-Type: text/csv
+
+Date,Publisher,Campaign ID,Ad group ID,Creative ID,Click-throughs,Detail page views,Add to carts,Purchases,Units sold,Sales
+{{$datetime "YYYY-MM-DD" -2 d}},Google Ads,10000000001,100000000002,100000000003,90,85,10,5,5,200.00
+--amazfy--
+
+
+############################################################
 # Development (local servers only; other servers answer 404)
 ############################################################
 
