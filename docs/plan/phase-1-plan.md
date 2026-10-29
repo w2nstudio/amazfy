@@ -92,7 +92,7 @@ Agreed ideas without a milestone yet, or waiting for something. Moved into Progr
 
 | Idea | Why | Waiting for |
 |---|---|---|
-| Clearer names for the special drill-down rows, e.g. "Ads with an unreadable link" and "Amazon sales without a known ad" | The current names don't say which side (Google ad or Amazon sale) is missing | Feedback from first sellers |
+| Clearer names for the special drill-down rows, e.g. "Ads with an unreadable link" and "Amazon sales without a known ad" | The current names don't say which side (Google ad or Amazon sale) is missing | Low priority; check the wording with the seller Amazfy is built with |
 | CSV import: preview before saving (dry run showing lines, days, matched share, sales; the seller confirms) | A valid but wrong file (other account, other marketplace) passes every format check | Planned with the upload page |
 | CSV import: warning when most lines match none of the account's ads | Strong sign of a report from another seller account | Planned with the upload page |
 | CSV import: check a marketplace or currency column against the chosen marketplace | A Canada report uploaded as US would count CAD as USD | A real export (does it have such a column?) |
