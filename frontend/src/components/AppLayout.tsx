@@ -36,6 +36,7 @@ export function AppLayout() {
             <PageLink to="/">Home</PageLink>
             <PageLink to="/brands">Brands</PageLink>
             <PageLink to="/products">Products</PageLink>
+            <PageLink to="/import">Import</PageLink>
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm">

@@ -68,7 +68,8 @@ class AttributionImportEndpointTest {
             csv: String,
             marketplace: String = "US",
             asToken: String = token,
-        ) = mockMvc.multipart("/api/v1/accounts/$accountId/attribution/imports") {
+            dryRun: Boolean = false,
+        ) = mockMvc.multipart("/api/v1/accounts/$accountId/attribution/imports${if (dryRun) "?dryRun=true" else ""}") {
             file(MockMultipartFile("file", "attribution.csv", "text/csv", csv.toByteArray()))
             param("marketplace", marketplace)
             header(HttpHeaders.AUTHORIZATION, "Bearer $asToken")
@@ -124,6 +125,26 @@ class AttributionImportEndpointTest {
         seller.upload(csv).andExpect { status { isOk() } } // the same report again
         assertEquals(rowsBefore, seller.attributionRows())
         assertEquals(17520.0 + 120, seller.summarySales())
+    }
+
+    @Test
+    fun `a dry run shows what the upload would bring in and saves nothing`() {
+        val seller = Seller()
+        val rowsBefore = seller.attributionRows()
+        val csv =
+            "$header\n${yesterday()},Google Ads,${seller.filterAdIds()},90,85,10,5,5,\"$200.00\"\n" +
+                "${yesterday()},Google Ads,1,2,3,9,9,2,1,1,25"
+
+        seller.upload(csv, dryRun = true).andExpect {
+            status { isOk() }
+            jsonPath("$.saved") { value(false) }
+            jsonPath("$.lines") { value(2) }
+            jsonPath("$.matchedLines") { value(1) }
+            jsonPath("$.sales") { value(225.0) }
+            jsonPath("$.currency") { value("USD") }
+        }
+        assertEquals(rowsBefore, seller.attributionRows())
+        assertEquals(17520.0, seller.summarySales()) // unchanged
     }
 
     @Test

@@ -698,7 +698,15 @@ paths:
         (other publishers are counted as skipped). Each line is linked to the Google ad with the same campaign, ad group
         and ad ids, or kept as unmatched. Uploading a report again updates its lines, never duplicates them.
         All or nothing: an invalid line rejects the file (400, the detail names the lines). Owners and editors only.
-        At most 20 MB.
+        At most 20 MB. With dryRun=true nothing is saved: the answer shows what the upload would bring in, for a
+        preview the seller confirms.
+      parameters:
+        - name: dryRun
+          in: query
+          required: false
+          description: Read and match the file without saving anything (preview)
+          schema:
+            type: boolean
       requestBody:
         required: true
         content:
@@ -1290,7 +1298,7 @@ components:
     AttributionImportResult:
       type: object
       description: What an upload brought in
-      required: [fromDate, toDate, lines, matchedLines, unmatchedLines, otherPublisherLines]
+      required: [fromDate, toDate, lines, matchedLines, unmatchedLines, otherPublisherLines, sales, currency, saved]
       properties:
         fromDate:
           type: string
@@ -1312,6 +1320,17 @@ components:
         otherPublisherLines:
           type: integer
           description: Lines of other publishers (e.g. Meta), left out; Phase 1 measures Google Ads only
+        sales:
+          type: number
+          description: Sales of the imported lines added up, in the marketplace's currency
+          example: 41350.00
+        currency:
+          type: string
+          description: The marketplace's currency, e.g. USD
+          example: USD
+        saved:
+          type: boolean
+          description: "False for a dry run (preview): nothing was saved"
 
     SampleDataResult:
       type: object
