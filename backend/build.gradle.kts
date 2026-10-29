@@ -67,6 +67,23 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
+// Slow tests that time the system on large data run only on demand: ./gradlew performanceTest
+tasks.test {
+    useJUnitPlatform { excludeTags("performance") }
+}
+val performanceTest by tasks.registering(Test::class) {
+    description = "Times the reports on a large seller's data (see ReportPerformanceTest)."
+    group = "verification"
+    testClassesDirs =
+        sourceSets.test
+            .get()
+            .output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform { includeTags("performance") }
+    testLogging { showStandardStreams = true }
+    outputs.upToDateWhen { false } // a measurement, so always run it again
+}
+
 // One executable jar with a fixed name (used by the Dockerfile); no extra "plain" jar
 tasks.bootJar {
     archiveFileName = "amazfy-backend.jar"

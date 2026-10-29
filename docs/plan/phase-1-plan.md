@@ -82,7 +82,8 @@ The CSV importer reads columns through a name mapping and is checked against a r
 | Frontend: drill-down table under the summary (view by brand, product or campaign; click a row to go one level down to the ads; path above the table to go back) | Done |
 | Frontend: trend chart (sales and spend per day for the whole account or the drill-down selection; last 14 days shaded as still being counted; hover or arrow keys for a day's numbers; daily table) | Done |
 | Frontend: sort the drill-down table by any column (numbers biggest first; missing values and the unmatched row last; currencies never ranked together; kept while drilling) | Done |
-| Report performance: test with a large seller (5,000 ads × 366 days) and a target of under 500 ms per report; pass the drill-down's ads as one array parameter, not an IN list (PostgreSQL allows at most 65,535 parameters); covering indexes on the daily tables; daily rollup tables only if the numbers still miss the target | Next |
+| Report performance, part 1: `./gradlew performanceTest` times every report for a large seller (500 products, 5,000 ads, 366 days = 1.83M rows each of spend and Attribution; target under 500 ms). Drill-down ads passed as one array parameter (an IN list broke past 65,535 ads). Baseline: whole-account reports 0.5–1.8 s; the database alone needs ~0.8 s to add up a year per ad, and covering indexes don't help (one account's year is read in full) | Done |
+| Report performance, part 2: rollup tables (pre-added totals) so reports read far fewer rows; performanceTest passes | Next |
 | Attribution CSV import (A10): upload, column mapping, re-upload updates rows; verified against a real export | To do |
 
 ## Repository layout
