@@ -1,5 +1,5 @@
 import { keepPreviousData } from '@tanstack/react-query'
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import { errorMessage } from '@/api/client'
 import type { BreakdownRow } from '@/api/generated/model'
 import { useGetReportBreakdown } from '@/api/generated/reports/reports'
@@ -9,10 +9,12 @@ import { cn } from '@/lib/utils'
 import type { DateRange } from '@/reports/dateRange'
 import { drillInto, LEVEL_NAMES, STARTS, type DrillStep } from '@/reports/drillDown'
 import { count, money, percent, ratio } from '@/reports/format'
+import { firstSort, sortRows, type Sort, type SortKey } from '@/reports/sortRows'
 
 // The summary split into rows, with drill-down: click a brand to see its products, a product to see its campaigns,
 // and so on down to the ads. Without a filter the rows add up to the summary tiles above.
 // `path`: the steps from the start to the table shown; the last one is the current table.
+// Click a column header to sort; the sort stays while drilling down.
 export function BreakdownTable({
   accountId,
   range,
@@ -30,7 +32,9 @@ export function BreakdownTable({
     { by: step.by, ...step.filter, from: range.from, to: range.to },
     { query: { placeholderData: keepPreviousData } },
   )
-  const rows = breakdown.data?.data.rows
+  const [sort, setSort] = useState<Sort>()
+  const data = breakdown.data?.data.rows
+  const rows = data && sortRows(data, sort)
   // While the next table loads, the previous rows stay visible (dimmed) but can't be clicked: they belong to another step
   const loading = breakdown.isPlaceholderData
 
@@ -81,13 +85,15 @@ export function BreakdownTable({
           <table className="w-full text-sm">
             <thead className="border-b text-muted-foreground">
               <tr>
-                <th className="px-3 py-2 text-left font-medium">{LEVEL_NAMES[step.by]}</th>
-                <Th>Spend</Th>
-                <Th>Sales</Th>
-                <Th>ROAS</Th>
-                <Th>Purchases</Th>
-                <Th>CPA</Th>
-                <Th>Conv. rate</Th>
+                {COLUMNS.map(([key, label]) => (
+                  <SortableTh
+                    key={key}
+                    label={key === 'name' ? LEVEL_NAMES[step.by] : label}
+                    sortKey={key}
+                    sort={sort}
+                    onSort={setSort}
+                  />
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -125,8 +131,47 @@ export function BreakdownTable({
   )
 }
 
-function Th({ children }: { children: string }) {
-  return <th className="px-3 py-2 text-right font-medium whitespace-nowrap">{children}</th>
+const COLUMNS: [SortKey, string][] = [
+  ['name', ''], // labelled with the level, e.g. "Product"
+  ['spend', 'Spend'],
+  ['sales', 'Sales'],
+  ['roas', 'ROAS'],
+  ['purchases', 'Purchases'],
+  ['cpa', 'CPA'],
+  ['conversionRate', 'Conv. rate'],
+]
+
+function SortableTh({
+  label,
+  sortKey,
+  sort,
+  onSort,
+}: {
+  label: string
+  sortKey: SortKey
+  sort: Sort | undefined
+  onSort: (sort: Sort) => void
+}) {
+  const active = sort?.key === sortKey
+  const isName = sortKey === 'name'
+  return (
+    <th
+      aria-sort={active ? (sort.descending ? 'descending' : 'ascending') : undefined}
+      className={cn('px-3 py-2 font-medium whitespace-nowrap', isName ? 'text-left' : 'text-right')}
+    >
+      <button
+        type="button"
+        className={cn('inline-flex items-center gap-1 hover:text-foreground', active && 'text-foreground')}
+        onClick={() => onSort(active ? { key: sortKey, descending: !sort.descending } : firstSort(sortKey))}
+      >
+        {label}
+        {/* Space kept for the arrow, so headers don't shift when the sort moves */}
+        <span aria-hidden className="w-3 text-xs">
+          {active ? (sort.descending ? '↓' : '↑') : ''}
+        </span>
+      </button>
+    </th>
+  )
 }
 
 function Numbers({ row: { totals } }: { row: BreakdownRow }) {
