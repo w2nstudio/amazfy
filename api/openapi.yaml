@@ -1146,7 +1146,8 @@ components:
       type: object
       description: |
         Totals in one currency. Money is in the currency's units with 2 decimals (12.50 = $12.50).
-        roas, cpa and conversionRate are left out when they can't be calculated (no spend, no purchases, no clicks).
+        roas, cpa and conversionRate are left out when they can't be calculated: roas and cpa without spend, cpa
+        without purchases, conversionRate without click-throughs.
       required: [currency, spend, impressions, clicks, clickThroughs, detailPageViews, addToCarts, purchases, unitsSold, sales]
       properties:
         currency:

@@ -88,6 +88,20 @@ The CSV importer reads columns through a name mapping and is checked against a r
 | Attribution CSV import, frontend: upload page with marketplace choice, result and errors; column mapping when headers aren't recognised | Next |
 | Verify the CSV import against a real Attribution export; add its header names | To do |
 
+## Backlog
+
+Agreed ideas without a milestone yet, or waiting for something. Moved into Progress when picked up.
+
+| Idea | Why | Waiting for |
+|---|---|---|
+| Clearer names for the special drill-down rows, e.g. "Ads with an unreadable link" and "Amazon sales without a known ad" | The current names don't say which side (Google ad or Amazon sale) is missing | Feedback from first sellers |
+| CSV import: preview before saving (dry run showing lines, days, matched share, sales; the seller confirms) | A valid but wrong file (other account, other marketplace) passes every format check | Planned with the upload page |
+| CSV import: warning when most lines match none of the account's ads | Strong sign of a report from another seller account | Planned with the upload page |
+| CSV import: check a marketplace or currency column against the chosen marketplace | A Canada report uploaded as US would count CAD as USD | A real export (does it have such a column?) |
+| CSV import: remove header aliases the real export doesn't use (e.g. "clicks", "campaign") | Generic names could match the wrong column | A real export |
+| Import history: who uploaded which file, when, for which days | A wrong upload can be traced | M6 audit log |
+| Undo an import | Upserts overwrite earlier numbers; re-uploading the right file repairs updated lines but not added ones | Only if real use shows the need |
+
 ## Repository layout
 
 ```
