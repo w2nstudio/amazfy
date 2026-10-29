@@ -13,6 +13,7 @@ import com.amazfy.common.tenant.CurrentAccount
 import com.amazfy.reporting.application.RefreshReportTotals
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDate
 
 /**
@@ -29,9 +30,11 @@ class ImportAttributionCsv(
     private val store: AttributionLineStore,
     private val reportTotals: RefreshReportTotals,
 ) {
+    /** [dryRun]: read and match only, save nothing, for a preview the seller confirms before importing. */
     fun import(
         csv: String,
         marketplace: Marketplace,
+        dryRun: Boolean = false,
     ): AttributionImport {
         val region = accounts.findAccount(CurrentAccount.get())!!.region
         if (marketplace.region != region) throw ReportOutsideRegionException(region)
@@ -39,16 +42,20 @@ class ImportAttributionCsv(
         val report = AttributionReport.parse(CsvText.rows(csv))
         val adIds = googleAds.idsOf(report.lines.mapNotNull { it.adKey }.toSet())
         val matched = report.lines.associateWith { line -> line.adKey?.let { adIds[it] } }
-        store.save(marketplace, matched)
-
         val days = report.lines.map { it.date }
-        reportTotals.forDays(days.min(), days.max())
+        if (!dryRun) {
+            store.save(marketplace, matched)
+            reportTotals.forDays(days.min(), days.max())
+        }
         return AttributionImport(
             fromDate = days.min(),
             toDate = days.max(),
             lines = matched.size,
             matchedLines = matched.values.count { it != null },
             otherPublisherLines = report.otherPublisherLines,
+            sales = report.lines.sumOf { it.sales },
+            currency = marketplace.currency,
+            saved = !dryRun,
         )
     }
 }
@@ -59,6 +66,9 @@ data class AttributionImport(
     val lines: Int,
     val matchedLines: Int,
     val otherPublisherLines: Int,
+    val sales: BigDecimal,
+    val currency: String,
+    val saved: Boolean,
 ) {
     val unmatchedLines: Int get() = lines - matchedLines
 }

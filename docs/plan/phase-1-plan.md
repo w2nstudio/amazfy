@@ -85,7 +85,8 @@ The CSV importer reads columns through a name mapping and is checked against a r
 | Report performance, part 1: `./gradlew performanceTest` times every report for a large seller (500 products, 5,000 ads, 366 days = 1.83M rows each of spend and Attribution; target under 500 ms). Drill-down ads passed as one array parameter (an IN list broke past 65,535 ads). Baseline: whole-account reports 0.5–1.8 s; the database alone needs ~0.8 s to add up a year per ad, and covering indexes don't help (one account's year is read in full) | Done |
 | Report performance, part 2: rollup tables (V11): totals per account and day (summary, whole-account trend) and per ad and month (drill-down, loose days at the ends from the daily rows); refreshed by `RefreshReportTotals` in the writer's transaction. Large seller, 366 days: summary 668 → 18 ms, trend 661 → 28 ms, breakdowns 1.0–1.8 s → 0.3–0.43 s; performanceTest passes | Done |
 | Attribution CSV import, backend (A10): `POST /accounts/{id}/attribution/imports` (owner/editor, one marketplace); strict `attribution` module; columns found by header names (aliases, header below report info lines); Google lines only; all or nothing with the bad lines named; lines matched to ads by Google's campaign / ad group / ad ids, else unmatched; re-upload updates (upsert), report totals refreshed | Done |
-| Attribution CSV import, frontend: upload page with marketplace choice, result and errors; column mapping when headers aren't recognised | Next |
+| Attribution CSV import, frontend: Import page (owner/editor) with marketplace choice; the file is first read as a preview (`dryRun=true`: lines, days, matched share, sales; nothing saved), then imported on confirmation; warning when under half the lines match the account's ads | Done |
+| Attribution CSV import: manual column mapping when a header isn't recognised | To do (with the real export) |
 | Verify the CSV import against a real Attribution export; add its header names | To do |
 
 ## Backlog
@@ -95,8 +96,6 @@ Agreed ideas without a milestone yet, or waiting for something. Moved into Progr
 | Idea | Why | Waiting for |
 |---|---|---|
 | Clearer names for the special drill-down rows, e.g. "Ads with an unreadable link" and "Amazon sales without a known ad" | The current names don't say which side (Google ad or Amazon sale) is missing | Low priority; check the wording with the seller Amazfy is built with |
-| CSV import: preview before saving (dry run showing lines, days, matched share, sales; the seller confirms) | A valid but wrong file (other account, other marketplace) passes every format check | Planned with the upload page |
-| CSV import: warning when most lines match none of the account's ads | Strong sign of a report from another seller account | Planned with the upload page |
 | CSV import: check a marketplace or currency column against the chosen marketplace | A Canada report uploaded as US would count CAD as USD | A real export (does it have such a column?) |
 | CSV import: remove header aliases the real export doesn't use (e.g. "clicks", "campaign") | Generic names could match the wrong column | A real export |
 | Import history: who uploaded which file, when, for which days | A wrong upload can be traced | M6 audit log |

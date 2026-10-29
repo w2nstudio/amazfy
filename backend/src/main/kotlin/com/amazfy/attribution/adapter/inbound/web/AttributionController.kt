@@ -21,8 +21,10 @@ class AttributionController(
         accountId: UUID,
         file: MultipartFile,
         marketplace: Marketplace,
+        dryRun: Boolean?,
     ): ResponseEntity<AttributionImportResult> {
-        val result = importCsv.import(file.bytes.toString(Charsets.UTF_8), DomainMarketplace.valueOf(marketplace.value))
+        val result =
+            importCsv.import(file.bytes.toString(Charsets.UTF_8), DomainMarketplace.valueOf(marketplace.value), dryRun == true)
         return ResponseEntity.ok(
             AttributionImportResult(
                 fromDate = result.fromDate,
@@ -31,6 +33,9 @@ class AttributionController(
                 matchedLines = result.matchedLines,
                 unmatchedLines = result.unmatchedLines,
                 otherPublisherLines = result.otherPublisherLines,
+                sales = result.sales,
+                currency = result.currency,
+                saved = result.saved,
             ),
         )
     }
