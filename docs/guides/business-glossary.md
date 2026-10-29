@@ -82,3 +82,11 @@ Plain-language explanations of business terms as they come up while building Ama
 
 **Drill-down** — Going from a total to its parts: all brands → one brand's products → one product's campaigns → ad groups → ads. Amazfy's reports work this way (requirement A12), so the seller sees where money works and where it doesn't. Budgets are set per campaign on Google, so the campaign level is where "spend more / spend less" is decided; the ad level shows which ad text works.
 
+
+**Ad testing (A/B testing)** — Running two or more ads with different text in the same ad group, for the same product, to find which words sell better. Google rotates them and favours the one with more clicks; Amazfy shows which one brings more Amazon *sales*. Example: ad A and ad B both spend $20 a day, A sells twice a day (ROAS 4.00), B once (ROAS 2.00): the seller pauses or rewrites B.
+
+**Match type** — How closely a search must match a keyword for the ad to show. **Exact** (`[aquarium filter 40l]`): searches with the same meaning, e.g. "40 litre aquarium filter"; fewer clicks, higher conversion rate. **Phrase** (`"aquarium filter"`): searches that include that meaning, e.g. "silent aquarium filter for 40l". **Broad** (`aquarium filter`): related searches too, e.g. "best filter for small fish tank"; many more clicks, lower conversion rate, finds new searches. Sellers often keep exact and broad keywords in separate ad groups to compare them.
+
+**Search terms report** — Google's list of what people actually typed before an ad showed or was clicked. Shows which searches a broad keyword really matched: good ones become exact keywords, wasteful ones negative keywords.
+
+**Negative keyword** — A word or search that must *not* show the ad, e.g. "pump" or "used" for a filter ad. Stops spending on searches that don't sell.
