@@ -5,6 +5,7 @@ import com.amazfy.catalog.application.CatalogService
 import com.amazfy.catalog.application.ProductSummary
 import com.amazfy.common.amazon.Marketplace
 import com.amazfy.common.tenant.CurrentAccount
+import com.amazfy.reporting.application.RefreshReportTotals
 import org.springframework.context.annotation.Profile
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.simple.JdbcClient
@@ -34,6 +35,7 @@ class SampleDataService(
     private val jdbc: JdbcClient,
     private val jdbcTemplate: JdbcTemplate,
     private val clock: Clock,
+    private val reportTotals: RefreshReportTotals,
 ) {
     /** Replaces the current account's campaigns (with ad groups, ads, spend) and Attribution numbers. */
     @Transactional
@@ -97,6 +99,8 @@ class SampleDataService(
                 "purchases, units_sold, sales) VALUES (?, 'CSV', ?, ?, 'Google Ads', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             attributionRows,
         )
+        // Everything was replaced, including days outside the new 90 (an earlier fill's), so rebuild all totals
+        reportTotals.forAllDays()
 
         return SampleDataSummary(
             fromDate = days.first(),

@@ -1,6 +1,8 @@
 package com.amazfy.reporting
 
 import com.amazfy.TestcontainersConfiguration
+import com.amazfy.common.tenant.CurrentAccount
+import com.amazfy.reporting.application.RefreshReportTotals
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -42,6 +44,9 @@ class ReportPerformanceTest {
     @Autowired
     lateinit var clock: Clock
 
+    @Autowired
+    lateinit var reportTotals: RefreshReportTotals
+
     @Test
     fun `every report answers within the target for a large seller`() {
         val (token, accountId) = signUp()
@@ -49,6 +54,8 @@ class ReportPerformanceTest {
         val from = to.minusDays(365)
         val loading = measureTimeMillis { fillLargeSeller(accountId, from, to) }
         println("Large seller loaded in ${loading / 1000} s")
+        val totals = measureTimeMillis { CurrentAccount.runAs(accountId) { reportTotals.forAllDays() } }
+        println("Report totals built in $totals ms")
 
         val brandId = firstId("brands", accountId)
         val productId = firstId("products", accountId)

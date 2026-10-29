@@ -1,6 +1,8 @@
 package com.amazfy.reporting.adapter.inbound.web
 
 import com.amazfy.TestcontainersConfiguration
+import com.amazfy.common.tenant.CurrentAccount
+import com.amazfy.reporting.application.RefreshReportTotals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -32,6 +34,9 @@ class ReportSummaryEndpointTest {
     /** The backend's clock (UTC), so "yesterday" here is the same day as in the backend, whatever this computer's zone. */
     @Autowired
     lateinit var clock: Clock
+
+    @Autowired
+    lateinit var refresh: RefreshReportTotals
 
     private fun today() = LocalDate.now(clock)
 
@@ -127,6 +132,8 @@ class ReportSummaryEndpointTest {
             ).param("a", accountId)
             .param("d", today().minusDays(2))
             .update()
+        // Like an import: written days are refreshed, since reports read the totals added up in advance
+        CurrentAccount.runAs(accountId) { refresh.forDays(today().minusDays(2), today().minusDays(2)) }
         summary(token, accountId).andExpect {
             jsonPath("$.currencies[0].sales") { value(99.96) }
             jsonPath("$.currencies[0].roas") { doesNotExist() }

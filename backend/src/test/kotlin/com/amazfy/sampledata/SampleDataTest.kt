@@ -145,6 +145,28 @@ class SampleDataTest {
     }
 
     @Test
+    fun `all 90 days add up exactly, whole months included`() {
+        val (token, accountId) = signUp()
+        createSampleData(token, accountId)
+        // 90 days always hold whole calendar months: the drill-down reads them from the monthly totals and only the
+        // loose days at either end from the daily rows, and must still give exactly 90 times one day
+        val to = LocalDate.now(clock).minusDays(1)
+        val days = "from=${to.minusDays(89)}&to=$to"
+
+        report(token, accountId, "summary?$days").andExpect {
+            jsonPath("$.currencies[0].spend") { value(14400.0) }
+            jsonPath("$.currencies[0].sales") { value(52560.0) }
+        }
+        report(token, accountId, "breakdown?by=BRAND&$days").andExpect {
+            jsonPath("$.rows[0].totals.spend") { value(11250.0) } // AquaLife: 90 × $125
+            jsonPath("$.rows[0].totals.sales") { value(41400.0) } // 90 × $460
+            jsonPath("$.rows[1].totals.spend") { value(2250.0) } // ClearTank: 90 × $25
+            jsonPath("$.rows[2].totals.spend") { value(900.0) } // not linked: 90 × $10
+            jsonPath("$.rows[3].totals.sales") { value(3600.0) } // unmatched: 90 × $40
+        }
+    }
+
+    @Test
     fun `the seller's own products get no sample ads`() {
         val (token, accountId) = signUp()
         val brand =
