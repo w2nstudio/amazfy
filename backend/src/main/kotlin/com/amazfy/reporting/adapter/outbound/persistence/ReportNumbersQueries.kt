@@ -119,9 +119,8 @@ class ReportNumbersQueries(
     override fun dailySpend(
         range: DateRange,
         adIds: Set<UUID>?,
-    ): List<DailySpend> {
-        if (adIds?.isEmpty() == true) return emptyList() // "IN ()" isn't valid SQL, and no ads means no numbers
-        return inRange(
+    ): List<DailySpend> =
+        inRange(
             """
             SELECT date, currency, $SPEND_SUMS
             FROM ad_spend_daily
@@ -131,14 +130,12 @@ class ReportNumbersQueries(
             range,
             adIds,
         ).query { rs, _ -> DailySpend(rs.date(), rs.toSpendTotals()) }.list()
-    }
 
     override fun dailyAttribution(
         range: DateRange,
         adIds: Set<UUID>?,
-    ): List<DailyAttributionNumbers> {
-        if (adIds?.isEmpty() == true) return emptyList()
-        return inRange(
+    ): List<DailyAttributionNumbers> =
+        inRange(
             """
             SELECT date, marketplace, $ATTRIBUTION_SUMS
             FROM attribution_daily
@@ -148,10 +145,12 @@ class ReportNumbersQueries(
             range,
             adIds,
         ).query { rs, _ -> DailyAttributionNumbers(rs.date(), rs.marketplace(), rs.toAttributionNumbers()) }.list()
-    }
 
-    /** [adIds] null: no condition. Otherwise the ads' ids are bound as :ads, which JdbcClient expands into a list. */
-    private fun onlyAds(adIds: Set<UUID>?) = if (adIds == null) "" else "AND ad_id IN (:ads)"
+    /**
+     * [adIds] null: no condition. Otherwise the ads' ids go in as one array parameter: a list "IN (?, ?, …)" would
+     * use one parameter per ad, and PostgreSQL refuses statements with more than 65,535.
+     */
+    private fun onlyAds(adIds: Set<UUID>?) = if (adIds == null) "" else "AND ad_id = ANY(:ads)"
 
     private fun inRange(
         sql: String,
@@ -162,7 +161,7 @@ class ReportNumbersQueries(
         .param("account", CurrentAccount.get())
         .param("from", range.from)
         .param("to", range.to)
-        .let { if (adIds == null) it else it.param("ads", adIds) }
+        .let { if (adIds == null) it else it.param("ads", adIds.toTypedArray()) }
 
     private companion object {
         const val SPEND_SUMS = "sum(cost_micros) AS cost_micros, sum(impressions) AS impressions, sum(clicks) AS clicks"
