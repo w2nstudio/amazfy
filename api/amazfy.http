@@ -299,6 +299,28 @@ Authorization: Bearer {{accessToken}}
 
 
 ############################################################
+# Ads: which product or brand an ad advertises
+############################################################
+
+### Ads linked to nothing, with what their link is (200). Sample data has two short-link ads.
+# @name unlinked
+GET {{baseUrl}}/accounts/{{accountId}}/ads/unlinked
+Authorization: Bearer {{accessToken}}
+
+### Link every unlinked ad whose final URL is the product page of a known product (200, owner or editor).
+POST {{baseUrl}}/accounts/{{accountId}}/ads/auto-link
+Authorization: Bearer {{accessToken}}
+
+### Link the first ad above to a brand (204, owner or editor); or {"productId": "..."} for a product.
+# Its spend moves from "Not linked to a product or brand" to the brand in the reports.
+PUT {{baseUrl}}/accounts/{{accountId}}/ads/{{unlinked.response.body.$[0].id}}/link
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"brandId": "{{productBrand.response.body.$.id}}"}
+
+
+############################################################
 # Attribution: upload an Amazon Attribution report (CSV)
 ############################################################
 

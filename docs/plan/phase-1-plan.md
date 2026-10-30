@@ -6,7 +6,7 @@ Phase 1a ships first: real sellers can connect Google Ads and Amazon and see ROA
 
 ## Progress
 
-Current milestone: **M3 reporting core + CSV import** (M0, M1 and M2 complete). Update this section whenever a step is merged.
+Current milestone: **M4 Google Ads connector** (M0, M1, M2 complete; M3 complete except the steps waiting for a real Attribution export). Update this section whenever a step is merged.
 
 | Step | Status |
 | --- | --- |
@@ -88,6 +88,19 @@ The CSV importer reads columns through a name mapping and is checked against a r
 | Attribution CSV import, frontend: Import page (owner/editor) with marketplace choice; the file is first read as a preview (`dryRun=true`: lines, days, matched share, sales; nothing saved), then imported on confirmation; warning when under half the lines match the account's ads | Done |
 | Attribution CSV import: manual column mapping when a header isn't recognised | To do (with the real export) |
 | Verify the CSV import against a real Attribution export; add its header names | To do |
+
+**M4: Google Ads connector**
+
+Steps 3 to 5 need a Google Ads manager account with a developer token and test accounts (see the approvals checklist in the requirements, section 10).
+
+| Step | Status |
+| --- | --- |
+| Ad linking, backend (A7): `channel` module reads the ASIN from a final URL; `GET /ads/unlinked`, `POST /ads/auto-link`, `PUT /ads/{id}/link` (product or brand); a seller's link is never overwritten by auto-linking; no totals refresh needed, since reports look up links when they run | Done |
+| Ad linking, frontend: unlinked-ads screen | Next |
+| Connect Google Ads: OAuth with the Ads scope, encrypted refresh token, disconnect (A4) | To do |
+| Pick the Google Ads account (A4) | To do |
+| Sync campaigns, ad groups and ads, with auto-linking (A6) | To do |
+| Daily spend sync, scheduled, refreshing report totals (A9) | To do |
 
 ## Backlog
 
