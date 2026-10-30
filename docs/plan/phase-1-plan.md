@@ -91,7 +91,7 @@ The CSV importer reads columns through a name mapping and is checked against a r
 
 **M4: Google Ads connector**
 
-Steps 3 to 5 need a Google Ads manager account with a developer token and test accounts (see the approvals checklist in the requirements, section 10).
+Steps 2 to 5 need the setup in the [Google Ads setup guide](../guides/google-ads-setup.md). Google retired developer tokens on 2026-09-09: access now belongs to the Google Cloud project. Test accounts show no cost or clicks, so the spend sync is tested with fake data until a real account is available.
 
 | Step | Status |
 | --- | --- |
