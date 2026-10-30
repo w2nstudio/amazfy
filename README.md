@@ -93,6 +93,7 @@ cd frontend && npm run lint && npm run format:check && npm run build
 - [Google Ads primer](docs/guides/google-ads-primer.md): how Google Ads works and how Amazfy maps ads to Amazon products
 - [Google login setup](docs/guides/google-login-setup.md): Google Cloud steps for "Sign in with Google" and where local secrets go
 - [Google login implementation](docs/guides/google-login-implementation.md): the sign-in flow, its security values and how Google's ID token is checked
+- [Google Ads setup](docs/guides/google-ads-setup.md): Google Cloud and test account steps for reading Google Ads in development
 - [OpenAPI and contract-first development](docs/guides/openapi-contract-first.md): how the API contract and code generation work
 - [Docker guide](docs/guides/docker-guide.md): Docker basics, our usage, commands and troubleshooting
 - [pgAdmin guide](docs/guides/pgadmin-guide.md): browse the local database's tables and run SQL in the browser

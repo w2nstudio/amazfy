@@ -303,7 +303,7 @@ Metrics: click-throughs, detail page views, add to carts, purchases, units sold,
 - [ ] Google Cloud brand verification completed
 - [ ] Google Ads API Explorer, then Basic access requested
 - [ ] Google OAuth consent screen verified for the Google Ads scope
-- [ ] Google Ads manager account and test accounts created
+- [ ] Google Ads test manager account and test client account created (no developer token: Google retired them on 2026-09-09; see the [Google Ads setup guide](../guides/google-ads-setup.md))
 - [ ] Login with Amazon security profile created
 - [ ] Meta app review and business verification for Facebook login (later phase)
 - [ ] Email-sending service chosen for verification and password-reset emails
