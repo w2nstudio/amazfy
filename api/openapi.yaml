@@ -33,6 +33,8 @@ tags:
     description: Amazon listings, each identified by ASIN + marketplace, linked to a brand
   - name: Reports
     description: What the seller's ads cost and what they brought on Amazon (ROAS and more), for a date range
+  - name: Ads
+    description: The seller's Google ads and what they advertise (the link from an ad to a product or brand)
   - name: Attribution
     description: Amazon Attribution numbers brought into Amazfy (CSV upload now, the Amazon API later)
   - name: Development
@@ -682,6 +684,90 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  # ---------- Ads ----------
+
+  /api/v1/accounts/{accountId}/ads/unlinked:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Ads]
+      operationId: listUnlinkedAds
+      summary: Ads linked to no product or brand yet, with what their link looks like
+      description: |
+        The ads behind the report row "Not linked to a product or brand", sorted by campaign, ad group and link. Any
+        member may read. linkKind says what the final URL is, so the page can suggest what to do.
+      responses:
+        "200":
+          description: The ads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UnlinkedAd"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/accounts/{accountId}/ads/auto-link:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    post:
+      tags: [Ads]
+      operationId: autoLinkAds
+      summary: Link every unlinked ad whose final URL is a product page of a known product
+      description: |
+        Reads the ASIN and marketplace from each unlinked ad's final URL and links the ad to the product with that ASIN
+        and marketplace. Ads already linked, also by hand, are left alone. Useful after adding a missing product.
+        Owners and editors only.
+      responses:
+        "200":
+          description: How many were linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutoLinkResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/accounts/{accountId}/ads/{adId}/link:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+      - name: adId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [Ads]
+      operationId: linkAd
+      summary: Link an ad to a product or a brand, chosen by the seller
+      description: |
+        For ads Amazfy can't link by itself (Brand Store pages, short links). Linking to a brand makes its spend
+        brand-level. Give exactly one of productId and brandId (400 otherwise, or for a product or brand of another
+        account). Replaces an earlier link. Owners and editors only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdLinkRequest"
+      responses:
+        "204":
+          description: Linked
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ---------- Attribution ----------
 
   /api/v1/accounts/{accountId}/attribution/imports:
@@ -897,7 +983,7 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
     NotFound:
-      description: No such brand or product in this account
+      description: No such brand, product or ad in this account
       content:
         application/problem+json:
           schema:
@@ -1294,6 +1380,62 @@ components:
           format: date
         totals:
           $ref: "#/components/schemas/CurrencyTotals"
+
+    AdLinkKind:
+      description: |
+        What an ad's final URL is. PRODUCT_PAGE: an Amazon product page, whose ASIN is given. BRAND_STORE: an Amazon
+        Brand Store page, shown per brand. OTHER: a short link or anything else Amazfy can't read.
+      type: string
+      enum: [PRODUCT_PAGE, BRAND_STORE, OTHER]
+
+    UnlinkedAd:
+      type: object
+      required: [id, externalId, finalUrl, campaignName, adGroupName, linkKind]
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalId:
+          type: string
+          description: Google's id of the ad
+        finalUrl:
+          type: string
+          description: Where the ad sends people, as set on Google
+          example: https://amzn.to/123456
+        campaignName:
+          type: string
+        adGroupName:
+          type: string
+        linkKind:
+          $ref: "#/components/schemas/AdLinkKind"
+        asin:
+          type: string
+          description: The ASIN in the final URL (PRODUCT_PAGE only); no product in Amazfy has it yet
+          example: B0AAA11111
+        marketplace:
+          $ref: "#/components/schemas/Marketplace"
+
+    AutoLinkResult:
+      type: object
+      required: [linked, stillUnlinked]
+      properties:
+        linked:
+          type: integer
+          description: Ads linked just now
+        stillUnlinked:
+          type: integer
+          description: Ads still linked to nothing
+
+    AdLinkRequest:
+      type: object
+      description: Exactly one of the two
+      properties:
+        productId:
+          type: string
+          format: uuid
+        brandId:
+          type: string
+          format: uuid
 
     AttributionImportResult:
       type: object
