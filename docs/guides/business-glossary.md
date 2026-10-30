@@ -64,7 +64,11 @@ Plain-language explanations of business terms as they come up while building Ama
 
 **Status (enabled / paused / removed)** — The state of a Google campaign, ad group or ad. *Enabled* runs, *paused* is stopped for now and can be restarted, *removed* is deleted on Google's side but still has its past spend. Amazfy keeps removed ones so old reports stay complete.
 
-**Unmatched ad** — A Google ad Amazfy can't link to a product or brand yet, e.g. its final URL is a short link. Its spend is still counted for its campaign, but not for any product until the seller links it.
+**Not linked to a product or brand** — A report row for Google ads Amazfy knows, but whose link it can't read, e.g. the final URL is a short link (`amzn.to/123456`) or the product isn't in Amazfy yet. Amazfy knows what the ad **cost**, but not which product it advertises. Shown at brand and product level, and clicking it opens its campaigns and ads. At campaign level there is no such row: these ads sit inside their campaign. Fixed by adding the product, or by linking the ad on the unmatched-ads screen (M4). The requirements call these *unmatched ads*.
+
+**Not matched to an ad** — A report row for Amazon sales whose campaign, ad group and ad ids match none of the seller account's Google ads: Amazfy knows the **sale**, but not which ad brought it, so its spend is unknown (ROAS and CPA show "—"). Usual causes: the ad was removed on Google before Amazfy's first sync, Google isn't synced yet, the report only goes down to ad groups, or the report is from another seller account. Shown last when viewing the whole account, without a drill-down, since it belongs to no brand, product or ad. The next Google sync or a corrected report fixes it.
+
+**Not linked vs not matched** — Opposite problems: *not linked* is the Google side (ad known, product unknown; has spend), *not matched* is the Amazon side (sale known, ad unknown; no spend). Both rows exist so the totals stay complete: the rows of a level add up to the dashboard tiles, and no money spent or earned disappears. Sample data has one of each kind: a short-link ad per brand ($5 a day each) and one unknown Attribution line ($40 a day).
 
 **Click-through** — In Attribution reports: one click on a tagged link that brought someone to Amazon. Usually a little lower than Google's click count for the same ad (some people leave before Amazon's page loads); conversion rate uses Amazon's number.
 
