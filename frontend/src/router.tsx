@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { RequireAuth } from '@/auth/RequireAuth'
 import { AppLayout } from '@/components/AppLayout'
+import { AdsPage } from '@/pages/AdsPage'
 import { BrandsPage } from '@/pages/BrandsPage'
 import { CreateAccountPage } from '@/pages/CreateAccountPage'
 import { ErrorPage } from '@/pages/ErrorPage'
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
                   { path: '/', element: <HomePage /> },
                   { path: '/brands', element: <BrandsPage /> },
                   { path: '/products', element: <ProductsPage /> },
+                  { path: '/ads', element: <AdsPage /> },
                   { path: '/import', element: <ImportPage /> },
                 ],
               },
