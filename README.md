@@ -98,3 +98,4 @@ cd frontend && npm run lint && npm run format:check && npm run build
 - [pgAdmin guide](docs/guides/pgadmin-guide.md): browse the local database's tables and run SQL in the browser
 - [API testing guide](docs/guides/api-testing-guide.md): try the endpoints by hand with Postman or with `api/amazfy.http` in VS Code (REST Client)
 - [Business glossary](docs/guides/business-glossary.md): Amazon and Google Ads terms in plain language
+- ["Not linked" and "Not matched" report rows](docs/guides/report-rows-not-linked-not-matched.md): the two special dashboard rows, side by side
