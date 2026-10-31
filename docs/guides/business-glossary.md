@@ -100,3 +100,5 @@ Plain-language explanations of business terms as they come up while building Ama
 **Client account** — The Google Ads account that holds campaigns, usually sitting under a manager account. Example: a seller's `AquaLife` account, managed from an agency's manager account.
 
 **Exact match keyword** — A keyword in square brackets, which targets searches with the same meaning as that keyword. Example: `[aquarium filter 40l]` can show an ad for "40l aquarium filter", but not for "aquarium heater".
+
+**Refresh token (Google)** — A long-lived key Google gives Amazfy when a seller allows access to their Google Ads. Amazfy trades it for short-lived access keys whenever it reads the account, and stores it encrypted. Example: AquaLife clicks "Connect Google Ads" once, and the daily sync keeps working without asking them to sign in again.
