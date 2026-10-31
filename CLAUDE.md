@@ -71,7 +71,8 @@ SaaS for Amazon sellers: run ads outside Amazon and measure the Amazon sales the
 ## Conventions
 
 - Database changes only through Flyway migrations.
-- Secrets never in code, config files or logs; OAuth tokens encrypted at rest.
+- Secrets never in code, config files or logs; OAuth tokens encrypted at rest with `common/crypto/SecretCipher` (AES-256-GCM, `SECRET_ENCRYPTION_KEY`), with a context naming what the value is for, so it can't be decrypted for another seller account or purpose.
+- A provider's consent page (Connect Google Ads, later Amazon): the callback has no login, so what it needs (state, PKCE verifier, seller account, user, expiry) waits in an encrypted, short-lived, `SameSite=Lax` cookie, and the callback checks the user's role again. Connections are owners only (`canManage`). Disconnecting deletes the token without revoking it at Google, which would also disconnect the person's other seller accounts.
 - Config: `application.properties` (shared, values only from environment variables) · `application-local.properties` (local defaults, the default profile) · `application-prod.properties`. A new required setting goes into `requiredSettings` in `AmazfyBackendApplication.kt` and gets a local default.
 - Tests: unit tests for domain and use cases; integration tests with Testcontainers PostgreSQL.
 
@@ -90,7 +91,7 @@ Local database (run in repo root; needs Docker Desktop running):
 - `docker compose up -d` — start PostgreSQL 18 on localhost:5432 (db/user/password: `amazfy`) Mailpit (SMTP localhost:1025; sent emails readable at http://localhost:8025) and pgAdmin (http://localhost:5050, database browser; `docs/guides/pgadmin-guide.md`)
 - `docker compose down` — stop it (data is kept in a Docker volume; `down -v` deletes it)
 
-Backend container image (run in repo root): `docker build -f backend/Dockerfile -t amazfy-backend .` (multi-stage, JRE-only runtime, non-root user, `prod` profile by default; pass `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `CORS_ALLOWED_ORIGINS`, `JWT_SECRET`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_FROM`, `FRONTEND_BASE_URL` with `-e`; inside a container the local database is `host.docker.internal:5432`).
+Backend container image (run in repo root): `docker build -f backend/Dockerfile -t amazfy-backend .` (multi-stage, JRE-only runtime, non-root user, `prod` profile by default; pass `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `CORS_ALLOWED_ORIGINS`, `JWT_SECRET`, `SECRET_ENCRYPTION_KEY`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_FROM`, `FRONTEND_BASE_URL` with `-e`; inside a container the local database is `host.docker.internal:5432`).
 
 Backend tests start their own throwaway PostgreSQL with Testcontainers; only Docker must be running.
 Migrations live in `backend/src/main/resources/db/migration` (`V<n>__<description>.sql`); never edit a merged one.

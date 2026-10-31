@@ -307,6 +307,19 @@ Authorization: Bearer {{accessToken}}
 GET {{baseUrl}}/accounts/{{accountId}}/ads/unlinked
 Authorization: Bearer {{accessToken}}
 
+### Whether this seller account has connected Google Ads (200, any member).
+GET {{baseUrl}}/accounts/{{accountId}}/google-ads/connection
+Authorization: Bearer {{accessToken}}
+
+### Start connecting Google Ads (200, owner): gives the address of Google's consent page.
+# Finish in a browser: the callback needs the cookie this sets, so use the Ads page's button for the whole flow.
+POST {{baseUrl}}/accounts/{{accountId}}/google-ads/connect
+Authorization: Bearer {{accessToken}}
+
+### Disconnect Google Ads (204, owner): deletes the stored token.
+DELETE {{baseUrl}}/accounts/{{accountId}}/google-ads/connection
+Authorization: Bearer {{accessToken}}
+
 ### Link every unlinked ad whose final URL is the product page of a known product (200, owner or editor).
 POST {{baseUrl}}/accounts/{{accountId}}/ads/auto-link
 Authorization: Bearer {{accessToken}}
