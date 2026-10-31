@@ -62,6 +62,8 @@ The **client account** is the one that holds campaigns, like a seller's Google A
 
 A budget-related error may appear here. Google says you can ignore it, because test accounts have no budgets.
 
+Google Ads may show a test account as **Canceled**. That's how it displays them, so don't reactivate it. To see it in the Accounts table, include Canceled in the Account status filter.
+
 ## 6. Create a test campaign
 
 Sign in to the test client account and create a small structure, so the sync has something to read. Nothing runs and nothing is charged. Choose **Create a campaign without a goal** if asked, type **Search**.
@@ -70,10 +72,19 @@ Sign in to the test client account and create a small structure, so the sync has
 | --- | --- |
 | Campaign | `Aquarium filter (test)`, status can be paused |
 | Ad group | `filter exact`, with a keyword such as `[aquarium filter 40l]` |
-| Ad 1 | Final URL `https://www.amazon.com/dp/B0AQL00001`: should link to the product automatically |
+| Ad 1 | Final URL `https://www.amazon.com/dp/` + the ASIN of a **real** product: should link to the product automatically |
 | Ad 2 | Final URL `https://amzn.to/123456`: should appear as an unlinked ad |
 
 A responsive search ad needs at least 3 headlines and 2 descriptions; any text will do.
+
+**Use a real product for Ad 1.** Any product on Amazon works, not only your own: test accounts never show ads, so you aren't advertising it. Choose one whose ASIN starts with `B0`, the only kind Amazfy accepts (the ASIN is the 10 characters after `/dp/` in the product's address).
+
+**Note that ASIN.** Sample data uses made-up ASINs, so it won't match Ad 1. To see Ad 1 link automatically, add a product with the same ASIN on amazon.com in Amazfy.
+
+Two things to expect:
+
+- **The Publish button** can be at the top right of the page rather than at the bottom. If it's missing, look for a red line on the **Review** page: an error is blocking publishing.
+- **The ad's status** can stay *Pending* or *Under review*, and may even become *Disapproved*. None of that matters here, because Amazfy only needs the ad to exist. Editing an ad sends it for review again, so leave it once its final URL is right.
 
 ## 7. Note the two account numbers
 
@@ -93,7 +104,7 @@ These aren't secrets like a password, but keep them out of the repository anyway
 - [ ] The OAuth client has the new redirect address
 - [ ] A test manager account and a test client account exist, both with the **Test account** label
 - [ ] The test client account has a campaign, an ad group and two ads
-- [ ] You've noted both account numbers
+- [ ] You've noted both account numbers and Ad 1's ASIN
 
 ## What test accounts can't do
 
@@ -123,6 +134,7 @@ A project on the Google Cloud **free trial**, or with suspended billing, may be 
 | `invalid_grant` after about a week | Testing status: connections expire after 7 days | Connect Google Ads again |
 | `AUTHORIZATION_ERROR` when reading an account | Test access reading a real account, or the Google account has no access to it | Use a test account signed in with the Google account from step 4 |
 | The test manager page opens a real account | The Google account is already linked to a real manager account | Use another Google account |
+| The campaign won't publish: a red **Ads** line on the Review page | Seen with a made-up ASIN in the final URL. It cleared after trying a real product's link, deleting the sitelinks Google added and turning off **AI Max**, but we didn't isolate which one fixed it | Try those three, starting with the real link. AI Max lets Google rewrite ads and change landing pages, so keep it off here anyway |
 
 ## Sources
 

@@ -94,3 +94,9 @@ Plain-language explanations of business terms as they come up while building Ama
 **Search terms report** — Google's list of what people actually typed before an ad showed or was clicked. Shows which searches a broad keyword really matched: good ones become exact keywords, wasteful ones negative keywords.
 
 **Negative keyword** — A word or search that must *not* show the ad, e.g. "pump" or "used" for a filter ad. Stops spending on searches that don't sell.
+
+**Test account** — A practice Google Ads account that can't run ads or charge anything. Google shows it as Canceled, and its clicks and cost stay empty. Example: `AquaLife test` holds a practice campaign so Amazfy's connection can be tried for free.
+
+**Client account** — The Google Ads account that holds campaigns, usually sitting under a manager account. Example: a seller's `AquaLife` account, managed from an agency's manager account.
+
+**Exact match keyword** — A keyword in square brackets, which targets searches with the same meaning as that keyword. Example: `[aquarium filter 40l]` can show an ad for "40l aquarium filter", but not for "aquarium heater".
