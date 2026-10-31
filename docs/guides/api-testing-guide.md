@@ -125,6 +125,18 @@ Each walkthrough lists the requests in order and what you should see. Use a new 
 2. The 6th try, even with the right password → **429** "Too many attempts. Please try again in N minutes", and a `Retry-After` header (seconds).
 3. It unlocks by itself 15 minutes after the first failed try. To start fresh sooner, restart with an empty database: `docker compose down -v`, `docker compose up -d`, restart `bootRun`.
 
+### Connect Google Ads
+
+Needs the [Google Ads setup](google-ads-setup.md) and a browser, since Google's consent page and the callback's cookie can't be done from Postman.
+
+1. Log in to Amazfy as an owner and open **Ads**. It says **Not connected**.
+2. **Connect Google Ads** → choose the Google login with the test accounts → allow access. Google warns that the app is unverified, which is expected while it's in Testing: **Advanced → Go to Amazfy**. Google words the permission broadly, covering changes as well as reading, because it's the only permission Google offers for Google Ads. For now, Amazfy only reads.
+3. You return to **Ads**, which says **Connected**. In pgAdmin, `google_ads_connections` holds an encrypted token starting with `v1.`, never Google's `1//…`.
+4. **Connect Google Ads** again and press **Cancel** on Google's page → back on **Ads**, with no message.
+5. **Disconnect** → **Not connected**, and the row is gone.
+
+In Postman, **Get Google Ads connection** answers `connected: true` or `false`. As an editor or viewer it still works, while starting and disconnecting answer **403**.
+
 ## 4. Troubleshooting
 
 | Symptom | Cause and fix |

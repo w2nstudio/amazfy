@@ -93,6 +93,7 @@ class SecurityConfig(
                 "/api/v1/auth/reset-password",
                 "/api/v1/auth/google",
                 "/api/v1/auth/google/callback",
+                "/api/v1/google-ads/callback",
             )
     }
 }

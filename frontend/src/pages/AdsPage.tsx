@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { AMAZON_SITES } from '@/account/amazon'
+import { GoogleAdsConnectionCard } from '@/ads/GoogleAdsConnectionCard'
 import { useCurrentAccount } from '@/account/currentAccount'
 import { errorMessage } from '@/api/client'
 import { useAutoLinkAds, useLinkAd, useListUnlinkedAds } from '@/api/generated/ads/ads'
@@ -28,10 +29,17 @@ export function AdsPage() {
   const { current } = useCurrentAccount()
   if (!current) return null
   // key: switching accounts starts fresh (a choice made for one account's ad is never carried over)
-  return <Ads key={current.account.id} accountId={current.account.id} canEdit={current.role !== Role.VIEWER} />
+  return (
+    <Ads
+      key={current.account.id}
+      accountId={current.account.id}
+      canEdit={current.role !== Role.VIEWER}
+      canManage={current.role === Role.OWNER}
+    />
+  )
 }
 
-function Ads({ accountId, canEdit }: { accountId: string; canEdit: boolean }) {
+function Ads({ accountId, canEdit, canManage }: { accountId: string; canEdit: boolean; canManage: boolean }) {
   const ads = useListUnlinkedAds(accountId)
   const brands = useListBrands(accountId)
   const products = useListProducts(accountId)
@@ -49,6 +57,8 @@ function Ads({ accountId, canEdit }: { accountId: string; canEdit: boolean }) {
 
   return (
     <main className="flex flex-col gap-6">
+      <GoogleAdsConnectionCard accountId={accountId} canManage={canManage} />
+
       <section className="flex flex-col gap-1">
         <h2 className="text-xl font-medium">Ads to link</h2>
         <p className="max-w-prose text-sm text-muted-foreground">

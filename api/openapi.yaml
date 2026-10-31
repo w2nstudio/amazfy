@@ -35,6 +35,8 @@ tags:
     description: What the seller's ads cost and what they brought on Amazon (ROAS and more), for a date range
   - name: Ads
     description: The seller's Google ads and what they advertise (the link from an ad to a product or brand)
+  - name: Google Ads
+    description: A seller account's permission to read its Google Ads
   - name: Attribution
     description: Amazon Attribution numbers brought into Amazfy (CSV upload now, the Amazon API later)
   - name: Development
@@ -709,6 +711,100 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /api/v1/accounts/{accountId}/google-ads/connection:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Google Ads]
+      operationId: getGoogleAdsConnection
+      summary: Whether this seller account has connected Google Ads
+      description: Any member. The token itself is never returned.
+      responses:
+        "200":
+          description: The connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleAdsConnection"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    delete:
+      tags: [Google Ads]
+      operationId: disconnectGoogleAds
+      summary: Disconnect Google Ads
+      description: |
+        Deletes the stored token, so Amazfy can no longer read the Google Ads account. Numbers already brought in stay.
+        Nothing happens if it isn't connected. Doesn't revoke the permission at Google: that would also disconnect the
+        person's other seller accounts. Owners only.
+      responses:
+        "204":
+          description: Not connected any more
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/accounts/{accountId}/google-ads/connect:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    post:
+      tags: [Google Ads]
+      operationId: startGoogleAdsConnect
+      summary: Start connecting Google Ads; the page then sends the browser to the returned address
+      description: |
+        Returns the address of Google's consent page and sets a short-lived, encrypted cookie for the callback.
+        A fetch call rather than a browser navigation, since only a fetch call can carry the access token. Owners only.
+      responses:
+        "200":
+          description: Where to send the browser
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleAdsConnectStart"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "501":
+          description: No Google OAuth client is set up on this server
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /api/v1/google-ads/callback:
+    get:
+      tags: [Google Ads]
+      operationId: completeGoogleAdsConnect
+      summary: Google redirects here after consent; Amazfy stores the token and redirects to the Ads page
+      description: |
+        Has no login: the cookie from starting says who is connecting which seller account. Redirects to the frontend's
+        /ads, with googleAds=connected or googleAds=failed (nothing added when the seller pressed Cancel).
+      security: []
+      parameters:
+        - name: code
+          in: query
+          description: One-time code from Google. Missing when the seller cancelled or Google failed (then `error` is set).
+          required: false
+          schema:
+            type: string
+        - name: error
+          in: query
+          description: Set by Google instead of `code`, e.g. `access_denied` when the seller pressed Cancel.
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to the frontend's Ads page
 
   /api/v1/accounts/{accountId}/ads/auto-link:
     parameters:
@@ -1414,6 +1510,26 @@ components:
           example: B0AAA11111
         marketplace:
           $ref: "#/components/schemas/Marketplace"
+
+    GoogleAdsConnection:
+      type: object
+      required: [connected]
+      properties:
+        connected:
+          type: boolean
+        connectedAt:
+          type: string
+          format: date-time
+          description: When it was connected; only when connected
+
+    GoogleAdsConnectStart:
+      type: object
+      required: [authorizationUrl]
+      properties:
+        authorizationUrl:
+          type: string
+          format: uri
+          description: Google's consent page
 
     AutoLinkResult:
       type: object

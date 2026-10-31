@@ -136,7 +136,7 @@ The **ad** is the unit of linking, not the campaign.
 | A1 | Sign up and log in with email/password or Google | User, account and owner membership created; password reset by email works |
 | A2 | Create another account and switch between my accounts | Account switcher in the top bar; all data shown is scoped to the selected account |
 | A3 | Connect and disconnect my Amazon Ads account | Token stored encrypted; Attribution advertisers listed; disconnect deletes the token |
-| A4 | Connect and disconnect my Google Ads account | Token stored encrypted; accessible Google Ads accounts listed; I pick one |
+| A4 | Connect and disconnect my Google Ads account | Owners only; token stored encrypted; accessible Google Ads accounts listed; I pick one; disconnect deletes the token (not revoked at Google, which would also disconnect the person's other seller accounts) |
 | A5 | Add, edit and remove brands and products | ASIN format validated; ASIN + marketplace unique in the account; each product has a brand |
 | A6 | See my Google campaigns, ad groups and ads | Synced with name, status, budget, final URL |
 | A7 | Have ads matched to products automatically | ASIN parsed from final URL; unmatched ads listed for me to link to a product or brand |

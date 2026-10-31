@@ -16,6 +16,7 @@ private val requiredSettings =
         "DB_PASSWORD",
         "CORS_ALLOWED_ORIGINS",
         "JWT_SECRET",
+        "SECRET_ENCRYPTION_KEY",
         "MAIL_HOST",
         "MAIL_PORT",
         "MAIL_FROM",

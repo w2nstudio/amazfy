@@ -65,6 +65,7 @@ docker run --rm -p 8081:8080 \
   -e DB_USERNAME=amazfy -e DB_PASSWORD=amazfy \
   -e CORS_ALLOWED_ORIGINS=http://localhost:5173 \
   -e JWT_SECRET=local-development-secret-not-for-production-0123456789 \
+  -e SECRET_ENCRYPTION_KEY=pQd05CRP9xYS6vbn2OtbAxkKs6025o8BG5YCLASdPgM= \
   -e MAIL_HOST=host.docker.internal -e MAIL_PORT=1025 \
   -e "MAIL_FROM=Amazfy <no-reply@amazfy.local>" -e FRONTEND_BASE_URL=http://localhost:5173 \
   amazfy-backend
