@@ -1,7 +1,8 @@
 import { keepPreviousData } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
+import { Link } from 'react-router'
 import { errorMessage } from '@/api/client'
-import type { BreakdownRow } from '@/api/generated/model'
+import { BreakdownRowKind, type BreakdownRow } from '@/api/generated/model'
 import { useGetReportBreakdown } from '@/api/generated/reports/reports'
 import { FormMessage } from '@/components/AuthCard'
 import { Button } from '@/components/ui/button'
@@ -126,6 +127,14 @@ export function BreakdownTable({
             </tbody>
           </table>
         </div>
+      )}
+      {rows?.some((row) => row.kind === BreakdownRowKind.NOT_LINKED) && (
+        <p className="text-xs text-muted-foreground">
+          Some ads aren't linked to a product or brand yet.{' '}
+          <Link to="/ads" className="underline underline-offset-4">
+            Link them
+          </Link>
+        </p>
       )}
     </section>
   )
