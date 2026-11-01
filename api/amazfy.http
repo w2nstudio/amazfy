@@ -307,6 +307,15 @@ Authorization: Bearer {{accessToken}}
 GET {{baseUrl}}/accounts/{{accountId}}/ads/unlinked
 Authorization: Bearer {{accessToken}}
 
+### The campaigns, with budget and counts (200, any member).
+# @name campaigns
+GET {{baseUrl}}/accounts/{{accountId}}/campaigns
+Authorization: Bearer {{accessToken}}
+
+### The first campaign's ad groups and ads (200, any member; 404 for a campaign not in this seller account).
+GET {{baseUrl}}/accounts/{{accountId}}/campaigns/{{campaigns.response.body.$[0].id}}/ad-groups
+Authorization: Bearer {{accessToken}}
+
 ### Whether this seller account has connected Google Ads (200, any member).
 GET {{baseUrl}}/accounts/{{accountId}}/google-ads/connection
 Authorization: Bearer {{accessToken}}

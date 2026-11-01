@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { accountLabel } from '@/ads/accountLabel'
 import { GoogleAdsAccountPicker } from '@/ads/GoogleAdsAccountPicker'
 import { errorMessage } from '@/api/client'
@@ -124,10 +124,15 @@ export function GoogleAdsConnectionCard({
       <FormMessage error>{errorMessage(start.error ?? disconnect.error ?? sync.error)}</FormMessage>
 
       {status?.account && canEdit && !confirming && !changingAccount && (
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
           <Button size="sm" onClick={bringInCampaigns} disabled={sync.isPending}>
             {sync.isPending ? 'Bringing in campaigns…' : 'Bring in campaigns'}
           </Button>
+          {status.syncedAt && (
+            <Link to="/campaigns" className="underline underline-offset-4">
+              See campaigns
+            </Link>
+          )}
         </div>
       )}
 
