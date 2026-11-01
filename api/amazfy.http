@@ -322,6 +322,10 @@ Content-Type: application/json
 
 {"customerId": "1234567890"}
 
+### Bring in the chosen account's campaigns, ad groups and ads (200, owner or editor); ads link automatically where they can.
+POST {{baseUrl}}/accounts/{{accountId}}/google-ads/sync
+Authorization: Bearer {{accessToken}}
+
 ### Start connecting Google Ads (200, owner): gives the address of Google's consent page.
 # Finish in a browser: the callback needs the cookie this sets, so use the Ads page's button for the whole flow.
 POST {{baseUrl}}/accounts/{{accountId}}/google-ads/connect

@@ -1,7 +1,11 @@
 package com.amazfy.channel.adapter.outbound.google
 
+import com.amazfy.channel.domain.GoogleAd
+import com.amazfy.channel.domain.GoogleAdGroup
+import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsConnectionExpiredException
 import com.amazfy.channel.domain.GoogleAdsReadFailedException
+import com.amazfy.channel.domain.GoogleCampaign
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.AfterEach
@@ -160,5 +164,46 @@ class GoogleAdsRestReaderTest {
         answer = 403 to """{"error":{"status":"PERMISSION_DENIED"}}"""
         assertFailsWith<GoogleAdsReadFailedException> { reader.hierarchyOf("9", "short-lived") }
         assertFailsWith<GoogleAdsReadFailedException> { reader.accessibleCustomerIds("short-lived") }
+        assertFailsWith<GoogleAdsReadFailedException> { reader.structureOf(ACCOUNT, "short-lived") }
+    }
+
+    @Test
+    fun `reads campaigns, ad groups and ads through the manager account, in Google's JSON`() {
+        pages +=
+            """
+            {"results":[
+              {"campaign":{"id":"21","name":"Filters","status":"ENABLED"},"campaignBudget":{"amountMicros":"15000000"},"customer":{"currencyCode":"USD"}},
+              {"campaign":{"id":"22","name":"Custom period","status":"PAUSED"},"campaignBudget":{},"customer":{"currencyCode":"USD"}}
+            ]}
+            """.trimIndent()
+        pages += """{"results":[{"adGroup":{"id":"31","name":"Filter 40L","status":"ENABLED"},"campaign":{"id":"21"}}]}"""
+        pages +=
+            """
+            {"results":[
+              {"adGroupAd":{"ad":{"id":"41","finalUrls":["https://www.amazon.com/dp/B0AAA11111","https://other"]},"status":"REMOVED"},"adGroup":{"id":"31"},"campaign":{"id":"21"}},
+              {"adGroupAd":{"ad":{"id":"42"},"status":"ENABLED"},"adGroup":{"id":"31"},"campaign":{"id":"21"}}
+            ]}
+            """.trimIndent()
+
+        val structure = reader.structureOf(ACCOUNT, "short-lived")
+
+        assertEquals(3, requests.size)
+        requests.forEach {
+            assertEquals("/v26/customers/1234567890/googleAds:search", it.path)
+            assertEquals("9998887776", it.loginCustomerId)
+            assertEquals("Bearer short-lived", it.authorization)
+            assertNull(it.developerToken)
+            assertTrue("advertising_channel_type = 'SEARCH'" in it.body)
+            assertFalse("status =" in it.body, "removed ones must come too, or they'd look alive forever")
+        }
+        assertEquals(GoogleCampaign("21", "Filters", "ENABLED", 15_000_000, "USD"), structure.campaigns[0])
+        assertNull(structure.campaigns[1].dailyBudgetMicros)
+        assertEquals(GoogleAdGroup("31", "21", "Filter 40L", "ENABLED"), structure.adGroups.single())
+        assertEquals(GoogleAd("41", "31", "21", "https://www.amazon.com/dp/B0AAA11111", "REMOVED"), structure.ads[0])
+        assertEquals("", structure.ads[1].finalUrl)
+    }
+
+    private companion object {
+        val ACCOUNT = GoogleAdsAccount("1234567890", "AquaLife", loginCustomerId = "9998887776")
     }
 }

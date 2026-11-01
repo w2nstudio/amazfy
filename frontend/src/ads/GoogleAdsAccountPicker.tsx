@@ -63,6 +63,12 @@ export function GoogleAdsAccountPicker({
         {choose.isPending ? 'Saving…' : 'Use this account'}
       </Button>
       <FormMessage error>{errorMessage(choose.error)}</FormMessage>
+      {chosen && (
+        <p className="w-full max-w-prose text-muted-foreground">
+          Campaigns already brought in stay in your reports, since their spend was real. Amazfy just stops updating
+          them.
+        </p>
+      )}
     </div>
   )
 }

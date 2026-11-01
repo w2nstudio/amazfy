@@ -33,4 +33,4 @@ Expected numbers: [Sample data and expected results](sample-data.md).
 | | Typical cause | Fix |
 | --- | --- | --- |
 | **Not linked** | Short links, links to a non-Amazon page, a product not added to Amazfy yet | The seller adds the product, or links the ad by hand on the **Ads** page. The ad then moves under its product or brand. |
-| **Not matched** | The ad was removed on Google before Amazfy's first sync; Google isn't synced yet; the report only goes down to ad groups; a report from another seller account | The next Google sync brings the ad in and the line gets matched on the next upload or sync. A large share of unmatched sales points to a wrong file, which the import page warns about. |
+| **Not matched** | Google isn't synced yet; the ad isn't in a Search campaign, the only kind Amazfy brings in; the report only goes down to ad groups; a report from another seller account | **Bring in campaigns** brings the ad in, and uploading the report again matches the line. A large share of unmatched sales points to a wrong file, which the import page warns about. |

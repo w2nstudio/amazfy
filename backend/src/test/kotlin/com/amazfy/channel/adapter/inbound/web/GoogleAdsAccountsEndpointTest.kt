@@ -3,9 +3,11 @@ package com.amazfy.channel.adapter.inbound.web
 import com.amazfy.TestcontainersConfiguration
 import com.amazfy.channel.application.port.GoogleAdsConnections
 import com.amazfy.channel.application.port.GoogleAdsReader
+import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsClient
 import com.amazfy.channel.domain.GoogleAdsConnectionExpiredException
 import com.amazfy.channel.domain.GoogleAdsReadFailedException
+import com.amazfy.channel.domain.GoogleAdsStructure
 import com.amazfy.common.tenant.CurrentAccount
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -69,6 +71,11 @@ class GoogleAdsAccountsEndpointTest {
                 else -> listOf(GoogleAdsClient(DIRECT, null, isManager = false, "ENABLED", isTestAccount = false, level = 0))
             }
         }
+
+        override fun structureOf(
+            account: GoogleAdsAccount,
+            accessToken: String,
+        ) = GoogleAdsStructure(emptyList(), emptyList(), emptyList())
     }
 
     @TestConfiguration(proxyBeanMethods = false)

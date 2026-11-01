@@ -135,10 +135,11 @@ Needs the [Google Ads setup](google-ads-setup.md) and a browser, since Google's 
 4. **Connect Google Ads** again and press **Cancel** on Google's page → back on **Ads**, with no message.
 5. Connected, the card lists the Google Ads accounts your login reaches. Choose your test client account → **Use this account**. The manager account isn't offered, since it holds no campaigns. The card now names the account, and in pgAdmin the row has `customer_id` and `login_customer_id`.
 6. **Connect again** keeps the chosen account. Choosing again works through **Change account**.
-7. After about a week, while the app is in Testing, **Change account** says Google no longer accepts the connection → **Connect again**.
-8. **Disconnect** → **Not connected**, and the row is gone.
+7. **Bring in campaigns** → the card says what it found and when. Your practice ads appear under **Ads to link**, unless their product is already in Amazfy: then they link automatically. Press it again: same counts, no duplicates. In pgAdmin, `campaigns` has `channel_account_id` and `daily_budget_micros`.
+8. After about a week, while the app is in Testing, **Bring in campaigns** says Google no longer accepts the connection → **Connect again**.
+9. **Disconnect** → **Not connected**, and the row is gone. The campaigns stay.
 
-In Postman, **Get Google Ads connection** answers `connected: true` or `false`. As an editor or viewer it still works, while starting and disconnecting answer **403**.
+In Postman, **Get Google Ads connection** answers `connected: true` or `false`. As an editor or viewer it still works, while starting and disconnecting answer **403**. **Bring in campaigns** works for owners and editors; viewers get **403**.
 
 ## 4. Troubleshooting
 

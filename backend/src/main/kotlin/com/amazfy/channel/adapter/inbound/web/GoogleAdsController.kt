@@ -3,11 +3,13 @@ package com.amazfy.channel.adapter.inbound.web
 import com.amazfy.api.generated.GoogleAdsApi
 import com.amazfy.api.generated.model.GoogleAdsAccountChoice
 import com.amazfy.api.generated.model.GoogleAdsConnectStart
+import com.amazfy.api.generated.model.GoogleAdsSyncResult
 import com.amazfy.channel.application.ChooseGoogleAdsAccount
 import com.amazfy.channel.application.ConnectGoogleAds
 import com.amazfy.channel.application.DisconnectGoogleAds
 import com.amazfy.channel.application.GetGoogleAdsConnection
 import com.amazfy.channel.application.ListGoogleAdsAccounts
+import com.amazfy.channel.application.SyncGoogleAds
 import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsConnectCancelledException
 import com.amazfy.channel.domain.GoogleAdsConnectFailedException
@@ -34,6 +36,7 @@ class GoogleAdsController(
     private val disconnect: DisconnectGoogleAds,
     private val listAccounts: ListGoogleAdsAccounts,
     private val chooseAccount: ChooseGoogleAdsAccount,
+    private val sync: SyncGoogleAds,
     private val attemptCookie: GoogleAdsConnectCookie,
     private val request: HttpServletRequest, // a proxy to the current request
     @param:Value("\${amazfy.frontend-base-url}") private val frontendBaseUrl: String,
@@ -48,6 +51,7 @@ class GoogleAdsController(
                 connected = connection != null,
                 connectedAt = connection?.connectedAt?.atOffset(ZoneOffset.UTC),
                 account = connection?.account?.toApi(),
+                syncedAt = connection?.syncedAt?.atOffset(ZoneOffset.UTC),
             ),
         )
     }
@@ -101,6 +105,21 @@ class GoogleAdsController(
         accountId: UUID,
         googleAdsAccountChoice: GoogleAdsAccountChoice,
     ): ResponseEntity<ApiGoogleAdsAccount> = ResponseEntity.ok(chooseAccount.choose(googleAdsAccountChoice.customerId).toApi())
+
+    /** Editors too: it changes no connection, and they already may link ads. */
+    @PreAuthorize("@accountAccess.canEdit(#accountId)")
+    override fun syncGoogleAds(accountId: UUID): ResponseEntity<GoogleAdsSyncResult> {
+        val outcome = sync.run()
+        return ResponseEntity.ok(
+            GoogleAdsSyncResult(
+                campaigns = outcome.campaigns,
+                adGroups = outcome.adGroups,
+                ads = outcome.ads,
+                linked = outcome.linked,
+                stillUnlinked = outcome.stillUnlinked,
+            ),
+        )
+    }
 }
 
 /** Without the login customer id: that's for calling Google, and clients have no use for it. */

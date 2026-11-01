@@ -8,10 +8,12 @@ import java.util.UUID
 /**
  * The seller account has allowed Amazfy to read its Google Ads, and which Google Ads account it chose (none yet right
  * after connecting). The refresh token stays with the application's use cases and the persistence adapter.
+ * [syncedAt] is about the chosen account: choosing another one empties it.
  */
 data class GoogleAdsConnection(
     val connectedAt: Instant,
     val account: GoogleAdsAccount?,
+    val syncedAt: Instant? = null,
 )
 
 /** What Google granted after the consent page. Not a data class: its toString must never print the token. */

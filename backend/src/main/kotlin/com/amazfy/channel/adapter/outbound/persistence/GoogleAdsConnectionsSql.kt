@@ -26,7 +26,7 @@ class GoogleAdsConnectionsSql(
         jdbc
             .sql(
                 """
-                SELECT connected_at, customer_id, login_customer_id, account_name
+                SELECT connected_at, customer_id, login_customer_id, account_name, synced_at
                 FROM google_ads_connections WHERE account_id = :account
                 """,
             ).param("account", CurrentAccount.get())
@@ -38,6 +38,7 @@ class GoogleAdsConnectionsSql(
                         customerId?.let {
                             GoogleAdsAccount(it, rs.getString("account_name"), rs.getString("login_customer_id"))
                         },
+                    syncedAt = rs.getObject("synced_at", OffsetDateTime::class.java)?.toInstant(),
                 )
             }.optional()
             .orElse(null)
@@ -78,7 +79,8 @@ class GoogleAdsConnectionsSql(
             .sql(
                 """
                 UPDATE google_ads_connections
-                SET customer_id = :customerId, login_customer_id = :loginCustomerId, account_name = :name
+                SET synced_at = CASE WHEN customer_id = :customerId THEN synced_at END,
+                    customer_id = :customerId, login_customer_id = :loginCustomerId, account_name = :name
                 WHERE account_id = :account
                 """,
             ).param("customerId", account.customerId)
