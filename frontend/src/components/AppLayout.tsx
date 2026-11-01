@@ -32,11 +32,12 @@ export function AppLayout() {
         <div className="flex flex-wrap items-center gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">Amazfy</h1>
           <AccountSwitcher />
-          <nav className="flex gap-1 text-sm">
+          <nav className="flex flex-wrap gap-1 text-sm">
             <PageLink to="/">Home</PageLink>
             <PageLink to="/brands">Brands</PageLink>
             <PageLink to="/products">Products</PageLink>
             <PageLink to="/ads">Ads</PageLink>
+            <PageLink to="/campaigns">Campaigns</PageLink>
             <PageLink to="/import">Import</PageLink>
           </nav>
         </div>

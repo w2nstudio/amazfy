@@ -3,6 +3,7 @@ import { RequireAuth } from '@/auth/RequireAuth'
 import { AppLayout } from '@/components/AppLayout'
 import { AdsPage } from '@/pages/AdsPage'
 import { BrandsPage } from '@/pages/BrandsPage'
+import { CampaignsPage } from '@/pages/CampaignsPage'
 import { CreateAccountPage } from '@/pages/CreateAccountPage'
 import { ErrorPage } from '@/pages/ErrorPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
                   { path: '/brands', element: <BrandsPage /> },
                   { path: '/products', element: <ProductsPage /> },
                   { path: '/ads', element: <AdsPage /> },
+                  { path: '/campaigns', element: <CampaignsPage /> },
                   { path: '/import', element: <ImportPage /> },
                 ],
               },

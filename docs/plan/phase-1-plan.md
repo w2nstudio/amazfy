@@ -100,8 +100,8 @@ Steps 2 to 5 need the setup in the [Google Ads setup guide](../guides/google-ads
 | Connect Google Ads (A4): owners allow access on Google's consent page, from the Ads page; refresh token encrypted (AES-256-GCM, V12, `SECRET_ENCRYPTION_KEY`); disconnect deletes it | Done |
 | Pick the Google Ads account (A4): owners choose from the accounts the connection reaches (manager accounts and accounts that can't run left out, test accounts kept); the choice is checked with Google, and stored with the account the access comes through (`login-customer-id`, V13); "Connect again" when Google refuses the token | Done |
 | Sync campaigns, ad groups and ads, with auto-linking (A6, V14): "Bring in campaigns" on the Ads page (owner/editor); Search campaigns only, removed ones included; found again by Google's ids, nothing deleted, links kept. Changing Google Ads account keeps the earlier campaigns, since their spend was real, and stops updating them (`campaigns.channel_account_id` tells them apart) | Done |
-| See campaigns, ad groups and ads with name, status, budget and final URL (A6) | Next |
-| Daily spend sync, scheduled, refreshing report totals (A9) | To do |
+| See campaigns, ad groups and ads (A6): Campaigns page (any member, read-only) with name, status, daily budget, final URL and what each ad is linked to; removed ones last; a campaign's ad groups and ads load when it's opened; campaigns from an earlier Google Ads account are marked | Done |
+| Daily spend sync, scheduled, refreshing report totals (A9) | Next |
 
 ## Backlog
 
@@ -116,7 +116,8 @@ Agreed ideas without a milestone yet, or waiting for something. Moved into Progr
 | Match Attribution lines again after a sync | Lines imported before their ads were synced stay unmatched until the file is uploaded again | Daily spend sync step, when syncs run on their own |
 | Review an ad's link when its final URL now points elsewhere | A sync keeps the link, so the ad's spend stays under the old product. Comparing what the URLs point to, not the text, avoids false alarms from added tags | Real accounts, to see how often it happens |
 | Remove the campaigns of a Google Ads account chosen by mistake | Changing account keeps earlier campaigns, so a wrong choice stays in reports. `campaigns.channel_account_id` makes this possible | A seller needing it |
-| "Add this product" on an ad under **Ads to link**: ASIN and marketplace filled in from its final URL, the seller picks a brand and name | Removes most of the typing for advertised products, with no Amazon connection. Doesn't help with short links | Nothing; pick up after M4's list of campaigns, ad groups and ads |
+| "Add this product" on an ad under **Ads to link**: ASIN and marketplace filled in from its final URL, the seller picks a brand and name | Removes most of the typing for advertised products, with no Amazon connection. Doesn't help with short links | Nothing; ready to pick up |
+| Change an ad's link once it's linked | **Ads to link** only offers unlinked ads, so a wrong link shows on the Campaigns page but can't be changed there. `PUT /ads/{id}/link` already replaces a link | Nothing; ready to pick up |
 | Import brands and products from Amazon through the Selling Partner API (SP-API), with the seller confirming the list | Sellers wouldn't type in their catalog. Confirming matters, since a seller may also resell other companies' products | A real seller account to test with, and SP-API developer registration. Amazon cancelled its planned third-party fees in May 2026: check again before building |
 | Undo an import | Upserts overwrite earlier numbers; re-uploading the right file repairs updated lines but not added ones | Only if real use shows the need |
 

@@ -712,6 +712,60 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /api/v1/accounts/{accountId}/campaigns:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Ads]
+      operationId: listCampaigns
+      summary: The seller account's campaigns, with their budget and how many ad groups and ads they hold
+      description: |
+        By name, removed campaigns last. Campaigns from an earlier Google Ads account stay, since their spend was real.
+        Any member may read. A campaign's ad groups and ads come separately, because a large seller has thousands.
+      responses:
+        "200":
+          description: The campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Campaign"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/accounts/{accountId}/campaigns/{campaignId}/ad-groups:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+      - name: campaignId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Ads]
+      operationId: listCampaignAdGroups
+      summary: One campaign's ad groups, each with its ads
+      description: By name and final URL, removed ones last. Any member may read.
+      responses:
+        "200":
+          description: The ad groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CampaignAdGroup"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /api/v1/accounts/{accountId}/google-ads/connection:
     parameters:
       - $ref: "#/components/parameters/AccountId"
@@ -1625,6 +1679,88 @@ components:
           example: B0AAA11111
         marketplace:
           $ref: "#/components/schemas/Marketplace"
+
+    ChannelStatus:
+      description: |
+        A campaign's, ad group's or ad's own status, as set on Google. An enabled ad only runs if its ad group and
+        campaign are enabled too.
+      type: string
+      enum: [ENABLED, PAUSED, REMOVED]
+
+    Campaign:
+      type: object
+      required: [id, externalId, name, status, adGroupCount, adCount]
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalId:
+          type: string
+          description: Google's id of the campaign
+        channelAccountId:
+          type: string
+          description: The Google Ads account it came from; absent for sample data
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ChannelStatus"
+        dailyBudget:
+          type: number
+          description: |
+            What the campaign aims to spend per day on average, in the currency's units. Absent when the budget isn't a
+            daily one, such as a total for a set period, and for sample data.
+          example: 15.00
+        budgetCurrency:
+          type: string
+          description: The Google Ads account's currency, with the daily budget
+          example: USD
+        adGroupCount:
+          type: integer
+        adCount:
+          type: integer
+
+    CampaignAdGroup:
+      type: object
+      required: [id, externalId, name, status, ads]
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalId:
+          type: string
+          description: Google's id of the ad group
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ChannelStatus"
+        ads:
+          type: array
+          items:
+            $ref: "#/components/schemas/CampaignAd"
+
+    CampaignAd:
+      type: object
+      description: Google's ads have no name, so an ad is known by its final URL and id.
+      required: [id, externalId, finalUrl, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalId:
+          type: string
+          description: Google's id of the ad
+        finalUrl:
+          type: string
+          description: Where the ad sends people. Empty for ads without one, such as call ads.
+          example: https://www.amazon.com/dp/B0AAA11111
+        status:
+          $ref: "#/components/schemas/ChannelStatus"
+        productName:
+          type: string
+          description: The product it's linked to, if any
+        brandName:
+          type: string
+          description: The brand it's linked to, if any (brand-level spend)
 
     GoogleAdsConnection:
       type: object
