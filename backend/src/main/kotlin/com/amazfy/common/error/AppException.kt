@@ -11,6 +11,7 @@ enum class ErrorKind {
     CONFLICT,
     TOO_MANY_REQUESTS,
     NOT_IMPLEMENTED,
+    BAD_GATEWAY,
 }
 
 /**

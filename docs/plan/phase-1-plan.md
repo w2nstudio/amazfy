@@ -98,8 +98,8 @@ Steps 2 to 5 need the setup in the [Google Ads setup guide](../guides/google-ads
 | Ad linking, backend (A7): `channel` module reads the ASIN from a final URL; `GET /ads/unlinked`, `POST /ads/auto-link`, `PUT /ads/{id}/link` (product or brand); a seller's link is never overwritten by auto-linking; no totals refresh needed, since reports look up links when they run | Done |
 | Ad linking, frontend: Ads page lists unlinked ads with what their link is and what to do; choose a product or brand; "Link automatically"; pointer from the dashboard's table; viewers only see the list | Done |
 | Connect Google Ads (A4): owners allow access on Google's consent page, from the Ads page; refresh token encrypted (AES-256-GCM, V12, `SECRET_ENCRYPTION_KEY`); disconnect deletes it | Done |
-| Pick the Google Ads account (A4) | Next |
-| Sync campaigns, ad groups and ads, with auto-linking (A6) | To do |
+| Pick the Google Ads account (A4): owners choose from the accounts the connection reaches (manager accounts and accounts that can't run left out, test accounts kept); the choice is checked with Google, and stored with the account the access comes through (`login-customer-id`, V13); "Connect again" when Google refuses the token | Done |
+| Sync campaigns, ad groups and ads, with auto-linking (A6). To decide: what happens to already synced campaigns when the seller changes account | Next |
 | Daily spend sync, scheduled, refreshing report totals (A9) | To do |
 
 ## Backlog

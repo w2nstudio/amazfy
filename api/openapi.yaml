@@ -747,6 +747,86 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /api/v1/accounts/{accountId}/google-ads/accounts:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [Google Ads]
+      operationId: listGoogleAdsAccounts
+      summary: The Google Ads accounts this connection can reach, to choose from
+      description: |
+        Asks Google each time. Leaves out manager accounts, which hold no campaigns, and accounts that can't run, except
+        test accounts. Owners only.
+      responses:
+        "200":
+          description: The accounts, sorted by name
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GoogleAdsAccount"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Not connected, or Google no longer accepts the connection, so connect again
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Google failed or refused the call
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /api/v1/accounts/{accountId}/google-ads/connection/account:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    put:
+      tags: [Google Ads]
+      operationId: chooseGoogleAdsAccount
+      summary: Choose which Google Ads account this seller account reads
+      description: Must be one of those listed; Amazfy asks Google again to be sure. Owners only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleAdsAccountChoice"
+      responses:
+        "200":
+          description: The chosen account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleAdsAccount"
+        "400":
+          description: Not an account this connection can reach
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Not connected, or Google no longer accepts the connection, so connect again
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Google failed or refused the call
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
   /api/v1/accounts/{accountId}/google-ads/connect:
     parameters:
       - $ref: "#/components/parameters/AccountId"
@@ -1521,6 +1601,30 @@ components:
           type: string
           format: date-time
           description: When it was connected; only when connected
+        account:
+          $ref: "#/components/schemas/GoogleAdsAccount"
+
+    GoogleAdsAccount:
+      type: object
+      description: A Google Ads account that holds campaigns; absent from a connection until one is chosen
+      required: [customerId]
+      properties:
+        customerId:
+          type: string
+          description: Digits only; Google Ads shows it as 123-456-7890
+          example: "1234567890"
+        name:
+          type: string
+          description: Its name on Google, if it has one
+          example: AquaLife
+
+    GoogleAdsAccountChoice:
+      type: object
+      required: [customerId]
+      properties:
+        customerId:
+          type: string
+          example: "1234567890"
 
     GoogleAdsConnectStart:
       type: object
