@@ -102,7 +102,7 @@ After sign-up the dashboard shows a checklist until every step is done.
 1. **Check eligibility.** The seller confirms they are a professional seller in Brand Registry, in a supported marketplace. Amazfy links to Amazon's Brand Registry page if not.
 2. **Enable Amazon Attribution.** A short guide shows how to open Attribution in the Amazon Ads console. Most sellers have never used it.
 3. **Connect Amazon.** Login with Amazon. Amazfy stores the token and lists the seller's Attribution advertisers; the seller picks one.
-4. **Connect Google Ads.** Google OAuth. Amazfy lists accessible Google Ads accounts; the seller picks one.
+4. **Connect Google Ads.** Google OAuth (Google requires a passkey for this, and a newly created one can take up to 7 days to work). Amazfy lists accessible Google Ads accounts; the seller picks one.
 5. **Add brands and products.** The seller enters ASINs, each with marketplace and brand. Amazfy also suggests products from ASINs found in existing ad links.
 6. **Review ad matching (1a)** or **create a campaign (1b).**
 

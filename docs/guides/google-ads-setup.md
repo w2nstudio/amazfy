@@ -34,6 +34,8 @@ This is what lets Amazfy ask a user "may Amazfy read your Google Ads?".
 
 Leave the app in **Testing** status. That's fine for development, but it has one effect: **Google Ads connections expire after 7 days**, and you connect again. See "Later, for real sellers" below.
 
+**Connecting needs a passkey.** Since August 2026, Google requires one whenever a person allows a Google Ads API app and a new refresh token is created; a password, or a code from an app or SMS, isn't enough. Without a passkey, Google asks you to create one, and it can take up to 7 days to become usable. So set it up early on the Google account from step 4. Tokens that already exist keep working, so the daily sync never needs it. Details: [Google's security requirements](https://developers.google.com/google-ads/api/docs/oauth/security-requirements).
+
 ## 3. Add the redirect address to the OAuth client
 
 **Clients** → open `Amazfy local` → **Authorized redirect URIs** → add:

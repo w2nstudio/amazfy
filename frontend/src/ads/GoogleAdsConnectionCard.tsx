@@ -88,10 +88,14 @@ export function GoogleAdsConnectionCard({ accountId, canManage }: { accountId: s
         (!canManage ? (
           <p className="text-muted-foreground">Only owners of this seller account can change this connection.</p>
         ) : !status.connected ? (
-          <div>
+          <div className="flex flex-col items-start gap-2">
             <Button size="sm" onClick={connect} disabled={start.isPending}>
               {start.isPending ? 'Opening Google…' : 'Connect Google Ads'}
             </Button>
+            <p className="max-w-prose text-muted-foreground">
+              Google asks for a passkey each time you connect. If your Google login doesn't have one, Google will ask
+              you to create it, and a new passkey can take up to 7 days to start working.
+            </p>
           </div>
         ) : confirming ? (
           <div className="flex flex-wrap items-center gap-2">
