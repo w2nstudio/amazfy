@@ -57,7 +57,7 @@ function Ads({ accountId, canEdit, canManage }: { accountId: string; canEdit: bo
 
   return (
     <main className="flex flex-col gap-6">
-      <GoogleAdsConnectionCard accountId={accountId} canManage={canManage} />
+      <GoogleAdsConnectionCard accountId={accountId} canEdit={canEdit} canManage={canManage} />
 
       <section className="flex flex-col gap-1">
         <h2 className="text-xl font-medium">Ads to link</h2>

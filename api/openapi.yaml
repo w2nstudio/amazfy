@@ -827,6 +827,41 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
 
+  /api/v1/accounts/{accountId}/google-ads/sync:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    post:
+      tags: [Google Ads]
+      operationId: syncGoogleAds
+      summary: Bring in the chosen account's campaigns, ad groups and ads
+      description: |
+        Search campaigns only, removed ones included. New ads are linked automatically where their final URL is the
+        product page of a known product. Nothing is deleted, and links already made stay. Campaigns from a Google Ads
+        account chosen earlier stay too, unchanged. Owners and editors only.
+      responses:
+        "200":
+          description: What the chosen account holds now
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleAdsSyncResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Not connected, no account chosen, or Google no longer accepts the connection, so connect again
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          description: Google failed or refused the call; nothing was changed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
   /api/v1/accounts/{accountId}/google-ads/connect:
     parameters:
       - $ref: "#/components/parameters/AccountId"
@@ -1603,6 +1638,28 @@ components:
           description: When it was connected; only when connected
         account:
           $ref: "#/components/schemas/GoogleAdsAccount"
+        syncedAt:
+          type: string
+          format: date-time
+          description: When the chosen account's campaigns were last brought in; absent until then
+
+    GoogleAdsSyncResult:
+      type: object
+      required: [campaigns, adGroups, ads, linked, stillUnlinked]
+      properties:
+        campaigns:
+          type: integer
+          description: Search campaigns in the chosen account, removed ones included
+        adGroups:
+          type: integer
+        ads:
+          type: integer
+        linked:
+          type: integer
+          description: Ads linked automatically just now
+        stillUnlinked:
+          type: integer
+          description: Ads still linked to nothing, in this seller account
 
     GoogleAdsAccount:
       type: object

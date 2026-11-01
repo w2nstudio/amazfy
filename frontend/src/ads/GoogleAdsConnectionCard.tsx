@@ -8,7 +8,9 @@ import {
   useDisconnectGoogleAds,
   useGetGoogleAdsConnection,
   useStartGoogleAdsConnect,
+  useSyncGoogleAds,
 } from '@/api/generated/google-ads/google-ads'
+import type { GoogleAdsSyncResult } from '@/api/generated/model'
 import { FormMessage } from '@/components/AuthCard'
 import { Button } from '@/components/ui/button'
 
@@ -16,10 +18,29 @@ import { Button } from '@/components/ui/button'
 // to Google's consent page; the backend sends it back here with ?googleAds=connected or =failed. Only owners can change
 // the connection.
 
-export function GoogleAdsConnectionCard({ accountId, canManage }: { accountId: string; canManage: boolean }) {
+function count(number: number, one: string, many: string) {
+  return `${number} ${number === 1 ? one : many}`
+}
+
+function syncSummary(result: GoogleAdsSyncResult) {
+  const found = `Found ${count(result.campaigns, 'Search campaign', 'Search campaigns')}, ${count(result.adGroups, 'ad group', 'ad groups')} and ${count(result.ads, 'ad', 'ads')}.`
+  const linked = result.linked > 0 ? ` Linked ${count(result.linked, 'ad', 'ads')} automatically.` : ''
+  return `${found}${linked} ${count(result.stillUnlinked, 'ad', 'ads')} left to link.`
+}
+
+export function GoogleAdsConnectionCard({
+  accountId,
+  canEdit,
+  canManage,
+}: {
+  accountId: string
+  canEdit: boolean
+  canManage: boolean
+}) {
   const connection = useGetGoogleAdsConnection(accountId)
   const start = useStartGoogleAdsConnect()
   const disconnect = useDisconnectGoogleAds()
+  const sync = useSyncGoogleAds()
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [confirming, setConfirming] = useState(false)
@@ -29,6 +50,11 @@ export function GoogleAdsConnectionCard({ accountId, canManage }: { accountId: s
 
   function connect() {
     start.mutate({ accountId }, { onSuccess: (response) => window.location.assign(response.data.authorizationUrl) })
+  }
+
+  function bringInCampaigns() {
+    // Everything may change: this card, the ads to link and the dashboard's rows
+    sync.mutate({ accountId }, { onSuccess: () => queryClient.invalidateQueries() })
   }
 
   function confirmDisconnect() {
@@ -57,7 +83,10 @@ export function GoogleAdsConnectionCard({ accountId, canManage }: { accountId: s
           Connected{status.connectedAt && ` on ${new Date(status.connectedAt).toLocaleDateString()}`}.{' '}
           {status.account ? (
             <>
-              Amazfy reads <span className="font-medium">{accountLabel(status.account)}</span>.
+              Amazfy reads <span className="font-medium">{accountLabel(status.account)}</span>.{' '}
+              {status.syncedAt
+                ? `Campaigns last brought in on ${new Date(status.syncedAt).toLocaleString()}.`
+                : 'No campaigns brought in from it yet.'}
             </>
           ) : (
             'Choose which Google Ads account Amazfy should read.'
@@ -91,7 +120,16 @@ export function GoogleAdsConnectionCard({ accountId, canManage }: { accountId: s
           .
         </FormMessage>
       )}
-      <FormMessage error>{errorMessage(start.error ?? disconnect.error)}</FormMessage>
+      {sync.data && !sync.isPending && <FormMessage>{syncSummary(sync.data.data)}</FormMessage>}
+      <FormMessage error>{errorMessage(start.error ?? disconnect.error ?? sync.error)}</FormMessage>
+
+      {status?.account && canEdit && !confirming && !changingAccount && (
+        <div>
+          <Button size="sm" onClick={bringInCampaigns} disabled={sync.isPending}>
+            {sync.isPending ? 'Bringing in campaigns…' : 'Bring in campaigns'}
+          </Button>
+        </div>
+      )}
 
       {status &&
         (!canManage ? (

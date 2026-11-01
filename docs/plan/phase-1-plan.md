@@ -99,7 +99,8 @@ Steps 2 to 5 need the setup in the [Google Ads setup guide](../guides/google-ads
 | Ad linking, frontend: Ads page lists unlinked ads with what their link is and what to do; choose a product or brand; "Link automatically"; pointer from the dashboard's table; viewers only see the list | Done |
 | Connect Google Ads (A4): owners allow access on Google's consent page, from the Ads page; refresh token encrypted (AES-256-GCM, V12, `SECRET_ENCRYPTION_KEY`); disconnect deletes it | Done |
 | Pick the Google Ads account (A4): owners choose from the accounts the connection reaches (manager accounts and accounts that can't run left out, test accounts kept); the choice is checked with Google, and stored with the account the access comes through (`login-customer-id`, V13); "Connect again" when Google refuses the token | Done |
-| Sync campaigns, ad groups and ads, with auto-linking (A6). To decide: what happens to already synced campaigns when the seller changes account | Next |
+| Sync campaigns, ad groups and ads, with auto-linking (A6, V14): "Bring in campaigns" on the Ads page (owner/editor); Search campaigns only, removed ones included; found again by Google's ids, nothing deleted, links kept. Changing Google Ads account keeps the earlier campaigns, since their spend was real, and stops updating them (`campaigns.channel_account_id` tells them apart) | Done |
+| See campaigns, ad groups and ads with name, status, budget and final URL (A6) | Next |
 | Daily spend sync, scheduled, refreshing report totals (A9) | To do |
 
 ## Backlog
@@ -112,6 +113,9 @@ Agreed ideas without a milestone yet, or waiting for something. Moved into Progr
 | CSV import: check a marketplace or currency column against the chosen marketplace | A Canada report uploaded as US would count CAD as USD | A real export (does it have such a column?) |
 | CSV import: remove header aliases the real export doesn't use (e.g. "clicks", "campaign") | Generic names could match the wrong column | A real export |
 | Import history: who uploaded which file, when, for which days | A wrong upload can be traced | M6 audit log |
+| Match Attribution lines again after a sync | Lines imported before their ads were synced stay unmatched until the file is uploaded again | Daily spend sync step, when syncs run on their own |
+| Review an ad's link when its final URL now points elsewhere | A sync keeps the link, so the ad's spend stays under the old product. Comparing what the URLs point to, not the text, avoids false alarms from added tags | Real accounts, to see how often it happens |
+| Remove the campaigns of a Google Ads account chosen by mistake | Changing account keeps earlier campaigns, so a wrong choice stays in reports. `campaigns.channel_account_id` makes this possible | A seller needing it |
 | Undo an import | Upserts overwrite earlier numbers; re-uploading the right file repairs updated lines but not added ones | Only if real use shows the need |
 
 ## Repository layout

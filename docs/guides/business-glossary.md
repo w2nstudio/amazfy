@@ -102,3 +102,9 @@ Plain-language explanations of business terms as they come up while building Ama
 **Exact match keyword** — A keyword in square brackets, which targets searches with the same meaning as that keyword. Example: `[aquarium filter 40l]` can show an ad for "40l aquarium filter", but not for "aquarium heater".
 
 **Refresh token (Google)** — A long-lived key Google gives Amazfy when a seller allows access to their Google Ads. Amazfy trades it for short-lived access keys whenever it reads the account, and stores it encrypted. Example: AquaLife clicks "Connect Google Ads" once, and the daily sync keeps working without asking them to sign in again.
+
+**Search campaign** — A Google Ads campaign whose text ads show on Google's search results, triggered by keywords. Other types show elsewhere, such as Display on websites or Shopping with product photos. Amazfy's Phase 1 brings in Search campaigns only. Example: AquaLife's "Aquarium filter 40L" campaign shows when someone searches for an aquarium filter.
+
+**Daily budget** — What a Google campaign aims to spend per day on average. Google may spend more on a busy day and less on a quiet one, balancing it out over the month. Amazfy reads it in micros. Example: a $15 daily budget is `15000000` micros.
+
+**Not matched to an ad, once Google is synced** — Bringing in campaigns also brings in removed ads, so a removed ad no longer causes this row. Lines already imported don't change with a sync: uploading the report again matches them. Example: AquaLife uploads a report, then brings in campaigns, and uploads the same report again to match its lines.
