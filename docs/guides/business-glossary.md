@@ -112,3 +112,5 @@ Plain-language explanations of business terms as they come up while building Ama
 **Listing** — A product's page on Amazon, for sale on one marketplace, identified by its ASIN. Amazfy's Products page holds one entry per listing the seller advertises.
 
 **Selling Partner API (SP-API)** — Amazon's way for software to read a seller's data from Seller Central, such as their listings, with the seller's permission. It's separate from the Amazon Ads API, which covers advertising and Attribution. Amazfy doesn't use it yet: importing products through it is in the plan's backlog.
+
+**Ad name** — Google's search ads don't have a name, unlike campaigns and ad groups. A seller tells them apart by their text, final URL or Google's id, so Amazfy's Campaigns page shows an ad's final URL, and its id when it has no final URL.
