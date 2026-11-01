@@ -116,6 +116,8 @@ Agreed ideas without a milestone yet, or waiting for something. Moved into Progr
 | Match Attribution lines again after a sync | Lines imported before their ads were synced stay unmatched until the file is uploaded again | Daily spend sync step, when syncs run on their own |
 | Review an ad's link when its final URL now points elsewhere | A sync keeps the link, so the ad's spend stays under the old product. Comparing what the URLs point to, not the text, avoids false alarms from added tags | Real accounts, to see how often it happens |
 | Remove the campaigns of a Google Ads account chosen by mistake | Changing account keeps earlier campaigns, so a wrong choice stays in reports. `campaigns.channel_account_id` makes this possible | A seller needing it |
+| "Add this product" on an ad under **Ads to link**: ASIN and marketplace filled in from its final URL, the seller picks a brand and name | Removes most of the typing for advertised products, with no Amazon connection. Doesn't help with short links | Nothing; pick up after M4's list of campaigns, ad groups and ads |
+| Import brands and products from Amazon through the Selling Partner API (SP-API), with the seller confirming the list | Sellers wouldn't type in their catalog. Confirming matters, since a seller may also resell other companies' products | A real seller account to test with, and SP-API developer registration. Amazon cancelled its planned third-party fees in May 2026: check again before building |
 | Undo an import | Upserts overwrite earlier numbers; re-uploading the right file repairs updated lines but not added ones | Only if real use shows the need |
 
 ## Repository layout

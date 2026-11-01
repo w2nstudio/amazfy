@@ -108,3 +108,7 @@ Plain-language explanations of business terms as they come up while building Ama
 **Daily budget** — What a Google campaign aims to spend per day on average. Google may spend more on a busy day and less on a quiet one, balancing it out over the month. Amazfy reads it in micros. Example: a $15 daily budget is `15000000` micros.
 
 **Not matched to an ad, once Google is synced** — Bringing in campaigns also brings in removed ads, so a removed ad no longer causes this row. Lines already imported don't change with a sync: uploading the report again matches them. Example: AquaLife uploads a report, then brings in campaigns, and uploads the same report again to match its lines.
+
+**Listing** — A product's page on Amazon, for sale on one marketplace, identified by its ASIN. Amazfy's Products page holds one entry per listing the seller advertises.
+
+**Selling Partner API (SP-API)** — Amazon's way for software to read a seller's data from Seller Central, such as their listings, with the seller's permission. It's separate from the Amazon Ads API, which covers advertising and Attribution. Amazfy doesn't use it yet: importing products through it is in the plan's backlog.
