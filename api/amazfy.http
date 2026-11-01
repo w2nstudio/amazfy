@@ -311,6 +311,17 @@ Authorization: Bearer {{accessToken}}
 GET {{baseUrl}}/accounts/{{accountId}}/google-ads/connection
 Authorization: Bearer {{accessToken}}
 
+### The Google Ads accounts this connection can reach (200, owner; 409 when not connected or expired).
+GET {{baseUrl}}/accounts/{{accountId}}/google-ads/accounts
+Authorization: Bearer {{accessToken}}
+
+### Choose the Google Ads account to read (200, owner; 400 for an account not listed above).
+PUT {{baseUrl}}/accounts/{{accountId}}/google-ads/connection/account
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"customerId": "1234567890"}
+
 ### Start connecting Google Ads (200, owner): gives the address of Google's consent page.
 # Finish in a browser: the callback needs the cookie this sets, so use the Ads page's button for the whole flow.
 POST {{baseUrl}}/accounts/{{accountId}}/google-ads/connect

@@ -78,4 +78,5 @@ private fun ErrorKind.toHttpStatus(): HttpStatus =
         ErrorKind.CONFLICT -> HttpStatus.CONFLICT
         ErrorKind.TOO_MANY_REQUESTS -> HttpStatus.TOO_MANY_REQUESTS
         ErrorKind.NOT_IMPLEMENTED -> HttpStatus.NOT_IMPLEMENTED
+        ErrorKind.BAD_GATEWAY -> HttpStatus.BAD_GATEWAY
     }

@@ -1,10 +1,14 @@
 package com.amazfy.channel.adapter.inbound.web
 
 import com.amazfy.api.generated.GoogleAdsApi
+import com.amazfy.api.generated.model.GoogleAdsAccountChoice
 import com.amazfy.api.generated.model.GoogleAdsConnectStart
+import com.amazfy.channel.application.ChooseGoogleAdsAccount
 import com.amazfy.channel.application.ConnectGoogleAds
 import com.amazfy.channel.application.DisconnectGoogleAds
 import com.amazfy.channel.application.GetGoogleAdsConnection
+import com.amazfy.channel.application.ListGoogleAdsAccounts
+import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsConnectCancelledException
 import com.amazfy.channel.domain.GoogleAdsConnectFailedException
 import com.amazfy.common.security.currentUserId
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 import java.time.ZoneOffset
 import java.util.UUID
+import com.amazfy.api.generated.model.GoogleAdsAccount as ApiGoogleAdsAccount
 import com.amazfy.api.generated.model.GoogleAdsConnection as ApiGoogleAdsConnection
 
 /** Implements the Google Ads part of api/openapi.yaml. Any member may see the connection; only owners may change it. */
@@ -27,6 +32,8 @@ class GoogleAdsController(
     private val getConnection: GetGoogleAdsConnection,
     private val connect: ConnectGoogleAds,
     private val disconnect: DisconnectGoogleAds,
+    private val listAccounts: ListGoogleAdsAccounts,
+    private val chooseAccount: ChooseGoogleAdsAccount,
     private val attemptCookie: GoogleAdsConnectCookie,
     private val request: HttpServletRequest, // a proxy to the current request
     @param:Value("\${amazfy.frontend-base-url}") private val frontendBaseUrl: String,
@@ -37,7 +44,11 @@ class GoogleAdsController(
     override fun getGoogleAdsConnection(accountId: UUID): ResponseEntity<ApiGoogleAdsConnection> {
         val connection = getConnection.current()
         return ResponseEntity.ok(
-            ApiGoogleAdsConnection(connected = connection != null, connectedAt = connection?.connectedAt?.atOffset(ZoneOffset.UTC)),
+            ApiGoogleAdsConnection(
+                connected = connection != null,
+                connectedAt = connection?.connectedAt?.atOffset(ZoneOffset.UTC),
+                account = connection?.account?.toApi(),
+            ),
         )
     }
 
@@ -80,4 +91,17 @@ class GoogleAdsController(
         disconnect.run()
         return ResponseEntity.noContent().build()
     }
+
+    @PreAuthorize("@accountAccess.canManage(#accountId)")
+    override fun listGoogleAdsAccounts(accountId: UUID): ResponseEntity<List<ApiGoogleAdsAccount>> =
+        ResponseEntity.ok(listAccounts.all().map { it.toApi() })
+
+    @PreAuthorize("@accountAccess.canManage(#accountId)")
+    override fun chooseGoogleAdsAccount(
+        accountId: UUID,
+        googleAdsAccountChoice: GoogleAdsAccountChoice,
+    ): ResponseEntity<ApiGoogleAdsAccount> = ResponseEntity.ok(chooseAccount.choose(googleAdsAccountChoice.customerId).toApi())
 }
+
+/** Without the login customer id: that's for calling Google, and clients have no use for it. */
+private fun GoogleAdsAccount.toApi() = ApiGoogleAdsAccount(customerId = customerId, name = name)

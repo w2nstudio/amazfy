@@ -133,7 +133,10 @@ Needs the [Google Ads setup](google-ads-setup.md) and a browser, since Google's 
 2. **Connect Google Ads** → choose the Google login with the test accounts → allow access. Google warns that the app is unverified, which is expected while it's in Testing: **Advanced → Go to Amazfy**. Google also asks for a passkey, every time: Amazfy always asks for a new refresh token, and Google requires a passkey for each one. Google words the permission broadly, covering changes as well as reading, because it's the only permission Google offers for Google Ads. For now, Amazfy only reads.
 3. You return to **Ads**, which says **Connected**. In pgAdmin, `google_ads_connections` holds an encrypted token starting with `v1.`, never Google's `1//…`.
 4. **Connect Google Ads** again and press **Cancel** on Google's page → back on **Ads**, with no message.
-5. **Disconnect** → **Not connected**, and the row is gone.
+5. Connected, the card lists the Google Ads accounts your login reaches. Choose your test client account → **Use this account**. The manager account isn't offered, since it holds no campaigns. The card now names the account, and in pgAdmin the row has `customer_id` and `login_customer_id`.
+6. **Connect again** keeps the chosen account. Choosing again works through **Change account**.
+7. After about a week, while the app is in Testing, **Change account** says Google no longer accepts the connection → **Connect again**.
+8. **Disconnect** → **Not connected**, and the row is gone.
 
 In Postman, **Get Google Ads connection** answers `connected: true` or `false`. As an editor or viewer it still works, while starting and disconnecting answer **403**.
 

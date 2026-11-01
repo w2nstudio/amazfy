@@ -1,6 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
+import { accountLabel } from '@/ads/accountLabel'
+import { GoogleAdsAccountPicker } from '@/ads/GoogleAdsAccountPicker'
 import { errorMessage } from '@/api/client'
 import {
   useDisconnectGoogleAds,
@@ -21,6 +23,7 @@ export function GoogleAdsConnectionCard({ accountId, canManage }: { accountId: s
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [confirming, setConfirming] = useState(false)
+  const [changingAccount, setChangingAccount] = useState(false)
   const status = connection.data?.data
   const outcome = searchParams.get('googleAds')
 
@@ -51,8 +54,14 @@ export function GoogleAdsConnectionCard({ accountId, canManage }: { accountId: s
         <p className="text-muted-foreground">Loading…</p>
       ) : status.connected ? (
         <p>
-          Connected{status.connectedAt && ` on ${new Date(status.connectedAt).toLocaleDateString()}`}. Amazfy has
-          permission to read this seller account's Google Ads.
+          Connected{status.connectedAt && ` on ${new Date(status.connectedAt).toLocaleDateString()}`}.{' '}
+          {status.account ? (
+            <>
+              Amazfy reads <span className="font-medium">{accountLabel(status.account)}</span>.
+            </>
+          ) : (
+            'Choose which Google Ads account Amazfy should read.'
+          )}
         </p>
       ) : (
         <p className="max-w-prose text-muted-foreground">
@@ -108,10 +117,27 @@ export function GoogleAdsConnectionCard({ accountId, canManage }: { accountId: s
             </Button>
           </div>
         ) : (
-          <div>
-            <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>
-              Disconnect
-            </Button>
+          <div className="flex flex-col items-start gap-3">
+            {(!status.account || changingAccount) && (
+              <GoogleAdsAccountPicker
+                accountId={accountId}
+                chosen={status.account?.customerId}
+                onDone={() => setChangingAccount(false)}
+              />
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {status.account && !changingAccount && (
+                <Button size="sm" variant="outline" onClick={() => setChangingAccount(true)}>
+                  Change account
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={connect} disabled={start.isPending}>
+                {start.isPending ? 'Opening Google…' : 'Connect again'}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>
+                Disconnect
+              </Button>
+            </div>
           </div>
         ))}
     </section>
