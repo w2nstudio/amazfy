@@ -8,13 +8,20 @@ import java.util.UUID
 /**
  * The seller account has allowed Amazfy to read its Google Ads, and which Google Ads account it chose (none yet right
  * after connecting). The refresh token stays with the application's use cases and the persistence adapter.
- * [syncedAt] is about the chosen account: choosing another one empties it.
+ * [syncedAt] is about the chosen account: choosing another one empties it. [syncProblem] is why the last sync failed.
  */
 data class GoogleAdsConnection(
     val connectedAt: Instant,
     val account: GoogleAdsAccount?,
     val syncedAt: Instant? = null,
+    val syncProblem: GoogleAdsSyncProblem? = null,
 )
+
+/** Why a sync failed. An expired connection needs the seller; anything else is tried again by itself. */
+enum class GoogleAdsSyncProblem {
+    CONNECTION_EXPIRED,
+    READ_FAILED,
+}
 
 /** What Google granted after the consent page. Not a data class: its toString must never print the token. */
 class GoogleAdsGrant(

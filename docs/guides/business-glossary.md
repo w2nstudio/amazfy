@@ -118,3 +118,5 @@ Plain-language explanations of business terms as they come up while building Ama
 **Invalid clicks** — Clicks Google doesn't charge for, such as accidental double clicks or automated traffic. Finding them can take days, so what a past day cost can still go down afterwards. That's why Amazfy reads the last two weeks of spend again each time. Example: Tuesday shows $20.00 on Wednesday, then $19.40 by Friday.
 
 **Google Ads account's time zone** — Set when the account is created, and it decides where one day ends in Google's numbers. Google's "yesterday" can differ from the seller's or Amazon's by some hours, so daily spend and daily sales may not line up exactly on a single day. Totals over longer periods are barely affected.
+
+**Refresh token expiring in Testing** — While Amazfy's app on Google Cloud is in Testing, Google ends a seller's permission after about 7 days, so the daily sync stops until they use **Connect again**. Once the app is published and verified, this no longer happens, unless the seller removes Amazfy from their Google Account.

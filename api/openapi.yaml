@@ -895,7 +895,8 @@ paths:
 
         Spend per ad and day: the first time for an account, the last 90 days. After that, from two weeks before the
         last time up to today, because Google corrects past days. Those days are replaced, so a day Google has corrected
-        to nothing goes away, and the report totals follow. Owners and editors only.
+        to nothing goes away, and the report totals follow. Amazfy also does all this by itself about once a day. Owners
+        and editors only.
       responses:
         "200":
           description: What the chosen account holds now
@@ -1781,7 +1782,17 @@ components:
         syncedAt:
           type: string
           format: date-time
-          description: When the chosen account's campaigns were last brought in; absent until then
+          description: When the chosen account's campaigns and spend were last brought in; absent until then
+        syncProblem:
+          $ref: "#/components/schemas/GoogleAdsSyncProblem"
+
+    GoogleAdsSyncProblem:
+      description: |
+        Why the last sync failed, by the button or the daily sync; absent after one that worked. CONNECTION_EXPIRED: Google
+        no longer accepts the connection, and nothing updates until an owner connects again. READ_FAILED: anything else,
+        which Amazfy tries again by itself.
+      type: string
+      enum: [CONNECTION_EXPIRED, READ_FAILED]
 
     GoogleAdsSyncResult:
       type: object

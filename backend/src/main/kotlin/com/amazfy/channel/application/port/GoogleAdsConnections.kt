@@ -2,6 +2,7 @@ package com.amazfy.channel.application.port
 
 import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsConnection
+import com.amazfy.channel.domain.GoogleAdsSyncProblem
 import java.time.Instant
 
 /** The stored Google Ads connection of CurrentAccount. The adapter encrypts the token, so nothing here sees it stored. */
@@ -16,7 +17,7 @@ interface GoogleAdsConnections {
 
     /**
      * Replaces any earlier token: a seller account has one. A chosen account stays: connecting again happens because
-     * the token expired, usually with the same Google login.
+     * the token expired, usually with the same Google login. Any sync problem goes away, and the next sync is due at once.
      */
     fun save(
         refreshToken: String,
@@ -24,6 +25,8 @@ interface GoogleAdsConnections {
     )
 
     fun chooseAccount(account: GoogleAdsAccount)
+
+    fun recordSyncProblem(problem: GoogleAdsSyncProblem)
 
     fun delete()
 }

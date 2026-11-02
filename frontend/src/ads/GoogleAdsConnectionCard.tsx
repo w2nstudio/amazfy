@@ -10,7 +10,7 @@ import {
   useStartGoogleAdsConnect,
   useSyncGoogleAds,
 } from '@/api/generated/google-ads/google-ads'
-import type { GoogleAdsSyncResult } from '@/api/generated/model'
+import { GoogleAdsSyncProblem, type GoogleAdsSyncResult } from '@/api/generated/model'
 import { FormMessage } from '@/components/AuthCard'
 import { Button } from '@/components/ui/button'
 import { money } from '@/reports/format'
@@ -30,6 +30,14 @@ function syncSummary(result: GoogleAdsSyncResult) {
     result.spend > 0 ? `Spend from ${period}: ${money(result.spend, result.currency)}.` : `No spend from ${period}.`
   const linked = result.linked > 0 ? ` Linked ${count(result.linked, 'ad', 'ads')} automatically.` : ''
   return `${found} ${spend}${linked} ${count(result.stillUnlinked, 'ad', 'ads')} left to link.`
+}
+
+function syncProblemMessage(problem: GoogleAdsSyncProblem, canManage: boolean) {
+  if (problem === GoogleAdsSyncProblem.READ_FAILED) {
+    return 'The last try to read Google Ads failed, so numbers may be behind. Amazfy tries again by itself.'
+  }
+  const action = canManage ? 'Use Connect again to fix this.' : 'An owner of this seller account can connect it again.'
+  return `Google no longer accepts this connection, so numbers have stopped updating. ${action}`
 }
 
 /** A date without a time, which must not shift to the day before in time zones behind UTC. */
@@ -62,8 +70,8 @@ export function GoogleAdsConnectionCard({
   }
 
   function bringInCampaigns() {
-    // Everything may change: this card, the ads to link and the dashboard's rows
-    sync.mutate({ accountId }, { onSuccess: () => queryClient.invalidateQueries() })
+    // Everything may change: this card, the ads to link and the dashboard's rows. Also after a failure: the card shows it
+    sync.mutate({ accountId }, { onSettled: () => queryClient.invalidateQueries() })
   }
 
   function confirmDisconnect() {
@@ -95,7 +103,9 @@ export function GoogleAdsConnectionCard({
               Amazfy reads <span className="font-medium">{accountLabel(status.account)}</span>.{' '}
               {status.syncedAt
                 ? `Campaigns and spend last brought in on ${new Date(status.syncedAt).toLocaleString()}.`
-                : 'Nothing brought in from it yet.'}
+                : 'Nothing brought in from it yet.'}{' '}
+              {status.syncProblem !== GoogleAdsSyncProblem.CONNECTION_EXPIRED &&
+                (status.syncedAt ? 'This happens by itself about once a day.' : 'This happens by itself soon.')}
             </>
           ) : (
             'Choose which Google Ads account Amazfy should read.'
@@ -129,7 +139,10 @@ export function GoogleAdsConnectionCard({
           .
         </FormMessage>
       )}
-      {sync.data && !sync.isPending && <FormMessage>{syncSummary(sync.data.data)}</FormMessage>}
+      {sync.data && !sync.isPending && !sync.isError && <FormMessage>{syncSummary(sync.data.data)}</FormMessage>}
+      {status?.syncProblem && !sync.isError && !sync.isPending && (
+        <FormMessage error>{syncProblemMessage(status.syncProblem, canManage)}</FormMessage>
+      )}
       <FormMessage error>{errorMessage(start.error ?? disconnect.error ?? sync.error)}</FormMessage>
 
       {status?.account && canEdit && !confirming && !changingAccount && (

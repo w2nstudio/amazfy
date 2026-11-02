@@ -65,6 +65,8 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // Tests run the daily sync themselves: on its schedule it would call Google for whatever a test left connected
+    systemProperty("amazfy.google-ads.sync-cron", "-")
 }
 
 // Slow tests that time the system on large data run only on demand: ./gradlew performanceTest

@@ -1,6 +1,7 @@
 package com.amazfy.channel.adapter.inbound.web
 
 import com.amazfy.TestcontainersConfiguration
+import com.amazfy.channel.application.DailyGoogleAdsSync
 import com.amazfy.channel.application.port.GoogleAdsConnections
 import com.amazfy.channel.application.port.GoogleAdsReader
 import com.amazfy.channel.domain.GoogleAd
@@ -37,6 +38,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.UUID
+import java.util.concurrent.Executors
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -54,6 +56,7 @@ class GoogleAdsSyncEndpointTest {
         var spend = emptyMap<String, List<GoogleAdSpend>>()
         var spendFails = false
         val spendReads = mutableListOf<ClosedRange<LocalDate>>()
+        var structureReads = 0
 
         override fun accessToken(refreshToken: String): String {
             if (tokenExpired) throw GoogleAdsConnectionExpiredException()
@@ -71,6 +74,7 @@ class GoogleAdsSyncEndpointTest {
             account: GoogleAdsAccount,
             accessToken: String,
         ): GoogleAdsStructure {
+            structureReads++
             if (readFails) throw GoogleAdsReadFailedException("refused")
             return structures.getValue(account.customerId)
         }
@@ -113,6 +117,9 @@ class GoogleAdsSyncEndpointTest {
     @Autowired
     lateinit var connections: GoogleAdsConnections
 
+    @Autowired
+    lateinit var daily: DailyGoogleAdsSync
+
     @BeforeEach
     fun resetGoogle() {
         google.structures = mapOf(FIRST_ACCOUNT to structure(), SECOND_ACCOUNT to otherAccountStructure())
@@ -121,6 +128,7 @@ class GoogleAdsSyncEndpointTest {
         google.spend = emptyMap()
         google.spendFails = false
         google.spendReads.clear()
+        google.structureReads = 0
     }
 
     private val today = LocalDate.now(ZoneOffset.UTC)
@@ -603,6 +611,204 @@ class GoogleAdsSyncEndpointTest {
 
         assertEquals(0, first.count("ad_spend_daily"))
         assertEquals(1, second.count("ad_spend_daily"))
+    }
+
+    /** The daily sync looks at every seller account, so job tests start with none connected. */
+    private fun sellerAloneConnected(): Seller {
+        jdbc.sql("DELETE FROM google_ads_connections").update()
+        return Seller().also { it.connectAndChoose() }
+    }
+
+    private fun Seller.setConnection(
+        column: String,
+        hoursAgo: Long,
+    ) {
+        jdbc
+            .sql("UPDATE google_ads_connections SET $column = now() - make_interval(hours => :h) WHERE account_id = :a")
+            .param("h", hoursAgo.toInt())
+            .param("a", accountId)
+            .update()
+    }
+
+    @Test
+    fun `the daily sync brings in a newly chosen account without anyone asking`() {
+        val seller = sellerAloneConnected()
+        google.spend = mapOf(FIRST_ACCOUNT to listOf(spendOf("41", today.minusDays(1), 2_000_000)))
+
+        daily.runDue()
+
+        assertEquals(1, seller.count("campaigns"))
+        assertEquals(mapOf("USD" to 2.0), seller.reportedSpend())
+        assertNotNull(seller.connection()["syncedAt"])
+        assertNull(seller.connection()["syncProblem"])
+    }
+
+    @Test
+    fun `an account synced recently isn't read again, and one synced a day ago is`() {
+        val seller = sellerAloneConnected()
+        seller.sync()
+        google.spendReads.clear()
+
+        daily.runDue()
+        assertEquals(0, google.spendReads.size)
+
+        seller.setConnection("synced_at", 22)
+        daily.runDue()
+        assertEquals(0, google.spendReads.size)
+
+        seller.setConnection("synced_at", 24)
+        daily.runDue()
+        assertEquals(1, google.spendReads.size)
+    }
+
+    @Test
+    fun `one run takes each account once, also when it fails`() {
+        sellerAloneConnected()
+        google.readFails = true
+
+        daily.runDue()
+        daily.runDue()
+
+        assertEquals(1, google.structureReads)
+    }
+
+    @Test
+    fun `a failed read shows on the connection, is tried again after an hour, and goes away when it works`() {
+        val seller = sellerAloneConnected()
+        google.readFails = true
+
+        daily.runDue()
+
+        assertEquals("READ_FAILED", seller.connection()["syncProblem"].asString())
+        assertEquals(0, seller.count("campaigns"))
+
+        google.readFails = false
+        daily.runDue()
+        assertEquals(0, seller.count("campaigns"), "not within the hour")
+
+        seller.setConnection("sync_attempted_at", 2)
+        daily.runDue()
+        assertEquals(1, seller.count("campaigns"))
+        assertNull(seller.connection()["syncProblem"])
+    }
+
+    @Test
+    fun `an expired connection waits until the seller connects again`() {
+        val seller = sellerAloneConnected()
+        google.tokenExpired = true
+
+        daily.runDue()
+        assertEquals("CONNECTION_EXPIRED", seller.connection()["syncProblem"].asString())
+
+        google.tokenExpired = false
+        seller.setConnection("sync_attempted_at", 48)
+        daily.runDue()
+        assertEquals(0, seller.count("campaigns"), "calling Google with a dead token only wastes its daily limit")
+
+        seller.connect()
+        assertNull(seller.connection()["syncProblem"])
+        daily.runDue()
+        assertEquals(1, seller.count("campaigns"))
+        assertEquals(FIRST_ACCOUNT, seller.connection()["account"]["customerId"].asString())
+    }
+
+    @Test
+    fun `an unexpected failure at one seller doesn't stop the others`() {
+        val failing = sellerAloneConnected()
+        val fine = Seller().also { it.connectAndChoose(SECOND_ACCOUNT) }
+        google.structures = mapOf(SECOND_ACCOUNT to otherAccountStructure()) // the first account's read now throws
+
+        daily.runDue()
+
+        assertEquals("READ_FAILED", failing.connection()["syncProblem"].asString())
+        assertEquals(1, fine.count("campaigns"))
+        assertNull(fine.connection()["syncProblem"])
+    }
+
+    @Test
+    fun `each seller's data goes to that seller`() {
+        val first = sellerAloneConnected()
+        val second = Seller().also { it.connectAndChoose(SECOND_ACCOUNT) }
+
+        daily.runDue()
+
+        assertEquals(
+            "21",
+            jdbc
+                .sql(
+                    "SELECT external_id FROM campaigns WHERE account_id = :a",
+                ).param("a", first.accountId)
+                .query(String::class.java)
+                .single(),
+        )
+        assertEquals(
+            "22",
+            jdbc
+                .sql(
+                    "SELECT external_id FROM campaigns WHERE account_id = :a",
+                ).param("a", second.accountId)
+                .query(String::class.java)
+                .single(),
+        )
+    }
+
+    @Test
+    fun `accounts without a chosen Google Ads account are skipped`() {
+        jdbc.sql("DELETE FROM google_ads_connections").update()
+        val notChosen = Seller().also { it.connect() }
+
+        daily.runDue()
+
+        assertEquals(0, notChosen.count("campaigns"))
+        assertNull(notChosen.connection()["syncProblem"])
+    }
+
+    @Test
+    fun `the button shows a failure too, and clears it when it works`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+        google.readFails = true
+        seller.sync()
+        assertEquals("READ_FAILED", seller.connection()["syncProblem"].asString())
+
+        google.readFails = false
+        seller.sync()
+        assertNull(seller.connection()["syncProblem"])
+    }
+
+    @Test
+    fun `choosing another account clears the problem`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+        google.readFails = true
+        seller.sync()
+
+        seller.choose(SECOND_ACCOUNT)
+
+        assertNull(seller.connection()["syncProblem"])
+    }
+
+    @Test
+    fun `syncs of one seller account at the same time wait for each other`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+        google.spend = mapOf(FIRST_ACCOUNT to (1L..60L).map { spendOf("41", today.minusDays(it), 1_000_000) })
+        seller.sync()
+        // An account without campaigns: saving campaigns isn't what makes them wait, and the earlier account's report totals
+        // are still rebuilt, which two syncs at the same moment couldn't both do
+        google.structures = mapOf(SECOND_ACCOUNT to GoogleAdsStructure(emptyList(), emptyList(), emptyList()))
+        seller.choose(SECOND_ACCOUNT)
+        val pool = Executors.newFixedThreadPool(8)
+
+        val statuses =
+            try {
+                (1..40).map { pool.submit<Int> { seller.sync().status } }.map { it.get() }
+            } finally {
+                pool.shutdown()
+            }
+
+        assertEquals(List(40) { 200 }, statuses)
+        assertEquals(60, seller.count("ad_spend_daily"))
     }
 
     @Test
