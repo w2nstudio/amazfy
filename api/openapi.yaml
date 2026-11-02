@@ -887,11 +887,15 @@ paths:
     post:
       tags: [Google Ads]
       operationId: syncGoogleAds
-      summary: Bring in the chosen account's campaigns, ad groups and ads
+      summary: Bring in the chosen account's campaigns, ad groups, ads and daily spend
       description: |
         Search campaigns only, removed ones included. New ads are linked automatically where their final URL is the
-        product page of a known product. Nothing is deleted, and links already made stay. Campaigns from a Google Ads
-        account chosen earlier stay too, unchanged. Owners and editors only.
+        product page of a known product. No campaign, ad group or ad is deleted, and links already made stay. Campaigns
+        from a Google Ads account chosen earlier stay too, unchanged, with their spend.
+
+        Spend per ad and day: the first time for an account, the last 90 days. After that, from two weeks before the
+        last time up to today, because Google corrects past days. Those days are replaced, so a day Google has corrected
+        to nothing goes away, and the report totals follow. Owners and editors only.
       responses:
         "200":
           description: What the chosen account holds now
@@ -1781,7 +1785,7 @@ components:
 
     GoogleAdsSyncResult:
       type: object
-      required: [campaigns, adGroups, ads, linked, stillUnlinked]
+      required: [campaigns, adGroups, ads, linked, stillUnlinked, spendFrom, spendTo, spend, currency]
       properties:
         campaigns:
           type: integer
@@ -1796,6 +1800,22 @@ components:
         stillUnlinked:
           type: integer
           description: Ads still linked to nothing, in this seller account
+        spendFrom:
+          type: string
+          format: date
+          description: The first day of spend read just now, in the Google Ads account's time zone
+        spendTo:
+          type: string
+          format: date
+          description: The last day read, which is today there, so it's still growing
+        spend:
+          type: number
+          description: What the ads cost over those days, in the currency's units
+          example: 1250.40
+        currency:
+          type: string
+          description: The Google Ads account's currency
+          example: USD
 
     GoogleAdsAccount:
       type: object

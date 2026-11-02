@@ -114,3 +114,7 @@ Plain-language explanations of business terms as they come up while building Ama
 **Selling Partner API (SP-API)** — Amazon's way for software to read a seller's data from Seller Central, such as their listings, with the seller's permission. It's separate from the Amazon Ads API, which covers advertising and Attribution. Amazfy doesn't use it yet: importing products through it is in the plan's backlog.
 
 **Ad name** — Google's search ads don't have a name, unlike campaigns and ad groups. A seller tells them apart by their text, final URL or Google's id, so Amazfy's Campaigns page shows an ad's final URL, and its id when it has no final URL.
+
+**Invalid clicks** — Clicks Google doesn't charge for, such as accidental double clicks or automated traffic. Finding them can take days, so what a past day cost can still go down afterwards. That's why Amazfy reads the last two weeks of spend again each time. Example: Tuesday shows $20.00 on Wednesday, then $19.40 by Friday.
+
+**Google Ads account's time zone** — Set when the account is created, and it decides where one day ends in Google's numbers. Google's "yesterday" can differ from the seller's or Amazon's by some hours, so daily spend and daily sales may not line up exactly on a single day. Totals over longer periods are barely affected.

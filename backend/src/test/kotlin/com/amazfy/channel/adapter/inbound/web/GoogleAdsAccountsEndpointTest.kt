@@ -3,9 +3,11 @@ package com.amazfy.channel.adapter.inbound.web
 import com.amazfy.TestcontainersConfiguration
 import com.amazfy.channel.application.port.GoogleAdsConnections
 import com.amazfy.channel.application.port.GoogleAdsReader
+import com.amazfy.channel.domain.GoogleAdSpend
 import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsClient
 import com.amazfy.channel.domain.GoogleAdsConnectionExpiredException
+import com.amazfy.channel.domain.GoogleAdsCustomer
 import com.amazfy.channel.domain.GoogleAdsReadFailedException
 import com.amazfy.channel.domain.GoogleAdsStructure
 import com.amazfy.common.tenant.CurrentAccount
@@ -31,6 +33,8 @@ import org.springframework.test.web.servlet.put
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -76,6 +80,17 @@ class GoogleAdsAccountsEndpointTest {
             account: GoogleAdsAccount,
             accessToken: String,
         ) = GoogleAdsStructure(emptyList(), emptyList(), emptyList())
+
+        override fun customerOf(
+            account: GoogleAdsAccount,
+            accessToken: String,
+        ) = GoogleAdsCustomer("USD", ZoneOffset.UTC)
+
+        override fun spendOf(
+            account: GoogleAdsAccount,
+            days: ClosedRange<LocalDate>,
+            accessToken: String,
+        ) = emptyList<GoogleAdSpend>()
     }
 
     @TestConfiguration(proxyBeanMethods = false)

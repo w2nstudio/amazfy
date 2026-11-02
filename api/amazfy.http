@@ -331,7 +331,7 @@ Content-Type: application/json
 
 {"customerId": "1234567890"}
 
-### Bring in the chosen account's campaigns, ad groups and ads (200, owner or editor); ads link automatically where they can.
+### Bring in the chosen account's campaigns, ad groups, ads and spend (200, owner or editor); ads link automatically where they can.
 POST {{baseUrl}}/accounts/{{accountId}}/google-ads/sync
 Authorization: Bearer {{accessToken}}
 

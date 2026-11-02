@@ -101,7 +101,8 @@ Steps 2 to 5 need the setup in the [Google Ads setup guide](../guides/google-ads
 | Pick the Google Ads account (A4): owners choose from the accounts the connection reaches (manager accounts and accounts that can't run left out, test accounts kept); the choice is checked with Google, and stored with the account the access comes through (`login-customer-id`, V13); "Connect again" when Google refuses the token | Done |
 | Sync campaigns, ad groups and ads, with auto-linking (A6, V14): "Bring in campaigns" on the Ads page (owner/editor); Search campaigns only, removed ones included; found again by Google's ids, nothing deleted, links kept. Changing Google Ads account keeps the earlier campaigns, since their spend was real, and stops updating them (`campaigns.channel_account_id` tells them apart) | Done |
 | See campaigns, ad groups and ads (A6): Campaigns page (any member, read-only) with name, status, daily budget, final URL and what each ad is linked to; removed ones last; a campaign's ad groups and ads load when it's opened; campaigns from an earlier Google Ads account are marked | Done |
-| Daily spend sync, scheduled, refreshing report totals (A9) | Next |
+| Google spend per ad and day, on request (A9): **Bring in campaigns and spend**; the first read covers 90 days, later ones go back two weeks from the last sync, since Google corrects past days and doesn't say when a day is final; those days are replaced, so a day corrected to nothing goes away; report totals refreshed in the same transaction. Large seller (5,000 ads): about 6 s for two weeks, 24 s for 90 full days | Done |
+| Run the sync by itself every day (A9), for every connected seller account; match Attribution lines again afterwards | Next |
 
 ## Backlog
 
@@ -113,7 +114,7 @@ Agreed ideas without a milestone yet, or waiting for something. Moved into Progr
 | CSV import: check a marketplace or currency column against the chosen marketplace | A Canada report uploaded as US would count CAD as USD | A real export (does it have such a column?) |
 | CSV import: remove header aliases the real export doesn't use (e.g. "clicks", "campaign") | Generic names could match the wrong column | A real export |
 | Import history: who uploaded which file, when, for which days | A wrong upload can be traced | M6 audit log |
-| Match Attribution lines again after a sync | Lines imported before their ads were synced stay unmatched until the file is uploaded again | Daily spend sync step, when syncs run on their own |
+| Match Attribution lines again after a sync | Lines imported before their ads were synced stay unmatched until the file is uploaded again | The daily sync step, next in M4 |
 | Review an ad's link when its final URL now points elsewhere | A sync keeps the link, so the ad's spend stays under the old product. Comparing what the URLs point to, not the text, avoids false alarms from added tags | Real accounts, to see how often it happens |
 | Remove the campaigns of a Google Ads account chosen by mistake | Changing account keeps earlier campaigns, so a wrong choice stays in reports. `campaigns.channel_account_id` makes this possible | A seller needing it |
 | "Add this product" on an ad under **Ads to link**: ASIN and marketplace filled in from its final URL, the seller picks a brand and name | Removes most of the typing for advertised products, with no Amazon connection. Doesn't help with short links | Nothing; ready to pick up |
