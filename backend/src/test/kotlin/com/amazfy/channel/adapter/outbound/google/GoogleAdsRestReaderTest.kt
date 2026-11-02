@@ -2,8 +2,10 @@ package com.amazfy.channel.adapter.outbound.google
 
 import com.amazfy.channel.domain.GoogleAd
 import com.amazfy.channel.domain.GoogleAdGroup
+import com.amazfy.channel.domain.GoogleAdSpend
 import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsConnectionExpiredException
+import com.amazfy.channel.domain.GoogleAdsCustomer
 import com.amazfy.channel.domain.GoogleAdsReadFailedException
 import com.amazfy.channel.domain.GoogleCampaign
 import com.sun.net.httpserver.HttpExchange
@@ -12,6 +14,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 import java.net.URLDecoder
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -203,7 +208,63 @@ class GoogleAdsRestReaderTest {
         assertEquals("", structure.ads[1].finalUrl)
     }
 
+    @Test
+    fun `reads the account's currency and time zone`() {
+        answer = 200 to """{"results":[{"customer":{"currencyCode":"EUR","timeZone":"Europe/Berlin"}}]}"""
+
+        val customer = reader.customerOf(ACCOUNT, "short-lived")
+
+        assertEquals(GoogleAdsCustomer("EUR", ZoneId.of("Europe/Berlin")), customer)
+        assertEquals("9998887776", requests.single().loginCustomerId)
+    }
+
+    @Test
+    fun `a time zone Java doesn't know falls back to UTC`() {
+        answer = 200 to """{"results":[{"customer":{"currencyCode":"USD","timeZone":"Mars/Olympus"}}]}"""
+        assertEquals(ZoneOffset.UTC, reader.customerOf(ACCOUNT, "short-lived").timeZone)
+    }
+
+    @Test
+    fun `an account without settings is a read failure`() {
+        answer = 200 to "{}"
+        assertFailsWith<GoogleAdsReadFailedException> { reader.customerOf(ACCOUNT, "short-lived") }
+    }
+
+    @Test
+    fun `reads spend per ad and day for the days asked, in Google's JSON`() {
+        pages +=
+            """
+            {"results":[
+              {"campaign":{"id":"21"},"adGroup":{"id":"31"},"adGroupAd":{"ad":{"id":"41"}},"segments":{"date":"2026-11-01"},
+               "metrics":{"impressions":"1000","clicks":"25","costMicros":"12500000"}},
+              {"campaign":{"id":"21"},"adGroup":{"id":"31"},"adGroupAd":{"ad":{"id":"42"}},"segments":{"date":"2026-11-02"},
+               "metrics":{"impressions":"7"}}
+            ],"nextPageToken":"page-2"}
+            """.trimIndent()
+        pages +=
+            """{"results":[{"campaign":{"id":"22"},"adGroup":{"id":"32"},"adGroupAd":{"ad":{"id":"43"}},"segments":{"date":"2026-11-02"}}]}"""
+
+        val spend = reader.spendOf(ACCOUNT, LocalDate.of(2026, 10, 20)..LocalDate.of(2026, 11, 2), "short-lived")
+
+        val query = requests.first().body
+        assertTrue("segments.date BETWEEN '2026-10-20' AND '2026-11-02'" in query)
+        assertTrue("advertising_channel_type = 'SEARCH'" in query)
+        assertFalse("status =" in query, "removed ads keep their past spend")
+        assertEquals("9998887776", requests.first().loginCustomerId)
+        assertEquals(GoogleAdSpend("21", "31", "41", LocalDate.of(2026, 11, 1), 1000, 25, 12_500_000), spend[0])
+        assertEquals(GoogleAdSpend("21", "31", "42", LocalDate.of(2026, 11, 2), 7, 0, 0), spend[1])
+        assertEquals(GoogleAdSpend("22", "32", "43", LocalDate.of(2026, 11, 2), 0, 0, 0), spend[2])
+    }
+
+    @Test
+    fun `a refused spend read is a read failure`() {
+        answer = 403 to """{"error":{"status":"PERMISSION_DENIED"}}"""
+        assertFailsWith<GoogleAdsReadFailedException> { reader.spendOf(ACCOUNT, DAY..DAY, "short-lived") }
+        assertFailsWith<GoogleAdsReadFailedException> { reader.customerOf(ACCOUNT, "short-lived") }
+    }
+
     private companion object {
         val ACCOUNT = GoogleAdsAccount("1234567890", "AquaLife", loginCustomerId = "9998887776")
+        val DAY: LocalDate = LocalDate.of(2026, 11, 2)
     }
 }

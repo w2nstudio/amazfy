@@ -3,9 +3,11 @@ package com.amazfy.channel.adapter.outbound.google
 import com.amazfy.channel.application.port.GoogleAdsReader
 import com.amazfy.channel.domain.GoogleAd
 import com.amazfy.channel.domain.GoogleAdGroup
+import com.amazfy.channel.domain.GoogleAdSpend
 import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsClient
 import com.amazfy.channel.domain.GoogleAdsConnectionExpiredException
+import com.amazfy.channel.domain.GoogleAdsCustomer
 import com.amazfy.channel.domain.GoogleAdsReadFailedException
 import com.amazfy.channel.domain.GoogleAdsStructure
 import com.amazfy.channel.domain.GoogleCampaign
@@ -17,6 +19,9 @@ import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestClientResponseException
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 /**
  * The Google Ads API over REST. Sends no developer token: Google retired them in September 2026, and access now belongs
@@ -74,32 +79,55 @@ class GoogleAdsRestReader(
     override fun hierarchyOf(
         customerId: String,
         accessToken: String,
-    ): List<GoogleAdsClient> = search("the hierarchy of $customerId", customerId, customerId, HIERARCHY_QUERY, accessToken).map(::toClient)
+    ): List<GoogleAdsClient> = search("the hierarchy of $customerId", customerId, customerId, HIERARCHY_QUERY, accessToken, ::toClient)
 
     override fun structureOf(
         account: GoogleAdsAccount,
         accessToken: String,
-    ): GoogleAdsStructure {
-        fun read(
-            what: String,
-            query: String,
-        ) = search("the $what of ${account.customerId}", account.customerId, account.loginCustomerId, query, accessToken)
-        return GoogleAdsStructure(
-            campaigns = read("campaigns", CAMPAIGNS_QUERY).map(::toCampaign),
-            adGroups = read("ad groups", AD_GROUPS_QUERY).map(::toAdGroup),
-            ads = read("ads", ADS_QUERY).map(::toAd),
+    ): GoogleAdsStructure =
+        GoogleAdsStructure(
+            campaigns = read(account, "campaigns", CAMPAIGNS_QUERY, accessToken, ::toCampaign),
+            adGroups = read(account, "ad groups", AD_GROUPS_QUERY, accessToken, ::toAdGroup),
+            ads = read(account, "ads", ADS_QUERY, accessToken, ::toAd),
         )
+
+    override fun customerOf(
+        account: GoogleAdsAccount,
+        accessToken: String,
+    ): GoogleAdsCustomer =
+        read(account, "settings", CUSTOMER_QUERY, accessToken, ::toCustomer).firstOrNull()
+            ?: throw GoogleAdsReadFailedException("Google sent no settings for ${account.customerId}")
+
+    override fun spendOf(
+        account: GoogleAdsAccount,
+        days: ClosedRange<LocalDate>,
+        accessToken: String,
+    ): List<GoogleAdSpend> {
+        val query = "$SPEND_QUERY AND segments.date BETWEEN '${days.start}' AND '${days.endInclusive}'"
+        return read(account, "spend", query, accessToken, ::toSpend)
     }
 
-    /** All pages of one query. Google's JSON leaves out values that are false or 0, and sends 64-bit numbers as text. */
-    private fun search(
+    private fun <T> read(
+        account: GoogleAdsAccount,
+        what: String,
+        query: String,
+        accessToken: String,
+        convert: (Map<*, *>) -> T,
+    ) = search("the $what of ${account.customerId}", account.customerId, account.loginCustomerId, query, accessToken, convert)
+
+    /**
+     * All pages of one query, converted page by page: a year of spend is too much to hold as raw JSON.
+     * Google's JSON leaves out values that are false or 0, and sends 64-bit numbers as text.
+     */
+    private fun <T> search(
         what: String,
         customerId: String,
         loginCustomerId: String,
         query: String,
         accessToken: String,
-    ): List<Map<*, *>> {
-        val results = mutableListOf<Map<*, *>>()
+        convert: (Map<*, *>) -> T,
+    ): List<T> {
+        val results = mutableListOf<T>()
         var pageToken: String? = null
         do {
             val body = mapOf("query" to query) + listOfNotNull(pageToken?.let { "pageToken" to it })
@@ -115,7 +143,7 @@ class GoogleAdsRestReader(
                         .retrieve()
                         .body(Map::class.java)
                 }
-            (page?.get("results") as? List<*>).orEmpty().mapTo(results) { it as Map<*, *> }
+            (page?.get("results") as? List<*>).orEmpty().mapTo(results) { convert(it as Map<*, *>) }
             pageToken = page?.get("nextPageToken") as? String
         } while (pageToken != null)
         return results
@@ -151,6 +179,30 @@ class GoogleAdsRestReader(
             campaignId = (result["campaign"] as Map<*, *>)["id"].toString(),
             finalUrl = (ad["finalUrls"] as? List<*>)?.firstOrNull() as? String ?: "",
             status = adGroupAd["status"].toString(),
+        )
+    }
+
+    private fun toCustomer(result: Map<*, *>): GoogleAdsCustomer {
+        val customer = result["customer"] as Map<*, *>
+        return GoogleAdsCustomer(
+            currency = customer["currencyCode"].toString(),
+            // Only decides which day counts as today, and each read covers earlier days again, so a wrong zone does no harm
+            timeZone = runCatching { ZoneId.of(customer["timeZone"].toString()) }.getOrDefault(ZoneOffset.UTC),
+        )
+    }
+
+    private fun toSpend(result: Map<*, *>): GoogleAdSpend {
+        val metrics = result["metrics"] as? Map<*, *>
+
+        fun metric(name: String) = metrics?.get(name)?.toString()?.toLong() ?: 0
+        return GoogleAdSpend(
+            campaignId = (result["campaign"] as Map<*, *>)["id"].toString(),
+            adGroupId = (result["adGroup"] as Map<*, *>)["id"].toString(),
+            adId = ((result["adGroupAd"] as Map<*, *>)["ad"] as Map<*, *>)["id"].toString(),
+            date = LocalDate.parse((result["segments"] as Map<*, *>)["date"].toString()),
+            impressions = metric("impressions"),
+            clicks = metric("clicks"),
+            costMicros = metric("costMicros"),
         )
     }
 
@@ -199,5 +251,9 @@ class GoogleAdsRestReader(
         const val ADS_QUERY =
             "SELECT ad_group_ad.ad.id, ad_group_ad.ad.final_urls, ad_group_ad.status, ad_group.id, campaign.id " +
                 "FROM ad_group_ad $SEARCH_ONLY"
+        const val CUSTOMER_QUERY = "SELECT customer.currency_code, customer.time_zone FROM customer"
+        const val SPEND_QUERY =
+            "SELECT campaign.id, ad_group.id, ad_group_ad.ad.id, segments.date, metrics.impressions, metrics.clicks, " +
+                "metrics.cost_micros FROM ad_group_ad $SEARCH_ONLY"
     }
 }

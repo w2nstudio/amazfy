@@ -1,8 +1,11 @@
 package com.amazfy.channel.application.port
 
+import com.amazfy.channel.domain.GoogleAdSpend
 import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsClient
+import com.amazfy.channel.domain.GoogleAdsCustomer
 import com.amazfy.channel.domain.GoogleAdsStructure
+import java.time.LocalDate
 
 /** Reading from the Google Ads API. Throws GoogleAdsReadFailedException when Google fails or refuses a call. */
 interface GoogleAdsReader {
@@ -23,4 +26,17 @@ interface GoogleAdsReader {
         account: GoogleAdsAccount,
         accessToken: String,
     ): GoogleAdsStructure
+
+    /** The account's currency and time zone. */
+    fun customerOf(
+        account: GoogleAdsAccount,
+        accessToken: String,
+    ): GoogleAdsCustomer
+
+    /** What each ad of its Search campaigns cost on these days, removed ads included. Days without any numbers are left out. */
+    fun spendOf(
+        account: GoogleAdsAccount,
+        days: ClosedRange<LocalDate>,
+        accessToken: String,
+    ): List<GoogleAdSpend>
 }

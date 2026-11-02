@@ -13,6 +13,7 @@ import {
 import type { GoogleAdsSyncResult } from '@/api/generated/model'
 import { FormMessage } from '@/components/AuthCard'
 import { Button } from '@/components/ui/button'
+import { money } from '@/reports/format'
 
 // Whether this seller account has allowed Amazfy to read its Google Ads (requirement A4). Connecting takes the browser
 // to Google's consent page; the backend sends it back here with ?googleAds=connected or =failed. Only owners can change
@@ -24,8 +25,16 @@ function count(number: number, one: string, many: string) {
 
 function syncSummary(result: GoogleAdsSyncResult) {
   const found = `Found ${count(result.campaigns, 'Search campaign', 'Search campaigns')}, ${count(result.adGroups, 'ad group', 'ad groups')} and ${count(result.ads, 'ad', 'ads')}.`
+  const period = `${day(result.spendFrom)} to ${day(result.spendTo)}`
+  const spend =
+    result.spend > 0 ? `Spend from ${period}: ${money(result.spend, result.currency)}.` : `No spend from ${period}.`
   const linked = result.linked > 0 ? ` Linked ${count(result.linked, 'ad', 'ads')} automatically.` : ''
-  return `${found}${linked} ${count(result.stillUnlinked, 'ad', 'ads')} left to link.`
+  return `${found} ${spend}${linked} ${count(result.stillUnlinked, 'ad', 'ads')} left to link.`
+}
+
+/** A date without a time, which must not shift to the day before in time zones behind UTC. */
+function day(iso: string) {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString()
 }
 
 export function GoogleAdsConnectionCard({
@@ -85,8 +94,8 @@ export function GoogleAdsConnectionCard({
             <>
               Amazfy reads <span className="font-medium">{accountLabel(status.account)}</span>.{' '}
               {status.syncedAt
-                ? `Campaigns last brought in on ${new Date(status.syncedAt).toLocaleString()}.`
-                : 'No campaigns brought in from it yet.'}
+                ? `Campaigns and spend last brought in on ${new Date(status.syncedAt).toLocaleString()}.`
+                : 'Nothing brought in from it yet.'}
             </>
           ) : (
             'Choose which Google Ads account Amazfy should read.'
@@ -126,7 +135,7 @@ export function GoogleAdsConnectionCard({
       {status?.account && canEdit && !confirming && !changingAccount && (
         <div className="flex flex-wrap items-center gap-3">
           <Button size="sm" onClick={bringInCampaigns} disabled={sync.isPending}>
-            {sync.isPending ? 'Bringing in campaigns…' : 'Bring in campaigns'}
+            {sync.isPending ? 'Bringing in campaigns and spend…' : 'Bring in campaigns and spend'}
           </Button>
           {status.syncedAt && (
             <Link to="/campaigns" className="underline underline-offset-4">

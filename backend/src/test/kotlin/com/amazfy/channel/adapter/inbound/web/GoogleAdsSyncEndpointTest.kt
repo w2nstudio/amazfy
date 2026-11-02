@@ -5,9 +5,11 @@ import com.amazfy.channel.application.port.GoogleAdsConnections
 import com.amazfy.channel.application.port.GoogleAdsReader
 import com.amazfy.channel.domain.GoogleAd
 import com.amazfy.channel.domain.GoogleAdGroup
+import com.amazfy.channel.domain.GoogleAdSpend
 import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsClient
 import com.amazfy.channel.domain.GoogleAdsConnectionExpiredException
+import com.amazfy.channel.domain.GoogleAdsCustomer
 import com.amazfy.channel.domain.GoogleAdsReadFailedException
 import com.amazfy.channel.domain.GoogleAdsStructure
 import com.amazfy.channel.domain.GoogleCampaign
@@ -32,6 +34,8 @@ import org.springframework.test.web.servlet.put
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -47,6 +51,9 @@ class GoogleAdsSyncEndpointTest {
         var structures = emptyMap<String, GoogleAdsStructure>()
         var tokenExpired = false
         var readFails = false
+        var spend = emptyMap<String, List<GoogleAdSpend>>()
+        var spendFails = false
+        val spendReads = mutableListOf<ClosedRange<LocalDate>>()
 
         override fun accessToken(refreshToken: String): String {
             if (tokenExpired) throw GoogleAdsConnectionExpiredException()
@@ -66,6 +73,21 @@ class GoogleAdsSyncEndpointTest {
         ): GoogleAdsStructure {
             if (readFails) throw GoogleAdsReadFailedException("refused")
             return structures.getValue(account.customerId)
+        }
+
+        override fun customerOf(
+            account: GoogleAdsAccount,
+            accessToken: String,
+        ) = GoogleAdsCustomer(if (account.customerId == SECOND_ACCOUNT) "EUR" else "USD", ZoneOffset.UTC)
+
+        override fun spendOf(
+            account: GoogleAdsAccount,
+            days: ClosedRange<LocalDate>,
+            accessToken: String,
+        ): List<GoogleAdSpend> {
+            if (spendFails) throw GoogleAdsReadFailedException("refused")
+            spendReads += days
+            return spend[account.customerId].orEmpty().filter { it.date in days }
         }
     }
 
@@ -96,7 +118,18 @@ class GoogleAdsSyncEndpointTest {
         google.structures = mapOf(FIRST_ACCOUNT to structure(), SECOND_ACCOUNT to otherAccountStructure())
         google.tokenExpired = false
         google.readFails = false
+        google.spend = emptyMap()
+        google.spendFails = false
+        google.spendReads.clear()
     }
+
+    private val today = LocalDate.now(ZoneOffset.UTC)
+
+    private fun spendOf(
+        adId: String,
+        date: LocalDate,
+        costMicros: Long,
+    ) = GoogleAdSpend("21", "31", adId, date, impressions = 100, clicks = 10, costMicros = costMicros)
 
     private fun structure(
         campaignName: String = "Filters",
@@ -215,6 +248,21 @@ class GoogleAdsSyncEndpointTest {
                 .param("a", accountId)
                 .query(Int::class.java)
                 .single()
+
+        /** Stored spend of one day, in micros. */
+        fun storedSpend(date: LocalDate): Long =
+            jdbc
+                .sql("SELECT coalesce(sum(cost_micros), 0) FROM ad_spend_daily WHERE account_id = :a AND date = :d")
+                .param("a", accountId)
+                .param("d", date)
+                .query(Long::class.java)
+                .single()
+
+        /** The dashboard's spend per currency: last 30 days up to yesterday. */
+        fun reportedSpend(): Map<String, Double> =
+            get("/api/v1/accounts/$accountId/reports/summary")["currencies"].toList().associate {
+                it["currency"].asString() to it["spend"].asDouble()
+            }
 
         fun campaign(externalId: String): Map<String, Any?> =
             jdbc
@@ -405,6 +453,178 @@ class GoogleAdsSyncEndpointTest {
         assertEquals(200, editor.sync(seller.accountId).status)
         assertEquals(403, viewer.sync(seller.accountId).status)
         assertEquals(403, Seller().sync(seller.accountId).status)
+    }
+
+    @Test
+    fun `spend comes in, and the reports show it at once`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+        val yesterday = today.minusDays(1)
+        google.spend =
+            mapOf(
+                FIRST_ACCOUNT to
+                    listOf(
+                        spendOf("41", yesterday, 12_500_000),
+                        spendOf("42", yesterday, 2_500_000),
+                        spendOf("41", yesterday.minusDays(1), 5_000_000),
+                    ),
+            )
+
+        val result = read(seller.sync())
+
+        assertEquals(20.0, result["spend"].asDouble())
+        assertEquals("USD", result["currency"].asString())
+        assertEquals(today.minusDays(89).toString(), result["spendFrom"].asString())
+        assertEquals(today.toString(), result["spendTo"].asString())
+        assertEquals(mapOf("USD" to 20.0), seller.reportedSpend())
+        val notLinked =
+            seller
+                .get("/api/v1/accounts/${seller.accountId}/reports/breakdown?by=BRAND")["rows"]
+                .toList()
+                .single { it["name"].asString() == "Not linked to a product or brand" }
+        assertEquals(20.0, notLinked["totals"]["spend"].asDouble())
+    }
+
+    @Test
+    fun `an account without spend brings in none`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+
+        val result = read(seller.sync())
+
+        assertEquals(0.0, result["spend"].asDouble())
+        assertEquals("USD", result["currency"].asString())
+        assertEquals(0, seller.count("ad_spend_daily"))
+    }
+
+    @Test
+    fun `the first sync reads 90 days, and later ones two weeks`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+
+        seller.sync()
+        seller.sync()
+
+        assertEquals(listOf(today.minusDays(89)..today, today.minusDays(13)..today), google.spendReads)
+    }
+
+    @Test
+    fun `syncing again replaces recent days, removes what Google corrected away, and keeps older days`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+        val changed = today.minusDays(1)
+        val correctedAway = today.minusDays(2)
+        val older = today.minusDays(40)
+        google.spend =
+            mapOf(
+                FIRST_ACCOUNT to
+                    listOf(spendOf("41", changed, 10_000_000), spendOf("41", correctedAway, 7_000_000), spendOf("41", older, 3_000_000)),
+            )
+        seller.sync()
+        assertEquals(mapOf("USD" to 17.0), seller.reportedSpend())
+
+        google.spend = mapOf(FIRST_ACCOUNT to listOf(spendOf("41", changed, 9_000_000)))
+        val result = read(seller.sync())
+
+        assertEquals(9.0, result["spend"].asDouble())
+        assertEquals(9_000_000, seller.storedSpend(changed))
+        assertEquals(0, seller.storedSpend(correctedAway))
+        assertEquals(3_000_000, seller.storedSpend(older))
+        assertEquals(mapOf("USD" to 9.0), seller.reportedSpend())
+    }
+
+    @Test
+    fun `spend of an account chosen earlier stays, in its own currency`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+        val yesterday = today.minusDays(1)
+        google.spend =
+            mapOf(
+                FIRST_ACCOUNT to listOf(spendOf("41", yesterday, 10_000_000)),
+                SECOND_ACCOUNT to listOf(GoogleAdSpend("22", "32", "44", yesterday, 50, 5, 4_000_000)),
+            )
+        seller.sync()
+
+        seller.choose(SECOND_ACCOUNT)
+        seller.sync()
+
+        assertEquals(mapOf("USD" to 10.0, "EUR" to 4.0), seller.reportedSpend())
+    }
+
+    @Test
+    fun `sample data's spend stays`() {
+        val seller = Seller()
+        mockMvc.post("/api/v1/accounts/${seller.accountId}/dev/sample-data") { header(HttpHeaders.AUTHORIZATION, "Bearer ${seller.token}") }
+        val sampleRows = seller.count("ad_spend_daily")
+        seller.connectAndChoose()
+        google.spend = mapOf(FIRST_ACCOUNT to listOf(spendOf("41", today.minusDays(1), 1_000_000)))
+
+        seller.sync()
+
+        assertEquals(sampleRows + 1, seller.count("ad_spend_daily"))
+    }
+
+    @Test
+    fun `spend of an ad that isn't stored is left out`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+        google.spend = mapOf(FIRST_ACCOUNT to listOf(spendOf("41", today, 1_000_000), spendOf("not-stored", today, 9_000_000)))
+
+        val result = read(seller.sync())
+
+        assertEquals(1.0, result["spend"].asDouble())
+        assertEquals(1, seller.count("ad_spend_daily"))
+    }
+
+    @Test
+    fun `a failed spend read changes nothing, not even campaigns`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+        google.spendFails = true
+
+        assertEquals(502, seller.sync().status)
+
+        assertEquals(0, seller.count("campaigns"))
+        assertNull(seller.connection()["syncedAt"])
+    }
+
+    @Test
+    fun `two seller accounts reading the same Google Ads account each have their own spend`() {
+        val first = Seller()
+        val second = Seller()
+        first.connectAndChoose()
+        second.connectAndChoose()
+        google.spend = mapOf(FIRST_ACCOUNT to listOf(spendOf("41", today.minusDays(1), 1_000_000)))
+        first.sync()
+        second.sync()
+
+        google.spend = emptyMap()
+        first.sync()
+
+        assertEquals(0, first.count("ad_spend_daily"))
+        assertEquals(1, second.count("ad_spend_daily"))
+    }
+
+    @Test
+    fun `a large account's spend comes in whole, more than once`() {
+        val seller = Seller()
+        val adGroups = (1..500).map { GoogleAdGroup("g$it", "c", "Group $it", "ENABLED") }
+        val ads = adGroups.flatMap { g -> (1..10).map { GoogleAd("a$it", g.id, "c", "https://amzn.to/$it", "ENABLED") } }
+        google.structures =
+            mapOf(FIRST_ACCOUNT to GoogleAdsStructure(listOf(GoogleCampaign("c", "Large", "ENABLED", 1_000_000, "USD")), adGroups, ads))
+        google.spend =
+            mapOf(
+                FIRST_ACCOUNT to
+                    (1L..14L).flatMap { daysAgo ->
+                        ads.map { GoogleAdSpend("c", it.adGroupId, it.id, today.minusDays(daysAgo), 100, 10, 1_000_000) }
+                    },
+            )
+        seller.connectAndChoose()
+
+        repeat(2) { assertEquals(200, seller.sync().status) }
+
+        assertEquals(5000 * 14, seller.count("ad_spend_daily"))
+        assertEquals(mapOf("USD" to 70_000.0), seller.reportedSpend())
     }
 
     @Test

@@ -22,6 +22,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RestController
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.net.URI
 import java.time.ZoneOffset
 import java.util.UUID
@@ -117,6 +119,10 @@ class GoogleAdsController(
                 ads = outcome.ads,
                 linked = outcome.linked,
                 stillUnlinked = outcome.stillUnlinked,
+                spendFrom = outcome.spendFrom,
+                spendTo = outcome.spendTo,
+                spend = BigDecimal.valueOf(outcome.spendMicros, 6).setScale(2, RoundingMode.HALF_UP),
+                currency = outcome.currency,
             ),
         )
     }
