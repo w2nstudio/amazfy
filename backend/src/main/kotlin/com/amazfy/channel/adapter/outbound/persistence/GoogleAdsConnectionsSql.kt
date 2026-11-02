@@ -4,6 +4,7 @@ import com.amazfy.channel.application.port.GoogleAdsConnections
 import com.amazfy.channel.domain.GoogleAdsAccount
 import com.amazfy.channel.domain.GoogleAdsConnection
 import com.amazfy.channel.domain.GoogleAdsConnectionExpiredException
+import com.amazfy.channel.domain.GoogleAdsSyncProblem
 import com.amazfy.common.crypto.SecretCipher
 import com.amazfy.common.tenant.CurrentAccount
 import org.springframework.jdbc.core.simple.JdbcClient
@@ -26,7 +27,7 @@ class GoogleAdsConnectionsSql(
         jdbc
             .sql(
                 """
-                SELECT connected_at, customer_id, login_customer_id, account_name, synced_at
+                SELECT connected_at, customer_id, login_customer_id, account_name, synced_at, sync_problem
                 FROM google_ads_connections WHERE account_id = :account
                 """,
             ).param("account", CurrentAccount.get())
@@ -39,6 +40,7 @@ class GoogleAdsConnectionsSql(
                             GoogleAdsAccount(it, rs.getString("account_name"), rs.getString("login_customer_id"))
                         },
                     syncedAt = rs.getObject("synced_at", OffsetDateTime::class.java)?.toInstant(),
+                    syncProblem = rs.getString("sync_problem")?.let(GoogleAdsSyncProblem::valueOf),
                 )
             }.optional()
             .orElse(null)
@@ -66,7 +68,8 @@ class GoogleAdsConnectionsSql(
                 INSERT INTO google_ads_connections (account_id, encrypted_refresh_token, connected_at)
                 VALUES (:account, :token, :connectedAt)
                 ON CONFLICT (account_id) DO UPDATE
-                    SET encrypted_refresh_token = excluded.encrypted_refresh_token, connected_at = excluded.connected_at
+                    SET encrypted_refresh_token = excluded.encrypted_refresh_token, connected_at = excluded.connected_at,
+                        sync_problem = NULL, sync_attempted_at = NULL
                 """,
             ).param("account", account)
             .param("token", cipher.encrypt(refreshToken, tokenContext(account)))
@@ -80,12 +83,21 @@ class GoogleAdsConnectionsSql(
                 """
                 UPDATE google_ads_connections
                 SET synced_at = CASE WHEN customer_id = :customerId THEN synced_at END,
-                    customer_id = :customerId, login_customer_id = :loginCustomerId, account_name = :name
+                    customer_id = :customerId, login_customer_id = :loginCustomerId, account_name = :name,
+                    sync_problem = NULL, sync_attempted_at = NULL
                 WHERE account_id = :account
                 """,
             ).param("customerId", account.customerId)
             .param("loginCustomerId", account.loginCustomerId)
             .param("name", account.name)
+            .param("account", CurrentAccount.get())
+            .update()
+    }
+
+    override fun recordSyncProblem(problem: GoogleAdsSyncProblem) {
+        jdbc
+            .sql("UPDATE google_ads_connections SET sync_problem = :problem WHERE account_id = :account")
+            .param("problem", problem.name)
             .param("account", CurrentAccount.get())
             .update()
     }

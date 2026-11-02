@@ -29,6 +29,7 @@ import java.time.ZoneOffset
 import java.util.UUID
 import com.amazfy.api.generated.model.GoogleAdsAccount as ApiGoogleAdsAccount
 import com.amazfy.api.generated.model.GoogleAdsConnection as ApiGoogleAdsConnection
+import com.amazfy.api.generated.model.GoogleAdsSyncProblem as ApiGoogleAdsSyncProblem
 
 /** Implements the Google Ads part of api/openapi.yaml. Any member may see the connection; only owners may change it. */
 @RestController
@@ -54,6 +55,7 @@ class GoogleAdsController(
                 connectedAt = connection?.connectedAt?.atOffset(ZoneOffset.UTC),
                 account = connection?.account?.toApi(),
                 syncedAt = connection?.syncedAt?.atOffset(ZoneOffset.UTC),
+                syncProblem = connection?.syncProblem?.let { ApiGoogleAdsSyncProblem.forValue(it.name) },
             ),
         )
     }

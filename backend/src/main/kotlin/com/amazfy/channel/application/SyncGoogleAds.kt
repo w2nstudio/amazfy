@@ -5,7 +5,10 @@ import com.amazfy.channel.application.port.GoogleAdsReader
 import com.amazfy.channel.application.port.GoogleAdsSpendStore
 import com.amazfy.channel.application.port.GoogleAdsStructures
 import com.amazfy.channel.domain.GoogleAdsAccountNotChosenException
+import com.amazfy.channel.domain.GoogleAdsConnectionExpiredException
 import com.amazfy.channel.domain.GoogleAdsNotConnectedException
+import com.amazfy.channel.domain.GoogleAdsReadFailedException
+import com.amazfy.channel.domain.GoogleAdsSyncProblem
 import com.amazfy.channel.domain.spendDaysToRead
 import com.amazfy.reporting.application.RefreshReportTotals
 import org.springframework.stereotype.Service
@@ -30,7 +33,19 @@ class SyncGoogleAds(
     private val transaction: TransactionTemplate,
     private val clock: Clock,
 ) {
-    fun run(): GoogleAdsSyncOutcome {
+    /** A failure stays on the connection until a sync works, so the seller sees it also when the daily job hit it. */
+    fun run(): GoogleAdsSyncOutcome =
+        try {
+            readAndSave()
+        } catch (e: GoogleAdsConnectionExpiredException) {
+            connections.recordSyncProblem(GoogleAdsSyncProblem.CONNECTION_EXPIRED)
+            throw e
+        } catch (e: GoogleAdsReadFailedException) {
+            connections.recordSyncProblem(GoogleAdsSyncProblem.READ_FAILED)
+            throw e
+        }
+
+    private fun readAndSave(): GoogleAdsSyncOutcome {
         val connection = connections.current() ?: throw GoogleAdsNotConnectedException()
         val account = connection.account ?: throw GoogleAdsAccountNotChosenException()
         val refreshToken = connections.refreshToken() ?: throw GoogleAdsNotConnectedException()

@@ -70,8 +70,12 @@ class GoogleAdsStructuresSql(
             structure.ads.map { arrayOf<Any?>(it.id, it.finalUrl, it.status, account, it.campaignId, it.adGroupId) },
         )
         jdbc
-            .sql("UPDATE google_ads_connections SET synced_at = :at WHERE account_id = :account AND customer_id = :customerId")
-            .param("at", syncedAt.atOffset(ZoneOffset.UTC))
+            .sql(
+                """
+                UPDATE google_ads_connections SET synced_at = :at, sync_problem = NULL
+                WHERE account_id = :account AND customer_id = :customerId
+                """,
+            ).param("at", syncedAt.atOffset(ZoneOffset.UTC))
             .param("account", account)
             .param("customerId", customerId)
             .update()
