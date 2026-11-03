@@ -112,7 +112,7 @@ Before M5 (which waits for Amazon Ads API access), Amazfy is shown on a real sel
 | Step | Status |
 | --- | --- |
 | Google Ads API Explorer access, to read real accounts | Done (2026-11-03) |
-| "Add this product" on the Ads page (from the backlog) | Next |
+| "Add this product" on the Ads page: an unlinked ad pointing to a product page of the seller account's region offers it, with ASIN and marketplace from the final URL; the seller names it and picks or creates a brand, then Link automatically links every ad pointing to that page. Frontend only, using the existing endpoints | Done |
 | Check the import against the seller's real Attribution export | Waiting for the export |
 | Private rehearsal, then the demo; fallback on test accounts and sample data if the seller's data isn't ready (checklist) | To do |
 
@@ -128,7 +128,6 @@ Agreed ideas without a milestone yet, or waiting for something. Moved into Progr
 | Import history: who uploaded which file, when, for which days | A wrong upload can be traced | M6 audit log |
 | Review an ad's link when its final URL now points elsewhere | A sync keeps the link, so the ad's spend stays under the old product. Comparing what the URLs point to, not the text, avoids false alarms from added tags | Real accounts, to see how often it happens |
 | Remove the campaigns of a Google Ads account chosen by mistake | Changing account keeps earlier campaigns, so a wrong choice stays in reports. `campaigns.channel_account_id` makes this possible | A seller needing it |
-| "Add this product" on an ad under **Ads to link**: ASIN and marketplace filled in from its final URL, the seller picks a brand and name | Removes most of the typing for advertised products, with no Amazon connection. Doesn't help with short links | Picked up: next step before the demo |
 | Change an ad's link once it's linked | **Ads to link** only offers unlinked ads, so a wrong link shows on the Campaigns page but can't be changed there. `PUT /ads/{id}/link` already replaces a link | Nothing; ready to pick up |
 | Import brands and products from Amazon through the Selling Partner API (SP-API), with the seller confirming the list | Sellers wouldn't type in their catalog. Confirming matters, since a seller may also resell other companies' products | A real seller account to test with, and SP-API developer registration. Amazon cancelled its planned third-party fees in May 2026: check again before building |
 | Undo an import | Upserts overwrite earlier numbers; re-uploading the right file repairs updated lines but not added ones | Only if real use shows the need |
