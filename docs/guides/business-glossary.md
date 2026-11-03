@@ -120,3 +120,7 @@ Plain-language explanations of business terms as they come up while building Ama
 **Google Ads account's time zone** — Set when the account is created, and it decides where one day ends in Google's numbers. Google's "yesterday" can differ from the seller's or Amazon's by some hours, so daily spend and daily sales may not line up exactly on a single day. Totals over longer periods are barely affected.
 
 **Refresh token expiring in Testing** — While Amazfy's app on Google Cloud is in Testing, Google ends a seller's permission after about 7 days, so the daily sync stops until they use **Connect again**. Once the app is published and verified, this no longer happens, unless the seller removes Amazfy from their Google Account.
+
+**Access level (Google Ads API)** — How much an app may do through the Google Ads API. It belongs to the app's Google Cloud project, not to a seller. **Test** reads only test accounts; **Explorer** also reads real accounts, up to 2,880 operations a day; **Basic** allows 15,000 a day and keyword planning; **Standard** has no daily limit. Example: with Test access, Amazfy can't read a real seller's account even after the seller clicks "Allow"; after Explorer is approved, the same click works.
+
+**Test user (Google Cloud)** — A Google account listed on an app's consent screen while the app is in Testing. Only test users can sign in to the app or allow it access; anyone else sees "Access blocked". Up to 100. Example: before a demo, the seller's Gmail is added as a test user so they can connect their Google Ads to Amazfy.

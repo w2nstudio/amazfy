@@ -114,6 +114,24 @@ These aren't secrets like a password, but keep them out of the repository anyway
 
 Also: at most 50 test accounts per hierarchy, and accounts with no logins or API use for a year are deleted.
 
+## Explorer access, to read real accounts
+
+Test access reads test accounts only: with it, Google refuses to read a real seller's account even when the seller allows it. **Explorer access** lifts that, up to 2,880 operations a day on real accounts (a sync uses about 5). It belongs to the `Amazfy` Google Cloud project, so it's applied for once, by the project's owner; sellers don't apply for anything. Needed for the [demo with a real seller](demo-checklist.md).
+
+1. Open the [Google Ads API Overview page](https://console.cloud.google.com/google/ads-apis/overview) in the `Amazfy` project, signed in with the account that owns it.
+2. Check that the current access level is **Test**.
+3. Expand **Upgrade access level** and check that **Next access level** says **Explorer**.
+4. Click **Apply for access**.
+
+Google approves Explorer automatically in most cases, sometimes straight away, but gives no set time. It doesn't need brand verification (only Basic does). If it's rejected on the free trial, upgrade billing and apply again (see the note below the next table).
+
+Explorer can't plan keywords, create accounts, manage users or touch billing: those need Basic. Amazfy's reading doesn't use any of them.
+
+Each person who connects must also be a **test user** while the app is in Testing (step 2: **Audience → Test users**), or Google shows "Access blocked".
+
+- [ ] The Overview page shows access level **Explorer**
+- [ ] The real seller's Google account is listed under **Test users**
+
 ## Later, for real sellers
 
 Not needed now. Requirements section 10 tracks these.
