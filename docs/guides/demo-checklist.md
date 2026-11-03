@@ -60,6 +60,33 @@ Once Explorer is approved, run the whole demo once privately with the seller's a
 5. **Import**: their Attribution CSV for the right marketplace → preview → import.
 6. **Home**: spend, sales, ROAS and CPA; drill down from brand to product to campaign to the single ad; the trend chart.
 
+## Fallback: demo on test accounts
+
+If the seller's Gmail or Attribution export isn't ready in time, the same story can be shown without their data. Two parts, each honest about what it is: the reports on made-up numbers, and the real Google connection on a test account.
+
+**Two seller accounts in Amazfy are needed**, because **Fill with sample data** deletes all of a seller account's campaigns and Attribution numbers, including those brought in from Google:
+
+| Seller account | Holds | Shows |
+| --- | --- | --- |
+| Your existing one (e.g. *Aqualife - US*) | Connected to the Google test account | The real connection: Google's consent page, picking an account, bringing in campaigns and ads, linking, the Campaigns page, an Attribution upload matched to real ad ids |
+| A second one, e.g. *Demo shop* (**Add Amazon seller account**) | Sample data only, never connected | The reports: 90 days of spend, sales and ROAS by brand, product, campaign and ad |
+
+### Before the fallback demo
+
+- [ ] **Demo shop** created; **Fill with sample data** pressed **on the demo day** (its numbers end the day before it's pressed)
+- [ ] The test seller account connected within the last 7 days (**Connect again** on the demo day morning is safest)
+- [ ] An Attribution CSV for the test ads: the ids of your test campaign, ad group and ads (pgAdmin: `external_id` in `campaigns`, `ad_groups`, `ads`) with made-up sales. Claude can generate it from the database; keep it out of the repository
+- [ ] Optional: a change ready to make in Google Ads during the demo, such as renaming the test campaign
+
+### The fallback demo (about 15 minutes)
+
+1. **The problem.** Google Ads shows clicks and cost, Amazon shows sales, and neither says which ad brought which sale.
+2. **The answer, on sample data** (*Demo shop*, say the numbers are made up): the tiles (spend, sales, ROAS, CPA); **View by Brand → Product → Campaign → ad**. Then the key moment: filter **ad A and ad B** cost the same $20 a day, but A sells twice as much (ROAS 4.00 vs 2.00), something Google alone can't show. Then the **Not linked** and **Not matched** rows (totals stay complete), and the trend chart with the last 14 days shaded while Amazon is still counting.
+3. **It's real, on the Google test account** (*Aqualife - US*): **Ads → Bring in campaigns and spend** live; the **Campaigns** page shows the campaign built in Google Ads; rename it in Google Ads, bring in again, and the page follows. **Ads to link**: link the short-link ad to a product. **Import**: upload the test CSV, and its lines match the real ads.
+4. **What their own account adds:** real spend next to their real sales, per ad; then the Amazon connector (M5) fetches Attribution by itself, with no CSV.
+
+What it can't show: test accounts have no spend, so part 3 shows no cost or ROAS. Sample numbers are the same every day, so part 2's trend lines are flat.
+
 ## After the demo
 
 - [ ] Apply for Amazon Ads API access and the Google approvals straight away; they take weeks
