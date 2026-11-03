@@ -29,7 +29,11 @@ function syncSummary(result: GoogleAdsSyncResult) {
   const spend =
     result.spend > 0 ? `Spend from ${period}: ${money(result.spend, result.currency)}.` : `No spend from ${period}.`
   const linked = result.linked > 0 ? ` Linked ${count(result.linked, 'ad', 'ads')} automatically.` : ''
-  return `${found} ${spend}${linked} ${count(result.stillUnlinked, 'ad', 'ads')} left to link.`
+  const matched =
+    result.attributionLinesMatched > 0
+      ? ` Matched ${count(result.attributionLinesMatched, 'earlier Attribution line', 'earlier Attribution lines')} to their ads.`
+      : ''
+  return `${found} ${spend}${linked} ${count(result.stillUnlinked, 'ad', 'ads')} left to link.${matched}`
 }
 
 function syncProblemMessage(problem: GoogleAdsSyncProblem, canManage: boolean) {

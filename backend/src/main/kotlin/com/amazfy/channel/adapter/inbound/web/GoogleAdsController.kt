@@ -121,6 +121,7 @@ class GoogleAdsController(
                 ads = outcome.ads,
                 linked = outcome.linked,
                 stillUnlinked = outcome.stillUnlinked,
+                attributionLinesMatched = outcome.attributionLinesMatched,
                 spendFrom = outcome.spendFrom,
                 spendTo = outcome.spendTo,
                 spend = BigDecimal.valueOf(outcome.spendMicros, 6).setScale(2, RoundingMode.HALF_UP),

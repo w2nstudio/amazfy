@@ -1796,7 +1796,7 @@ components:
 
     GoogleAdsSyncResult:
       type: object
-      required: [campaigns, adGroups, ads, linked, stillUnlinked, spendFrom, spendTo, spend, currency]
+      required: [campaigns, adGroups, ads, linked, stillUnlinked, attributionLinesMatched, spendFrom, spendTo, spend, currency]
       properties:
         campaigns:
           type: integer
@@ -1811,6 +1811,11 @@ components:
         stillUnlinked:
           type: integer
           description: Ads still linked to nothing, in this seller account
+        attributionLinesMatched:
+          type: integer
+          description: >-
+            Attribution lines uploaded earlier without a known ad, matched just now to the ads brought in. Their sales move
+            from "Not matched to an ad" to those ads.
         spendFrom:
           type: string
           format: date

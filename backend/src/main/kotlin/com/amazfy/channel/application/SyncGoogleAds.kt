@@ -1,5 +1,6 @@
 package com.amazfy.channel.application
 
+import com.amazfy.attribution.application.MatchAttributionLines
 import com.amazfy.channel.application.port.GoogleAdsConnections
 import com.amazfy.channel.application.port.GoogleAdsReader
 import com.amazfy.channel.application.port.GoogleAdsSpendStore
@@ -18,9 +19,10 @@ import java.time.LocalDate
 
 /**
  * Use case: brings the chosen Google Ads account's campaigns, ad groups, ads and daily spend into the current seller
- * account, then links the new ads it can (requirements A6, A7, A9). Reads Google before opening a transaction, so a slow
- * Google never holds a database connection, and a failed read changes nothing. Campaigns before spend: spend needs its
- * ads stored. Callers must have checked edit access first (@PreAuthorize with accountAccess).
+ * account, then links the new ads it can and matches earlier Attribution lines to them (requirements A6, A7, A9, A10).
+ * Reads Google before opening a transaction, so a slow Google never holds a database connection, and a failed read
+ * changes nothing. Campaigns before spend and Attribution: both need the ads stored. Callers must have checked edit
+ * access first (@PreAuthorize with accountAccess).
  */
 @Service
 class SyncGoogleAds(
@@ -30,6 +32,7 @@ class SyncGoogleAds(
     private val spendStore: GoogleAdsSpendStore,
     private val reportTotals: RefreshReportTotals,
     private val autoLink: AutoLinkAds,
+    private val matchAttribution: MatchAttributionLines,
     private val transaction: TransactionTemplate,
     private val clock: Clock,
 ) {
@@ -64,21 +67,28 @@ class SyncGoogleAds(
                 structures.save(account.customerId, structure, now)
                 val spendMicros = spendStore.replace(account.customerId, days, customer.currency, spend)
                 reportTotals.forDays(days.start, days.endInclusive)
-                spendMicros to autoLink.run()
+                Saved(spendMicros, autoLink.run(), matchAttribution.run())
             }
-        val (spendMicros, linking) = saved
+        val (spendMicros, linking, attributionLinesMatched) = saved
         return GoogleAdsSyncOutcome(
             campaigns = structure.campaigns.size,
             adGroups = structure.adGroups.size,
             ads = structure.ads.size,
             linked = linking.linked,
             stillUnlinked = linking.stillUnlinked,
+            attributionLinesMatched = attributionLinesMatched,
             spendFrom = days.start,
             spendTo = days.endInclusive,
             spendMicros = spendMicros,
             currency = customer.currency,
         )
     }
+
+    private data class Saved(
+        val spendMicros: Long,
+        val linking: AutoLinkOutcome,
+        val attributionLinesMatched: Int,
+    )
 }
 
 data class GoogleAdsSyncOutcome(
@@ -87,6 +97,7 @@ data class GoogleAdsSyncOutcome(
     val ads: Int,
     val linked: Int,
     val stillUnlinked: Int,
+    val attributionLinesMatched: Int,
     val spendFrom: LocalDate,
     val spendTo: LocalDate,
     val spendMicros: Long,

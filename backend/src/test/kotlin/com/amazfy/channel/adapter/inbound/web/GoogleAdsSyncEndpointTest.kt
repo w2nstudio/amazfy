@@ -28,8 +28,10 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.mock.web.MockHttpServletResponse
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.multipart
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import tools.jackson.databind.JsonNode
@@ -279,6 +281,35 @@ class GoogleAdsSyncEndpointTest {
                 .param("e", externalId)
                 .query()
                 .singleRow()
+
+        /** An Attribution report for amazon.com, one line per [lines] entry: creative id to sales. All for yesterday. */
+        fun uploadAttribution(vararg lines: Pair<String, String>) =
+            mockMvc
+                .multipart("/api/v1/accounts/$accountId/attribution/imports") {
+                    val rows = lines.map { (creative, sales) -> "${today.minusDays(1)},Google Ads,21,31,$creative,9,9,2,1,1,$sales" }
+                    val csv = (listOf(ATTRIBUTION_HEADER) + rows).joinToString("\n")
+                    file(MockMultipartFile("file", "attribution.csv", "text/csv", csv.toByteArray()))
+                    param("marketplace", "US")
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                }.andExpect { status { isOk() } }
+
+        /** Ad each stored Attribution line is matched to, by creative id (null: unmatched). */
+        fun attributionMatches(): Map<String, UUID?> =
+            jdbc
+                .sql("SELECT creative_external_id, ad_id FROM attribution_daily WHERE account_id = :a")
+                .param("a", accountId)
+                .query { rs, _ -> rs.getString("creative_external_id") to rs.getObject("ad_id", UUID::class.java) }
+                .list()
+                .toMap()
+
+        /** The dashboard's sales on the "Not matched to an ad" row, null when there's no such row. */
+        fun unmatchedSales(): Double? =
+            get("/api/v1/accounts/$accountId/reports/breakdown?by=CAMPAIGN")["rows"]
+                .toList()
+                .singleOrNull { it["kind"].asString() == "UNMATCHED" }
+                ?.get("totals")
+                ?.get("sales")
+                ?.asDouble()
 
         fun addMember(
             member: Seller,
@@ -852,9 +883,49 @@ class GoogleAdsSyncEndpointTest {
         assertEquals(5000, seller.count("ads"))
     }
 
+    @Test
+    fun `Attribution lines uploaded before their ads match once the sync brings the ads in`() {
+        val seller = Seller()
+        seller.connectAndChoose()
+        seller.uploadAttribution("41" to "25.00", "999" to "10.00")
+        assertEquals(mapOf("41" to null, "999" to null), seller.attributionMatches())
+        assertEquals(35.0, seller.unmatchedSales())
+
+        val result = read(seller.sync())
+
+        assertEquals(1, result["attributionLinesMatched"].asInt())
+        assertEquals(mapOf("41" to seller.adId("41"), "999" to null), seller.attributionMatches())
+        assertEquals(10.0, seller.unmatchedSales()) // the reports moved the sales to the ad straight away
+        assertEquals(0, read(seller.sync())["attributionLinesMatched"].asInt())
+    }
+
+    @Test
+    fun `the daily sync matches them too`() {
+        val seller = sellerAloneConnected()
+        seller.uploadAttribution("41" to "25.00")
+
+        daily.runDue()
+
+        assertEquals(mapOf("41" to seller.adId("41")), seller.attributionMatches())
+    }
+
+    @Test
+    fun `another seller account's lines with the same ids stay unmatched`() {
+        val synced = Seller()
+        val other = Seller()
+        synced.connectAndChoose()
+        other.uploadAttribution("41" to "25.00")
+
+        synced.sync()
+
+        assertEquals(mapOf("41" to null), other.attributionMatches())
+    }
+
     private companion object {
         const val FIRST_ACCOUNT = "1234567890"
         const val SECOND_ACCOUNT = "2223334445"
         const val PRODUCT_URL = "https://www.amazon.com/dp/B0AAA11111"
+        const val ATTRIBUTION_HEADER =
+            "Date,Publisher,Campaign ID,Ad group ID,Creative ID,Click-throughs,Detail page views,Add to carts,Purchases,Units sold,Sales"
     }
 }

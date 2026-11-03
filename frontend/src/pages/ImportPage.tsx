@@ -220,7 +220,8 @@ function Preview({
       {lowMatch && (
         <p role="alert" className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2">
           <strong>Most lines don't match your Google ads.</strong> Is this report from {accountName}, and for {site}? If
-          it is, Amazfy may not know these ads yet; their sales are still imported, as "Not matched to an ad".
+          it is, Amazfy may not know these ads yet; their sales are still imported, as "Not matched to an ad", and move
+          to their ads once Amazfy brings those ads in from Google Ads.
         </p>
       )}
       <div className="flex gap-2">

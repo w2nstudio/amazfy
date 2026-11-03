@@ -2,6 +2,7 @@ package com.amazfy.attribution.adapter.outbound.persistence
 
 import com.amazfy.attribution.application.port.AttributionLineStore
 import com.amazfy.attribution.application.port.GoogleAdLookup
+import com.amazfy.attribution.application.port.MatchedLines
 import com.amazfy.attribution.domain.AdKey
 import com.amazfy.attribution.domain.AttributionLine
 import com.amazfy.common.amazon.Marketplace
@@ -78,4 +79,30 @@ class AttributionSql(
             },
         )
     }
+
+    override fun matchUnmatched(): MatchedLines? =
+        jdbc
+            .sql(
+                """
+                WITH matched AS (
+                    UPDATE attribution_daily AS line SET ad_id = ad.id, updated_at = now()
+                    FROM ads AS ad
+                    JOIN ad_groups AS g ON g.id = ad.ad_group_id
+                    JOIN campaigns AS c ON c.id = g.campaign_id
+                    WHERE line.account_id = :account AND line.ad_id IS NULL
+                        AND ad.account_id = :account AND c.channel = 'GOOGLE'
+                        AND c.external_id = line.campaign_external_id
+                        AND g.external_id = line.ad_group_external_id
+                        AND ad.external_id = line.creative_external_id
+                    RETURNING line.date
+                )
+                SELECT count(*) AS lines, min(date) AS first_day, max(date) AS last_day FROM matched
+                """,
+            ).param("account", CurrentAccount.get())
+            .query { rs, _ ->
+                rs.getInt("lines").takeIf { it > 0 }?.let {
+                    MatchedLines(it, rs.getDate("first_day").toLocalDate(), rs.getDate("last_day").toLocalDate())
+                }
+            }.list()
+            .single()
 }
