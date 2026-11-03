@@ -105,6 +105,17 @@ Steps 2 to 5 need the setup in the [Google Ads setup guide](../guides/google-ads
 | Run the sync by itself (A9, V15): every 10 minutes a job looks for seller accounts not synced for 23 hours, so a server that was down catches up; taking one is atomic, so two servers never take the same; a failed read is tried again after an hour; an expired connection waits for **Connect again** and doesn't spend Google's daily limit; the Ads page shows the problem | Done |
 | Match Attribution lines again after a sync (A10): every sync, by the button or the daily run, links unmatched Attribution lines to the ads it now has, by the same Google ids as the import, and refreshes those days' report totals, in the sync's transaction; the card says how many lines matched, so a report uploaded before its ads no longer needs uploading again. Large seller (`performanceTest`): 14 ms when no lines are waiting, the usual case; 133 s once if a whole year (1.83 million lines) was uploaded before Google was connected | Done |
 
+**Next: demo with a real seller**
+
+Before M5 (which waits for Amazon Ads API access), Amazfy is shown on a real seller's own Google Ads and Attribution numbers. The big approvals are applied for after the demo. Steps and what's still missing: [demo checklist](../guides/demo-checklist.md).
+
+| Step | Status |
+| --- | --- |
+| Google Ads API Explorer access, to read real accounts | To do (project owner) |
+| "Add this product" on the Ads page (from the backlog) | Next |
+| Check the import against the seller's real Attribution export | Waiting for the export |
+| Private rehearsal, then the demo | To do |
+
 ## Backlog
 
 Agreed ideas without a milestone yet, or waiting for something. Moved into Progress when picked up.
@@ -117,7 +128,7 @@ Agreed ideas without a milestone yet, or waiting for something. Moved into Progr
 | Import history: who uploaded which file, when, for which days | A wrong upload can be traced | M6 audit log |
 | Review an ad's link when its final URL now points elsewhere | A sync keeps the link, so the ad's spend stays under the old product. Comparing what the URLs point to, not the text, avoids false alarms from added tags | Real accounts, to see how often it happens |
 | Remove the campaigns of a Google Ads account chosen by mistake | Changing account keeps earlier campaigns, so a wrong choice stays in reports. `campaigns.channel_account_id` makes this possible | A seller needing it |
-| "Add this product" on an ad under **Ads to link**: ASIN and marketplace filled in from its final URL, the seller picks a brand and name | Removes most of the typing for advertised products, with no Amazon connection. Doesn't help with short links | Nothing; ready to pick up |
+| "Add this product" on an ad under **Ads to link**: ASIN and marketplace filled in from its final URL, the seller picks a brand and name | Removes most of the typing for advertised products, with no Amazon connection. Doesn't help with short links | Picked up: next step before the demo |
 | Change an ad's link once it's linked | **Ads to link** only offers unlinked ads, so a wrong link shows on the Campaigns page but can't be changed there. `PUT /ads/{id}/link` already replaces a link | Nothing; ready to pick up |
 | Import brands and products from Amazon through the Selling Partner API (SP-API), with the seller confirming the list | Sellers wouldn't type in their catalog. Confirming matters, since a seller may also resell other companies' products | A real seller account to test with, and SP-API developer registration. Amazon cancelled its planned third-party fees in May 2026: check again before building |
 | Undo an import | Upserts overwrite earlier numbers; re-uploading the right file repairs updated lines but not added ones | Only if real use shows the need |
