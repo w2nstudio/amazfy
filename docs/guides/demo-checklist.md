@@ -12,7 +12,7 @@ How to show Amazfy working on a real seller's own numbers: their real Google Ads
 | **Reading a real Google Ads account** | **Needs Explorer access**: with Test access, Google refuses to read real accounts |
 | Real spend numbers | Not tested yet: test accounts have no spend |
 | A real Attribution CSV | Not tested yet: no real export seen so far |
-| Entering the seller's products | Works by typing each ASIN; "Add this product" (backlog) makes it a few clicks |
+| Entering the seller's products | Works: **Add this product** under **Ads to link** fills in the ASIN and marketplace from each ad's link |
 
 ## Approvals, and when each is needed
 
@@ -44,7 +44,7 @@ All but Explorer need company details: legal name, address, a website on Amazfy'
 
 **Code still to do:**
 
-- [ ] "Add this product" on the Ads page: an ad's ASIN and marketplace filled in from its final URL, the seller picks a brand and name
+- [x] "Add this product" on the Ads page: an ad's ASIN and marketplace filled in from its final URL, the seller picks a brand and name
 - [ ] Fixes from the seller's real CSV, if any
 
 ## Rehearsal
@@ -56,7 +56,7 @@ Once Explorer is approved, run the whole demo once privately with the seller's a
 1. The seller signs up in Amazfy (or continues with Google) and creates their seller account for their region.
 2. **Ads → Connect Google Ads**: their Google login, past the "unverified app" warning (**Advanced → Go to Amazfy**), passkey, allow. Connect on the day: in Testing, connections expire after about 7 days.
 3. Choose their Google Ads account → **Bring in campaigns and spend**: campaigns, ads and 90 days of spend.
-4. Add their brand and products (or use **Add this product** under **Ads to link**); ads with Amazon product links link by themselves.
+4. **Ads → Ads to link → Add this product** on each ad pointing to one of their products: a name and a brand (the first time, **New brand…**), and every ad pointing to that product links at once.
 5. **Import**: their Attribution CSV for the right marketplace → preview → import.
 6. **Home**: spend, sales, ROAS and CPA; drill down from brand to product to campaign to the single ad; the trend chart.
 
