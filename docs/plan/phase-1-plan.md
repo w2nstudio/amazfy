@@ -111,10 +111,10 @@ Before M5 (which waits for Amazon Ads API access), Amazfy is shown on a real sel
 
 | Step | Status |
 | --- | --- |
-| Google Ads API Explorer access, to read real accounts | To do (project owner) |
+| Google Ads API Explorer access, to read real accounts | Done (2026-11-03) |
 | "Add this product" on the Ads page (from the backlog) | Next |
 | Check the import against the seller's real Attribution export | Waiting for the export |
-| Private rehearsal, then the demo | To do |
+| Private rehearsal, then the demo; fallback on test accounts and sample data if the seller's data isn't ready (checklist) | To do |
 
 ## Backlog
 
