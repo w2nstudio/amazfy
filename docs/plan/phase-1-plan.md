@@ -6,7 +6,7 @@ Phase 1a ships first: real sellers can connect Google Ads and Amazon and see ROA
 
 ## Progress
 
-Current milestone: **M4 Google Ads connector** (M0, M1, M2 complete; M3 complete except the steps waiting for a real Attribution export). Update this section whenever a step is merged.
+Current milestone: **M4 Google Ads connector**, complete once this step is merged (M0, M1, M2 complete; M3 complete except the steps waiting for a real Attribution export). Update this section whenever a step is merged.
 
 | Step | Status |
 | --- | --- |
@@ -103,7 +103,7 @@ Steps 2 to 5 need the setup in the [Google Ads setup guide](../guides/google-ads
 | See campaigns, ad groups and ads (A6): Campaigns page (any member, read-only) with name, status, daily budget, final URL and what each ad is linked to; removed ones last; a campaign's ad groups and ads load when it's opened; campaigns from an earlier Google Ads account are marked | Done |
 | Google spend per ad and day, on request (A9): **Bring in campaigns and spend**; the first read covers 90 days, later ones go back two weeks from the last sync, since Google corrects past days and doesn't say when a day is final; those days are replaced, so a day corrected to nothing goes away; report totals refreshed in the same transaction. Large seller (5,000 ads): about 6 s for two weeks, 24 s for 90 full days | Done |
 | Run the sync by itself (A9, V15): every 10 minutes a job looks for seller accounts not synced for 23 hours, so a server that was down catches up; taking one is atomic, so two servers never take the same; a failed read is tried again after an hour; an expired connection waits for **Connect again** and doesn't spend Google's daily limit; the Ads page shows the problem | Done |
-| Match Attribution lines again after a sync | Next |
+| Match Attribution lines again after a sync (A10): every sync, by the button or the daily run, links unmatched Attribution lines to the ads it now has, by the same Google ids as the import, and refreshes those days' report totals, in the sync's transaction; the card says how many lines matched, so a report uploaded before its ads no longer needs uploading again. Large seller (`performanceTest`): 14 ms when no lines are waiting, the usual case; 133 s once if a whole year (1.83 million lines) was uploaded before Google was connected | Done |
 
 ## Backlog
 

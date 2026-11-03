@@ -1,6 +1,7 @@
 package com.amazfy.reporting
 
 import com.amazfy.TestcontainersConfiguration
+import com.amazfy.attribution.application.MatchAttributionLines
 import com.amazfy.common.tenant.CurrentAccount
 import com.amazfy.reporting.application.RefreshReportTotals
 import org.junit.jupiter.api.Tag
@@ -47,6 +48,9 @@ class ReportPerformanceTest {
     @Autowired
     lateinit var reportTotals: RefreshReportTotals
 
+    @Autowired
+    lateinit var matchAttribution: MatchAttributionLines
+
     @Test
     fun `every report answers within the target for a large seller`() {
         val (token, accountId) = signUp()
@@ -83,7 +87,16 @@ class ReportPerformanceTest {
         println("Report times for 366 days (median of 5, target $TARGET_MS ms):")
         timings.forEach { (name, ms) -> println("  ${name.padEnd(34)} ${"$ms".padStart(6)} ms${if (ms > TARGET_MS) "  SLOW" else ""}") }
         val slow = timings.filterValues { it > TARGET_MS }
+
+        // Every sync looks for Attribution lines that can now be matched: usually none, at worst a year uploaded before
+        // Google was connected. Measured after the reports, since the worst case leaves the lines matched again anyway.
+        val noneWaiting = measureTimeMillis { CurrentAccount.runAs(accountId) { matchAttribution.run() } }
+        jdbc.sql("UPDATE attribution_daily SET ad_id = NULL WHERE account_id = :a").param("a", accountId).update()
+        val yearWaiting = measureTimeMillis { CurrentAccount.runAs(accountId) { matchAttribution.run() } }
+        println("Matching Attribution lines in a sync: none waiting $noneWaiting ms, a year waiting (1.83M lines) $yearWaiting ms")
+
         assertTrue(slow.isEmpty(), "Over $TARGET_MS ms: $slow")
+        assertTrue(noneWaiting <= TARGET_MS, "Matching with no lines waiting took $noneWaiting ms")
     }
 
     private fun signUp(): Pair<String, UUID> {
