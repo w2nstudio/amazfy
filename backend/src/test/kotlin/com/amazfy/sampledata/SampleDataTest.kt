@@ -54,7 +54,10 @@ class SampleDataTest {
     private fun createSampleData(
         token: String,
         accountId: UUID,
-    ) = mockMvc.post("/api/v1/accounts/$accountId/dev/sample-data") { header(HttpHeaders.AUTHORIZATION, "Bearer $token") }
+        set: String? = null,
+    ) = mockMvc.post("/api/v1/accounts/$accountId/dev/sample-data${set?.let { "?set=$it" } ?: ""}") {
+        header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+    }
 
     private fun count(
         table: String,
@@ -189,6 +192,100 @@ class SampleDataTest {
 
         assertEquals(4, count("products", accountId)) // the own product and the three sample products
         assertEquals(0, count("ads", accountId, "product_id IN (SELECT id FROM products WHERE asin = 'B0MYOWN001')"))
+    }
+
+    @Test
+    fun `the small demo is 4 days for Leafwell, 18 to 15 days ago`() {
+        val (token, accountId) = signUp()
+        val today = LocalDate.now(clock)
+
+        createSampleData(token, accountId, "SMALL_DEMO").andExpect {
+            status { isOk() }
+            jsonPath("$.fromDate") { value(today.minusDays(18).toString()) }
+            jsonPath("$.toDate") { value(today.minusDays(15).toString()) }
+            jsonPath("$.products") { value(2) }
+            jsonPath("$.campaigns") { value(3) } // shears (ads A and B), gloves, brand (short link)
+            jsonPath("$.ads") { value(4) }
+            jsonPath("$.spendRows") { value(4 * 4) }
+            jsonPath("$.attributionRows") { value(5 * 4) } // the 4 ads and the unmatched line
+        }
+
+        assertEquals(2, count("products", accountId, "brand_id IN (SELECT id FROM brands WHERE name = 'Leafwell')"))
+        assertEquals(1, count("ads", accountId, "product_id IS NULL AND brand_id IS NULL"))
+    }
+
+    @Test
+    fun `the small demo's numbers match the expected results in docs-guides-sample-data`() {
+        val (token, accountId) = signUp()
+        createSampleData(token, accountId, "SMALL_DEMO")
+        val today = LocalDate.now(clock)
+        val days = "from=${today.minusDays(18)}&to=${today.minusDays(15)}"
+
+        // 4 days: $257 spend at $1 a click, $580 sales from 26 purchases and 262 click-throughs
+        report(token, accountId, "summary?$days").andExpect {
+            jsonPath("$.currencies[0].spend") { value(257.0) }
+            jsonPath("$.currencies[0].sales") { value(580.0) }
+            jsonPath("$.currencies[0].purchases") { value(26) }
+            jsonPath("$.currencies[0].clicks") { value(257) }
+            jsonPath("$.currencies[0].clickThroughs") { value(262) }
+            jsonPath("$.currencies[0].roas") { value(2.26) }
+            jsonPath("$.currencies[0].cpa") { value(9.88) }
+            jsonPath("$.currencies[0].conversionRate") { value(9.92) }
+        }
+        val brands =
+            listOf(
+                Triple("Leafwell", 237.0, 530.0),
+                Triple("Not linked to a product or brand", 20.0, 0.0),
+                Triple("Not matched to an ad", 0.0, 50.0),
+            )
+        report(token, accountId, "breakdown?by=BRAND&$days").andExpect {
+            jsonPath("$.rows.length()") { value(brands.size) }
+            brands.forEachIndexed { i, (name, spend, sales) ->
+                jsonPath("$.rows[$i].name") { value(name) }
+                jsonPath("$.rows[$i].totals.spend") { value(spend) }
+                jsonPath("$.rows[$i].totals.sales") { value(sales) }
+            }
+        }
+        // Ad A and ad B advertise the same shears at about the same cost; A sells far more
+        val shears =
+            jdbc
+                .sql("SELECT id FROM products WHERE account_id = :a AND asin = 'B0LFW00001'")
+                .param("a", accountId)
+                .query(UUID::class.java)
+                .single()
+        report(token, accountId, "breakdown?by=AD&productId=$shears&$days").andExpect {
+            jsonPath("$.rows.length()") { value(2) }
+            jsonPath("$.rows[0].totals.spend") { value(95.0) }
+            jsonPath("$.rows[0].totals.sales") { value(325.0) }
+            jsonPath("$.rows[0].totals.roas") { value(3.42) }
+            jsonPath("$.rows[1].totals.spend") { value(85.0) }
+            jsonPath("$.rows[1].totals.sales") { value(25.0) }
+            jsonPath("$.rows[1].totals.roas") { value(0.29) }
+        }
+        // Day 3 is the very good day, day 4 the weak one
+        val spend = listOf(55.0, 59.0, 78.0, 65.0)
+        val sales = listOf(111.0, 136.0, 265.0, 68.0)
+        report(token, accountId, "trend?$days").andExpect {
+            jsonPath("$.series[0].days.length()") { value(4) }
+            spend.indices.forEach { i ->
+                jsonPath("$.series[0].days[$i].totals.spend") { value(spend[i]) }
+                jsonPath("$.series[0].days[$i].totals.sales") { value(sales[i]) }
+            }
+        }
+    }
+
+    @Test
+    fun `switching between the sets replaces the data`() {
+        val (token, accountId) = signUp()
+        createSampleData(token, accountId)
+        createSampleData(token, accountId, "SMALL_DEMO")
+
+        assertEquals(3, count("campaigns", accountId))
+        assertEquals(4 * 4, count("ad_spend_daily", accountId))
+
+        createSampleData(token, accountId, "FULL")
+        assertEquals(5, count("campaigns", accountId))
+        assertEquals(5, count("products", accountId)) // products stay: the three aquarium and the two gardening ones
     }
 
     @Test

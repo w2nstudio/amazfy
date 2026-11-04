@@ -1,6 +1,13 @@
 # Sample data and expected results
 
-Local development only. **Fill with sample data** on the dashboard (owner, `npm run dev`) or `POST /accounts/{id}/dev/sample-data` in `api/amazfy.http` replaces the seller account's campaigns, ads, spend and Attribution numbers with the data below. The numbers are round and the same every day, so every tile, table row and chart value can be checked with a calculator. `SampleDataTest` checks the summary and brand rows against this page.
+Local development only. The dashboard's sample data panel (owner, `npm run dev`) or `POST /accounts/{id}/dev/sample-data` in `api/amazfy.http` replaces the seller account's campaigns, ads, spend and Attribution numbers with one of two sets. `SampleDataTest` checks both against this page.
+
+| Set | Button | For |
+| --- | --- | --- |
+| **Full sample** (`set=FULL`, the default) | **Full sample: 90 days** | Checking reports: round numbers, the same every day, so every tile, table row and chart value can be checked with a calculator. Described first, below |
+| **Small demo** (`set=SMALL_DEMO`) | **Small demo: Leafwell Garden, 4 days** | Demos: one gardening brand over 4 days, uneven like a real shop. See [Small demo: Leafwell Garden](#small-demo-leafwell-garden) at the end |
+
+Both replace whatever sample data was there before; products stay.
 
 ## What it creates
 
@@ -84,3 +91,65 @@ A Brand Store campaign holds both the store ad and the short-link ad, so it cost
 **Trend chart:** flat lines, since every day is the same. Whole account: sales $584, spend $160. After clicking AquaLife: sales $460, spend $125. After clicking the filter: sales $240, spend $80.
 
 **Checks that hold for any range:** at the top of the drill-down, the rows add up to the tiles. After a click, the rows add up to the clicked row. The chart's days add up to the tiles (open *Daily numbers*).
+
+## Small demo: Leafwell Garden
+
+A small, made-up gardening shop for demos: easy to explain in a minute, and uneven like a real one. **Small demo: Leafwell Garden, 4 days** fills it, and the dashboard then shows exactly its 4 days.
+
+- **The 4 days are 18 to 15 days ago**, not up to yesterday: Amazon's 14-day window has closed for them, so nothing is marked as still being counted. Fill it again on the demo day, and the days move along.
+- **One brand, Leafwell, two products** on the region's first marketplace (US in North America), created if missing:
+
+| Product | ASIN | Price |
+| --- | --- | --- |
+| Bypass pruning shears | B0LFW00001 | $25 |
+| Gardening gloves | B0LFW00002 | $18 |
+
+- **Google:** three Search campaigns.
+
+| Campaign | Ad group | Ad | Links to |
+| --- | --- | --- | --- |
+| Leafwell – Pruning shears (US) | pruning shears | **ad A** (the lower id) | the shears |
+| | | **ad B** | the shears |
+| Leafwell – Gardening gloves (US) | gardening gloves | gloves ad | the gloves |
+| Leafwell – Brand (US) | leafwell | short-link ad (`amzn.to/…`) | nothing: **Not linked** |
+
+  Plus Attribution lines for an ad Amazfy doesn't know: **Not matched**. Amazfy shows ads by their Google id, not their text, so ad A is the one with the lower id.
+
+- **Fixed rules:** $1 a click (clicks = spend in dollars); 20 impressions per click; 9 of 10 clicks reach Amazon (click-throughs, rounded to whole visits); 2 add-to-carts per purchase; one unit per purchase.
+
+### Per ad and day
+
+Purchases in brackets; sales = purchases × price.
+
+| | Day 1 | Day 2 | **Day 3** | Day 4 | 4 days | ROAS |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Ad A** spend | $18 | $22 | **$30** | $25 | $95 | |
+| sales | $50 (2) | $75 (3) | **$150 (6)** | $50 (2) | $325 (13) | **3.42** |
+| **Ad B** spend | $20 | $19 | $24 | $22 | $85 | |
+| sales | $25 (1) | $0 | $0 | $0 | $25 (1) | **0.29** |
+| **Gloves ad** spend | $12 | $14 | **$18** | $13 | $57 | |
+| sales | $36 (2) | $36 (2) | **$90 (5)** | $18 (1) | $180 (10) | **3.16** |
+| **Short-link ad** spend | $5 | $4 | $6 | $5 | $20 | 0.00 |
+| **Not matched** sales | $0 | $25 (1) | $25 (1) | $0 | $50 (2) | — |
+| **Whole shop** spend | $55 | $59 | **$78** | $65 | **$257** | |
+| sales | $111 | $136 | **$265** | $68 | **$580** | **2.26** |
+
+Click-throughs over the 4 days: ad A 86, ad B 77, gloves 52, short link 19, not matched 28 (6, 8, 9 and 5 a day).
+
+### Expected results for the 4 days
+
+**Tiles:** spend **$257**, sales **$580**, ROAS **2.26**, purchases **26**, CPA **$9.88**, conversion rate **9.92%** (26 of 262 click-throughs); clicks 257.
+
+**View by Brand:**
+
+| Row | Spend | Sales | ROAS |
+| --- | --- | --- | --- |
+| Leafwell | $237 | $530 | 2.24 |
+| Not linked to a product or brand | $20 | $0 | 0.00 |
+| Not matched to an ad | $0 | $50 | — |
+
+**View by Product** (or click Leafwell): Bypass pruning shears $180 → $350 (ROAS 1.94), Gardening gloves $57 → $180 (3.16).
+
+**Click the shears, then its campaign and ad group:** ad A $95 → $325 (ROAS 3.42) and ad B $85 → $25 (0.29). Same product, about the same cost, but A sells 13 times and B once: B is the ad to pause.
+
+**Trend chart:** day 3 is the peak ($78 → $265), day 4 the dip ($65 → $68).
