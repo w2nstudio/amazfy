@@ -2,7 +2,9 @@ package com.amazfy.sampledata.adapter.inbound.web
 
 import com.amazfy.api.generated.DevelopmentApi
 import com.amazfy.api.generated.model.SampleDataResult
+import com.amazfy.api.generated.model.SampleDataSet
 import com.amazfy.sampledata.application.SampleDataService
+import com.amazfy.sampledata.application.SampleSet
 import org.springframework.context.annotation.Profile
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -19,8 +21,11 @@ class SampleDataController(
     private val sampleData: SampleDataService,
 ) : DevelopmentApi {
     @PreAuthorize("@accountAccess.canManage(#accountId)")
-    override fun createSampleData(accountId: UUID): ResponseEntity<SampleDataResult> {
-        val summary = sampleData.replaceWithSampleData()
+    override fun createSampleData(
+        accountId: UUID,
+        set: SampleDataSet,
+    ): ResponseEntity<SampleDataResult> {
+        val summary = sampleData.replaceWithSampleData(SampleSet.valueOf(set.name))
         return ResponseEntity.ok(
             SampleDataResult(
                 fromDate = summary.fromDate,

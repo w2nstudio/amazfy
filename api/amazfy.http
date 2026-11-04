@@ -391,6 +391,10 @@ Date,Publisher,Campaign ID,Ad group ID,Creative ID,Click-throughs,Detail page vi
 POST {{baseUrl}}/accounts/{{accountId}}/dev/sample-data
 Authorization: Bearer {{accessToken}}
 
+### Or the small demo: Leafwell Garden, 4 days, 18 to 15 days ago (docs/guides/sample-data.md).
+POST {{baseUrl}}/accounts/{{accountId}}/dev/sample-data?set=SMALL_DEMO
+Authorization: Bearer {{accessToken}}
+
 
 ############################################################
 # Access rules: a second user can't reach the first user's account

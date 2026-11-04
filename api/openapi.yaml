@@ -1101,12 +1101,18 @@ paths:
       operationId: createSampleData
       summary: Fill the seller account with sample campaigns, spend and Attribution numbers (local only)
       description: |
-        Replaces the account's campaigns, ad groups, ads, daily spend and Attribution numbers with 90 days (up to
-        yesterday) of made-up data with round numbers, the same every day, so reports can be checked by hand before the
-        Google and Amazon connections exist (expected results: docs/guides/sample-data.md). The ads are for three sample
-        products, added with their brands if missing; the account's own products get no ads.
-        Includes the cases reports must handle: ads linked to products, a Brand Store ad (brand-level spend), an
-        unmatched ad and an Attribution line that matches no ad. Owner only. Only on local development servers.
+        Replaces the account's campaigns, ad groups, ads, daily spend and Attribution numbers with made-up data, so
+        reports can be checked and shown before the Google and Amazon connections exist (expected results:
+        docs/guides/sample-data.md). The ads are for sample products, added with their brands if missing; the account's
+        own products get no ads. Includes the cases reports must handle: ads linked to products, an ad Amazfy can't
+        link and an Attribution line that matches no ad. Owner only. Only on local development servers.
+      parameters:
+        - name: set
+          in: query
+          required: false
+          description: Which sample data; FULL when left out
+          schema:
+            $ref: "#/components/schemas/SampleDataSet"
       responses:
         "200":
           description: Sample data created
@@ -1922,6 +1928,15 @@ components:
         saved:
           type: boolean
           description: "False for a dry run (preview): nothing was saved"
+
+    SampleDataSet:
+      type: string
+      enum: [FULL, SMALL_DEMO]
+      default: FULL
+      description: >-
+        FULL: 90 days up to yesterday for three aquarium products and two brands, round numbers that are the same every
+        day, for checking reports with a calculator. SMALL_DEMO: 4 days for one gardening brand (Leafwell, two products),
+        uneven like a real shop, for demos; the days are 18 to 15 days ago, when Amazon's 14-day window has closed.
 
     SampleDataResult:
       type: object
