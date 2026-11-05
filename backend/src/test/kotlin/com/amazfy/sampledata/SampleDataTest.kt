@@ -1,6 +1,7 @@
 package com.amazfy.sampledata
 
 import com.amazfy.TestcontainersConfiguration
+import com.jayway.jsonpath.JsonPath
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -9,8 +10,10 @@ import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.multipart
 import org.springframework.test.web.servlet.post
 import java.time.Clock
 import java.time.LocalDate
@@ -271,6 +274,56 @@ class SampleDataTest {
                 jsonPath("$.series[0].days[$i].totals.spend") { value(spend[i]) }
                 jsonPath("$.series[0].days[$i].totals.sales") { value(sales[i]) }
             }
+        }
+    }
+
+    @Test
+    fun `without Amazon's numbers, the returned CSV imported on the Import page gives the same reports`() {
+        val (token, accountId) = signUp()
+        val today = LocalDate.now(clock)
+        val days = "from=${today.minusDays(18)}&to=${today.minusDays(15)}"
+
+        val body =
+            mockMvc
+                .post("/api/v1/accounts/$accountId/dev/sample-data?set=SMALL_DEMO&amazonNumbers=false") {
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                }.andExpect {
+                    status { isOk() }
+                    jsonPath("$.spendRows") { value(4 * 4) }
+                    jsonPath("$.attributionRows") { value(0) }
+                }.andReturn()
+                .response.contentAsString
+        val csv = JsonPath.read<String>(body, "$.attributionCsv")
+        assertEquals(1 + 5 * 4, csv.trimEnd().lines().size) // the header, then the 4 ads and the unmatched line per day
+        assertEquals(0, count("attribution_daily", accountId))
+        // Before the import: Google's spend, no sales yet
+        report(token, accountId, "summary?$days").andExpect {
+            jsonPath("$.currencies[0].spend") { value(257.0) }
+            jsonPath("$.currencies[0].sales") { value(0.0) }
+        }
+
+        mockMvc
+            .multipart("/api/v1/accounts/$accountId/attribution/imports") {
+                file(MockMultipartFile("file", "leafwell-attribution.csv", "text/csv", csv.toByteArray()))
+                param("marketplace", "US")
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$.lines") { value(20) }
+                jsonPath("$.matchedLines") { value(16) } // all but the unmatched line's 4 days
+            }
+
+        // After it: exactly the one-click fill's numbers
+        report(token, accountId, "summary?$days").andExpect {
+            jsonPath("$.currencies[0].spend") { value(257.0) }
+            jsonPath("$.currencies[0].sales") { value(580.0) }
+            jsonPath("$.currencies[0].purchases") { value(26) }
+            jsonPath("$.currencies[0].clickThroughs") { value(262) }
+        }
+        report(token, accountId, "breakdown?by=BRAND&$days").andExpect {
+            jsonPath("$.rows[0].totals.sales") { value(530.0) } // Leafwell
+            jsonPath("$.rows[2].name") { value("Not matched to an ad") }
+            jsonPath("$.rows[2].totals.sales") { value(50.0) }
         }
     }
 

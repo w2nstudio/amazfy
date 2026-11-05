@@ -7,7 +7,7 @@ Local development only. The dashboard's sample data panel (owner, `npm run dev`)
 | **Full sample** (`set=FULL`, the default) | **Full sample: 90 days** | Checking reports: round numbers, the same every day, so every tile, table row and chart value can be checked with a calculator. Described first, below |
 | **Small demo** (`set=SMALL_DEMO`) | **Small demo: Leafwell Garden, 4 days** | Demos: one gardening brand over 4 days, uneven like a real shop. See [Small demo: Leafwell Garden](#small-demo-leafwell-garden) at the end |
 
-Both replace whatever sample data was there before; products stay.
+Both replace whatever sample data was there before; products stay. With **Google side only** ticked (`amazonNumbers=false`), either set fills only the ads and spend, and its Amazon numbers come back as an Attribution CSV to upload on the Import page: see [Showing the CSV import](#showing-the-csv-import).
 
 ## What it creates
 
@@ -153,3 +153,14 @@ Click-throughs over the 4 days: ad A 86, ad B 77, gloves 52, short link 19, not 
 **Click the shears, then its campaign and ad group:** ad A $95 → $325 (ROAS 3.42) and ad B $85 → $25 (0.29). Same product, about the same cost, but A sells 13 times and B once: B is the ad to pause.
 
 **Trend chart:** day 3 is the peak ($78 → $265), day 4 the dip ($65 → $68).
+
+## Showing the CSV import
+
+Until the Amazon connector (M5) exists, a seller brings Amazon's sales into Amazfy by uploading an Attribution CSV. To show that step with numbers everyone knows:
+
+1. Tick **Google side only**, then fill (the small demo suits a demo best). Ads and spend are saved; Amazon's numbers aren't. The dashboard shows the spend ($257 for the small demo), and no sales, ROAS or purchases yet.
+2. **Download the Attribution CSV** under the panel. It holds the lines the fill left out: one per ad and day, plus the lines for an ad Amazfy doesn't know (20 lines for the small demo), with the header names the importer reads.
+3. On **Import**, choose the seller account's first marketplace (amazon.com in North America) and choose the file. The preview shows the lines and how many match the ads (16 of 20 for the small demo; the other 4 are the *Not matched* lines), then **Import**.
+4. Back on **Home**: exactly the numbers of a one-click fill ($580 sales, ROAS 2.26 for the small demo).
+
+The CSV fits only the fill it came with: filling again makes new ads and, on another day, new days. It isn't kept, so download it before leaving the page. `SampleDataTest` imports it and checks the reports.

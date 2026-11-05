@@ -40,9 +40,16 @@ class SampleDataService(
     private val clock: Clock,
     private val reportTotals: RefreshReportTotals,
 ) {
-    /** Replaces the current account's campaigns (with ad groups, ads, spend) and Attribution numbers. */
+    /**
+     * Replaces the current account's campaigns (with ad groups, ads, spend) and Attribution numbers. With
+     * [amazonNumbers] false, only the Google side is saved, and the Attribution numbers come back as a CSV report to
+     * upload on the Import page: the same lines, for the same ads and days.
+     */
     @Transactional
-    fun replaceWithSampleData(set: SampleSet = SampleSet.FULL): SampleDataSummary {
+    fun replaceWithSampleData(
+        set: SampleSet = SampleSet.FULL,
+        amazonNumbers: Boolean = true,
+    ): SampleDataSummary {
         val accountId = CurrentAccount.get()
         val marketplace =
             accounts
@@ -51,20 +58,56 @@ class SampleDataService(
                 .first()
         jdbc.sql("DELETE FROM attribution_daily WHERE account_id = :a").param("a", accountId).update()
         jdbc.sql("DELETE FROM campaigns WHERE account_id = :a").param("a", accountId).update() // cascades to ads, spend
-        val summary =
+        val filled =
             when (set) {
                 SampleSet.FULL -> fullSet(accountId, marketplace)
                 SampleSet.SMALL_DEMO -> smallDemo(accountId, marketplace)
             }
+        jdbcTemplate.batchUpdate(
+            "INSERT INTO ad_spend_daily (account_id, ad_id, date, impressions, clicks, cost_micros, currency) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            filled.spendRows,
+        )
+        if (amazonNumbers) {
+            jdbcTemplate.batchUpdate(
+                "INSERT INTO attribution_daily (account_id, source, marketplace, date, publisher, campaign_external_id, " +
+                    "ad_group_external_id, creative_external_id, ad_id, click_throughs, detail_page_views, add_to_carts, " +
+                    "purchases, units_sold, sales) VALUES (?, 'CSV', ?, ?, 'Google Ads', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                filled.attributionRows,
+            )
+        }
         // Everything was replaced, including days outside the new ones (an earlier fill's), so rebuild all totals
         reportTotals.forAllDays()
-        return summary
+        return SampleDataSummary(
+            fromDate = filled.fromDate,
+            toDate = filled.toDate,
+            products = filled.products,
+            campaigns = filled.campaigns,
+            ads = filled.ads,
+            spendRows = filled.spendRows.size,
+            attributionRows = if (amazonNumbers) filled.attributionRows.size else 0,
+            attributionCsv = if (amazonNumbers) null else attributionCsv(filled.attributionRows),
+        )
+    }
+
+    /**
+     * Attribution lines as the CSV report the Import page reads, with the header names it recognises (and that tests
+     * use for Amazon's documented columns). Columns follow attributionRow.
+     */
+    private fun attributionCsv(rows: List<Array<Any?>>): String {
+        val header =
+            "Date,Publisher,Campaign ID,Ad group ID,Creative ID,Click-throughs,Detail page views,Add to carts,Purchases,Units sold,Sales"
+        val lines =
+            rows.map { row ->
+                val sales = (row[12] as BigDecimal).toPlainString()
+                listOf(row[2], "Google Ads", row[3], row[4], row[5], row[7], row[8], row[9], row[10], row[11], sales).joinToString(",")
+            }
+        return (listOf(header) + lines).joinToString("\n", postfix = "\n")
     }
 
     private fun fullSet(
         accountId: UUID,
         marketplace: Marketplace,
-    ): SampleDataSummary {
+    ): FilledRows {
         val products = sampleProducts(marketplace, SAMPLE_PRODUCTS)
         val toDate = LocalDate.now(clock).minusDays(1) // Attribution has no numbers for today yet
         val days = (0 until DAYS).map { toDate.minusDays(DAYS - 1 - it) }
@@ -104,16 +147,15 @@ class SampleDataService(
             // Attribution numbers for an ad Amazfy doesn't know (e.g. removed on Google before the first sync): kept, unmatched
             attributionRows += attributionRow(accountId, ads.first(), UNMATCHED_CREATIVE, day, adId = null, UNMATCHED)
         }
-        insertRows(spendRows, attributionRows)
 
-        return SampleDataSummary(
+        return FilledRows(
             fromDate = days.first(),
             toDate = toDate,
             products = products.size,
             campaigns = ads.map { it.campaignId }.distinct().size,
             ads = ads.size,
-            spendRows = spendRows.size,
-            attributionRows = attributionRows.size,
+            spendRows = spendRows,
+            attributionRows = attributionRows,
         )
     }
 
@@ -124,7 +166,7 @@ class SampleDataService(
     private fun smallDemo(
         accountId: UUID,
         marketplace: Marketplace,
-    ): SampleDataSummary {
+    ): FilledRows {
         val products = sampleProducts(marketplace, listOf(SmallDemo.SHEARS, SmallDemo.GLOVES)).toMap()
         val toDate = LocalDate.now(clock).minusDays(SmallDemo.DAYS_AGO_LAST)
         val days = (SmallDemo.DAYS - 1 downTo 0).map { toDate.minusDays(it.toLong()) }
@@ -154,16 +196,15 @@ class SampleDataService(
             attributionRows +=
                 attributionRow(accountId, ads.first().second, UNMATCHED_CREATIVE, day, adId = null, SmallDemo.unmatchedOn(i))
         }
-        insertRows(spendRows, attributionRows)
 
-        return SampleDataSummary(
+        return FilledRows(
             fromDate = days.first(),
             toDate = toDate,
             products = products.size,
             campaigns = campaigns.size,
             ads = ads.size,
-            spendRows = spendRows.size,
-            attributionRows = attributionRows.size,
+            spendRows = spendRows,
+            attributionRows = attributionRows,
         )
     }
 
@@ -174,22 +215,6 @@ class SampleDataService(
         numbers: AdDay,
     ): Array<Any> =
         arrayOf(accountId, ad.id, Date.valueOf(day), numbers.impressions, numbers.clicks, numbers.costMicros, ad.marketplace.currency)
-
-    private fun insertRows(
-        spendRows: List<Array<Any>>,
-        attributionRows: List<Array<Any?>>,
-    ) {
-        jdbcTemplate.batchUpdate(
-            "INSERT INTO ad_spend_daily (account_id, ad_id, date, impressions, clicks, cost_micros, currency) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            spendRows,
-        )
-        jdbcTemplate.batchUpdate(
-            "INSERT INTO attribution_daily (account_id, source, marketplace, date, publisher, campaign_external_id, " +
-                "ad_group_external_id, creative_external_id, ad_id, click_throughs, detail_page_views, add_to_carts, " +
-                "purchases, units_sold, sales) VALUES (?, 'CSV', ?, ?, 'Google Ads', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            attributionRows,
-        )
-    }
 
     /** The sample products on the region's first marketplace, created (with their brands) where missing. */
     private fun sampleProducts(
@@ -361,7 +386,7 @@ private object SmallDemo {
     fun unmatchedOn(day: Int) = AdDay(0, UNMATCHED_PURCHASES[day], SHEARS.price, clickThroughsWithoutSpend = UNMATCHED_CLICK_THROUGHS[day])
 }
 
-/** What replaceWithSampleData created. */
+/** What replaceWithSampleData created; [attributionCsv] only when it left out Amazon's numbers. */
 data class SampleDataSummary(
     val fromDate: LocalDate,
     val toDate: LocalDate,
@@ -370,6 +395,18 @@ data class SampleDataSummary(
     val ads: Int,
     val spendRows: Int,
     val attributionRows: Int,
+    val attributionCsv: String? = null,
+)
+
+/** A set's ads (already saved) and the rows still to save: spend always, Attribution only with Amazon's numbers. */
+private class FilledRows(
+    val fromDate: LocalDate,
+    val toDate: LocalDate,
+    val products: Int,
+    val campaigns: Int,
+    val ads: Int,
+    val spendRows: List<Array<Any>>,
+    val attributionRows: List<Array<Any?>>,
 )
 
 /**

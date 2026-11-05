@@ -24,8 +24,9 @@ class SampleDataController(
     override fun createSampleData(
         accountId: UUID,
         set: SampleDataSet,
+        amazonNumbers: Boolean,
     ): ResponseEntity<SampleDataResult> {
-        val summary = sampleData.replaceWithSampleData(SampleSet.valueOf(set.name))
+        val summary = sampleData.replaceWithSampleData(SampleSet.valueOf(set.name), amazonNumbers)
         return ResponseEntity.ok(
             SampleDataResult(
                 fromDate = summary.fromDate,
@@ -35,6 +36,7 @@ class SampleDataController(
                 ads = summary.ads,
                 spendRows = summary.spendRows,
                 attributionRows = summary.attributionRows,
+                attributionCsv = summary.attributionCsv,
             ),
         )
     }

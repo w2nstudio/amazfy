@@ -74,6 +74,7 @@ If the seller's Gmail or Attribution export isn't ready in time, the same story 
 ### Before the fallback demo
 
 - [ ] **Leafwell Garden – US** created; **Small demo: Leafwell Garden, 4 days** pressed **on the demo day** (its 4 days are 18 to 15 days before it's pressed)
+- [ ] To show the import too: tick **Google side only** before filling, download the Attribution CSV it gives, and keep it for step 2 ([how](sample-data.md#showing-the-csv-import))
 - [ ] The test seller account connected within the last 7 days (**Connect again** on the demo day morning is safest)
 - [ ] An Attribution CSV for the test ads: the ids of your test campaign, ad group and ads (pgAdmin: `external_id` in `campaigns`, `ad_groups`, `ads`) with made-up sales. Claude can generate it from the database; keep it out of the repository
 - [ ] Optional: a change ready to make in Google Ads during the demo, such as renaming the test campaign
@@ -81,7 +82,7 @@ If the seller's Gmail or Attribution export isn't ready in time, the same story 
 ### The fallback demo (about 15 minutes)
 
 1. **The problem.** Google Ads shows clicks and cost, Amazon shows sales, and neither says which ad brought which sale.
-2. **The answer, on sample data** (*Leafwell Garden – US*, say the numbers are made up): the tiles ($257 spent, $580 sold, ROAS 2.26); **View by Brand → Product → Campaign → ad**. Then the key moment: the pruning shears' **ad A and ad B** cost about the same ($95 and $85), but A sold 13 times and B once (ROAS 3.42 vs 0.29), something Google alone can't show: B is the ad to pause. Then the **Not linked** and **Not matched** rows (totals stay complete), and the trend chart: day 3 the peak, day 4 the dip.
+2. **The answer, on sample data** (*Leafwell Garden – US*, say the numbers are made up). If filled with **Google side only**: first the spend alone, then **Import** the CSV and the sales appear. Then the tiles ($257 spent, $580 sold, ROAS 2.26); **View by Brand → Product → Campaign → ad**. Then the key moment: the pruning shears' **ad A and ad B** cost about the same ($95 and $85), but A sold 13 times and B once (ROAS 3.42 vs 0.29), something Google alone can't show: B is the ad to pause. Then the **Not linked** and **Not matched** rows (totals stay complete), and the trend chart: day 3 the peak, day 4 the dip.
 3. **It's real, on the Google test account** (*Aqualife - US*): **Ads → Bring in campaigns and spend** live; the **Campaigns** page shows the campaign built in Google Ads; rename it in Google Ads, bring in again, and the page follows. **Ads to link**: link the short-link ad to a product. **Import**: upload the test CSV, and its lines match the real ads.
 4. **What their own account adds:** real spend next to their real sales, per ad; then the Amazon connector (M5) fetches Attribution by itself, with no CSV.
 

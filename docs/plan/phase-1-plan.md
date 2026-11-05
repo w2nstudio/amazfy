@@ -114,6 +114,7 @@ Before M5 (which waits for Amazon Ads API access), Amazfy is shown on a real sel
 | Google Ads API Explorer access, to read real accounts | Done (2026-11-03) |
 | "Add this product" on the Ads page: an unlinked ad pointing to a product page of the seller account's region offers it, with ASIN and marketplace from the final URL; the seller names it and picks or creates a brand, then Link automatically links every ad pointing to that page. Frontend only, using the existing endpoints | Done |
 | Small demo sample data: Leafwell Garden, one gardening brand with two products and four ads over 4 days (18 to 15 days ago), uneven, with ad A beating ad B, a peak day and a dip; a second button next to the 90-day set (`set=SMALL_DEMO`), which stays for checking reports | Done |
+| Sample data without Amazon's numbers (`amazonNumbers=false`, **Google side only**): only ads and spend are saved, and the left-out Attribution lines come back as a CSV to download and upload on **Import**, so a demo shows sales appearing after the import; tested by importing it | Done |
 | Check the import against the seller's real Attribution export | Waiting for the export |
 | Private rehearsal, then the demo; fallback on test accounts and sample data if the seller's data isn't ready (checklist) | To do |
 
