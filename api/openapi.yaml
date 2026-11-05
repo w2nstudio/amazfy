@@ -1113,6 +1113,15 @@ paths:
           description: Which sample data; FULL when left out
           schema:
             $ref: "#/components/schemas/SampleDataSet"
+        - name: amazonNumbers
+          in: query
+          required: false
+          description: >-
+            false: only the Google side (ads and spend) is filled; Amazon's Attribution numbers come back as
+            attributionCsv instead, to upload on the Import page, so a demo can show sales appearing after the import.
+          schema:
+            type: boolean
+            default: true
       responses:
         "200":
           description: Sample data created
@@ -1961,7 +1970,13 @@ components:
           description: Rows of daily spend (one per ad and day)
         attributionRows:
           type: integer
-          description: Rows of daily Attribution numbers
+          description: Rows of daily Attribution numbers saved (0 when amazonNumbers=false)
+        attributionCsv:
+          type: string
+          description: >-
+            Only when amazonNumbers=false: the Attribution numbers this fill left out, as an Attribution CSV report for
+            the region's first marketplace (the same lines the full fill saves, for the same ads and days). It matches
+            only this fill: filling again makes new days.
 
     BrandRequest:
       type: object

@@ -395,6 +395,10 @@ Authorization: Bearer {{accessToken}}
 POST {{baseUrl}}/accounts/{{accountId}}/dev/sample-data?set=SMALL_DEMO
 Authorization: Bearer {{accessToken}}
 
+### Or Google side only: ads and spend; the Amazon numbers come back as attributionCsv, to upload with "Upload a report for amazon.com" above.
+POST {{baseUrl}}/accounts/{{accountId}}/dev/sample-data?set=SMALL_DEMO&amazonNumbers=false
+Authorization: Bearer {{accessToken}}
+
 
 ############################################################
 # Access rules: a second user can't reach the first user's account

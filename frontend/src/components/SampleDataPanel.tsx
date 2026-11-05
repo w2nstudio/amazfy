@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { errorMessage } from '@/api/client'
 import { useCreateSampleData } from '@/api/generated/development/development'
 import { SampleDataSet } from '@/api/generated/model'
@@ -33,11 +33,14 @@ export function SampleDataPanel({ accountId }: { accountId: string }) {
   const queryClient = useQueryClient()
   const [, setSearchParams] = useSearchParams()
   const [confirming, setConfirming] = useState<SampleDataSet | null>(null)
+  const [googleOnly, setGoogleOnly] = useState(false)
   const result = create.data?.data
+  // A data: link, so nothing needs freeing; the CSV matches only this fill, so it goes when the next one starts
+  const csvLink = result?.attributionCsv && `data:text/csv;charset=utf-8,${encodeURIComponent(result.attributionCsv)}`
 
   function fill(set: SampleDataSet) {
     create.mutate(
-      { accountId, params: { set } },
+      { accountId, params: { set, amazonNumbers: !googleOnly } },
       {
         onSuccess: async (response) => {
           setConfirming(null)
@@ -66,6 +69,22 @@ export function SampleDataPanel({ accountId }: { accountId: string }) {
           </li>
         ))}
       </ul>
+      <label htmlFor="sample-google-only" className="flex items-start gap-2">
+        <input
+          id="sample-google-only"
+          type="checkbox"
+          className="mt-1 size-4 accent-primary"
+          checked={googleOnly}
+          onChange={(e) => setGoogleOnly(e.target.checked)}
+        />
+        <span>
+          <span className="font-medium">Google side only.</span>{' '}
+          <span className="text-muted-foreground">
+            Ads and spend, without Amazon&apos;s sales. You get those as an Attribution CSV to upload on the Import
+            page, to show sales appearing after the import.
+          </span>
+        </span>
+      </label>
       <div className="flex flex-wrap items-center gap-2">
         {confirming ? (
           <>
@@ -88,8 +107,27 @@ export function SampleDataPanel({ accountId }: { accountId: string }) {
       <FormMessage>
         {result &&
           `Done: ${result.campaigns} campaigns, ${result.ads} ads for ${result.products} products, ` +
-            `${result.fromDate} to ${result.toDate}.`}
+            `${result.fromDate} to ${result.toDate}.` +
+            (csvLink ? ' No sales yet: they are in the CSV below.' : '')}
       </FormMessage>
+      {result && csvLink && (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <a
+            href={csvLink}
+            download={`sample-attribution-${result.fromDate}-to-${result.toDate}.csv`}
+            className="font-medium underline underline-offset-4"
+          >
+            Download the Attribution CSV
+          </a>
+          <span className="text-muted-foreground">
+            then upload it on{' '}
+            <Link to="/import" className="underline underline-offset-4">
+              Import
+            </Link>{' '}
+            for this seller account&apos;s first marketplace. It fits only this fill.
+          </span>
+        </p>
+      )}
       <FormMessage error>{errorMessage(create.error)}</FormMessage>
     </section>
   )

@@ -100,3 +100,4 @@ cd frontend && npm run lint && npm run format:check && npm run build
 - [API testing guide](docs/guides/api-testing-guide.md): try the endpoints by hand with Postman or with `api/amazfy.http` in VS Code (REST Client)
 - [Business glossary](docs/guides/business-glossary.md): Amazon and Google Ads terms in plain language
 - ["Not linked" and "Not matched" report rows](docs/guides/report-rows-not-linked-not-matched.md): the two special dashboard rows, side by side
+- [Running Amazfy on another computer](docs/guides/demo-laptop.md): a demo laptop or MacBook, from installing the tools to the first sample data
