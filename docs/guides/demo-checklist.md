@@ -34,7 +34,7 @@ All but Explorer need company details: legal name, address, a website on Amazfy'
 
 - [ ] Explorer access applied for, and the Overview page shows **Explorer**
 - [ ] The seller's Google account added under **Google Auth Platform → Audience → Test users**
-- [ ] Latest `main` running locally (backend restarted after pulling)
+- [ ] Latest `main` running locally (backend restarted after pulling); on another computer, such as the seller's laptop: [running Amazfy on another computer](demo-laptop.md)
 
 **Seller, a few days ahead:**
 
